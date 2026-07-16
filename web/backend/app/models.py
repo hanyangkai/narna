@@ -161,6 +161,30 @@ class RegistryPlugin(Base):
     )
 
 
+class RegistryGovernancePackage(Base):
+    """Governance Package marketplace listing."""
+
+    __tablename__ = "registry_governance_packages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    package_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    version: Mapped[str] = mapped_column(String(64), default="0.1.0")
+    provider: Mapped[str] = mapped_column(String(128), default="local", index=True)
+    package_kind: Mapped[str] = mapped_column(String(64), default="Compliance")
+    license: Mapped[str] = mapped_column(String(64), default="MIT")
+    disclaimer: Mapped[str] = mapped_column(Text, default="")
+    package_hash: Mapped[str] = mapped_column(String(128), default="")
+    spec_json: Mapped[str] = mapped_column(Text, default="{}")
+    stars: Mapped[int] = mapped_column(Integer, default=0)
+    downloads: Mapped[int] = mapped_column(Integer, default=0)
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
 def generate_api_key() -> tuple[str, str, str]:
     """Returns (full_key, prefix, sha256_hex_hash)."""
     import hashlib

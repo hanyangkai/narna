@@ -28,9 +28,9 @@ const howSteps = [
 ];
 
 const archLayers = [
-  "NARNA Constitution Layer",
-  "Identity · Policy · Evidence · Trust",
-  "Passport · Certification · Governance",
+  "NARNA Governance Runtime",
+  "Constitution Runtime · Load → Execute → Switch",
+  "Governance Packages · Marketplace · Passport",
   "OpenTelemetry · MCP · Agent SDKs",
   "LangGraph · CrewAI · OpenShell · …",
   "Any Model",
@@ -160,12 +160,12 @@ export default function Landing() {
         <section className="section two-col">
           <div>
             <p className="section-label">Architecture</p>
-            <h2>Constitution Layer. Any framework. Any model.</h2>
+            <h2>Governance Runtime. Any framework. Any model.</h2>
             <p className="section-desc">
-              {BRAND.name} sits above OpenTelemetry, MCP, and agent SDKs — defining who AI is, what it may do, and why it can be trusted.
+              {BRAND.name} sits above OpenTelemetry, MCP, and agent SDKs — loading Governance Packages that say who AI is, what it may do, and why it can be trusted.
             </p>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-              {BRAND.name} is not a model, not an app, and not competing to own the runtime. It is the Constitution Layer for autonomous AI.
+              {BRAND.name} is not a model, not an app, and not competing to own the agent executor. It is the Governance Runtime for autonomous AI.
             </p>
           </div>
           <div className="arch-stack">
@@ -325,16 +325,16 @@ export default function Landing() {
 
         <section className="section">
           <p className="section-label">Vision</p>
-          <h2>The Constitution Layer for Autonomous AI</h2>
+          <h2>The Governance Runtime for Autonomous AI</h2>
           <p className="section-desc">
-            Like SSL for websites and OCI for containers — NARNA aims to be the portable trust layer
-            every autonomous system can carry across vendors.
+            Like OCI for containers — NARNA aims to be the portable governance runtime
+            every autonomous system can bind across vendors.
           </p>
           <div className="community-grid" style={{ marginTop: "1rem" }}>
             <a href={BRAND.github} target="_blank" rel="noreferrer">GitHub</a>
             <a href={BRAND.discord} target="_blank" rel="noreferrer">Discord</a>
             <Link to="/docs/what-is-narna">What is NARNA?</Link>
-            <Link to="/docs/constitution">Constitution</Link>
+            <Link to="/packages">Packages</Link>
           </div>
         </section>
       </div>

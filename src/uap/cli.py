@@ -116,6 +116,71 @@ def cmd_fleet(args: argparse.Namespace) -> int:
     _print_json(out)
     return 0
 
+
+def cmd_governance_list(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    _print_json({"active": rt.active(), "packages": rt.list_local()})
+    return 0
+
+
+def cmd_governance_load(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    result = rt.load(
+        path=args.path,
+        provider=args.provider,
+        version=args.version,
+        ref=args.ref,
+        constitution_path=args.constitution,
+    )
+    out = {"ok": True, "binding": result["binding"]}
+    _print_json(out)
+    return 0
+
+
+def cmd_governance_switch(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    result = rt.switch(path=args.path, provider=args.provider, version=args.version)
+    _print_json({"ok": True, "binding": result["binding"], "previous": result.get("previous")})
+    return 0
+
+
+def cmd_governance_execute(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    decision = rt.execute(action=args.action, agent_id=args.entity, fleet_path=args.fleet)
+    _print_json(decision)
+    return 0 if decision["decision"] != "deny" else 2
+
+
+def cmd_governance_verify(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    bundle = json.loads(Path(args.bundle).read_text(encoding="utf-8"))
+    _print_json(rt.verify(bundle))
+    return 0
+
+
+def cmd_governance_audit(args: argparse.Namespace) -> int:
+    from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(Path.cwd())
+    run_record = None
+    if args.run:
+        p = Path(".uap") / "runs" / args.run / "run.json"
+        if p.exists():
+            run_record = json.loads(p.read_text(encoding="utf-8"))
+    _print_json(rt.audit(run_record))
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     if getattr(args, "spec", None) and Path(args.spec).exists():
         agent = Agent.from_spec(args.spec)
@@ -367,6 +432,60 @@ def cmd_plugin_attach(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_package_search(args: argparse.Namespace) -> int:
+    from .packages import search_packages
+
+    rows = search_packages(Path.cwd(), args.q)
+    _print_json({"packages": rows})
+    return 0
+
+
+def cmd_package_publish(args: argparse.Namespace) -> int:
+    import os
+
+    from .packages import register_package_local
+
+    entry = register_package_local(Path.cwd(), Path(args.path))
+    out: dict = {**entry, "status": "local"}
+    if not args.local:
+        base = (
+            args.registry_url
+            or os.environ.get("NARNA_REGISTRY_URL")
+            or os.environ.get("UAP_CLOUD_URL")
+            or ""
+        ).rstrip("/")
+        key = (
+            args.registry_key
+            or os.environ.get("NARNA_REGISTRY_KEY")
+            or os.environ.get("UAP_CLOUD_KEY")
+            or "uap_live_dev_local_key_change_in_prod"
+        )
+        if base:
+            try:
+                from uap_cloud.exporter import publish_governance_package
+
+                remote = publish_governance_package(listing=entry, api_key=key, base_url=base)
+                out["remote"] = remote
+                out["status"] = "published"
+            except Exception as e:
+                out["remoteError"] = str(e)
+                out["message"] = f"Published locally. Remote unavailable ({e})."
+        else:
+            out["message"] = "Published locally. Set NARNA_REGISTRY_URL to sync."
+    else:
+        out["message"] = "Published to local package registry."
+    _print_json(out)
+    return 0
+
+
+def cmd_package_pull(args: argparse.Namespace) -> int:
+    from .packages import pull_package
+
+    entry = pull_package(Path.cwd(), args.provider, args.version)
+    _print_json({"ok": True, "package": entry})
+    return 0
+
+
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
@@ -438,7 +557,7 @@ def cmd_orchestrate(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="narna",
-        description="NARNA CLI — Open Runtime for Trusted AI Agents (UAP protocol)",
+        description="NARNA CLI — Universal AI Governance Runtime (UAP protocol)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -463,6 +582,34 @@ def build_parser() -> argparse.ArgumentParser:
     fleet.add_argument("--action", default=None)
     fleet.add_argument("--level", default=None, help="Check minCertification vs level")
     fleet.set_defaults(func=cmd_fleet)
+
+    gov = sub.add_parser("governance", help="Constitution Runtime (Load/Execute/Switch/…)")
+    gov_sub = gov.add_subparsers(dest="gov_cmd", required=True)
+    g_list = gov_sub.add_parser("list", help="List local packages + active binding")
+    g_list.set_defaults(func=cmd_governance_list)
+    g_load = gov_sub.add_parser("load", help="Load package and set active binding")
+    g_load.add_argument("--path", default=None)
+    g_load.add_argument("--provider", default=None)
+    g_load.add_argument("--version", default=None)
+    g_load.add_argument("--ref", default=None)
+    g_load.add_argument("--constitution", default=None)
+    g_load.set_defaults(func=cmd_governance_load)
+    g_sw = gov_sub.add_parser("switch", help="Switch active Governance Package")
+    g_sw.add_argument("--path", default=None)
+    g_sw.add_argument("--provider", default=None)
+    g_sw.add_argument("--version", default=None)
+    g_sw.set_defaults(func=cmd_governance_switch)
+    g_ex = gov_sub.add_parser("execute", help="Authorize an action via active package")
+    g_ex.add_argument("--action", required=True)
+    g_ex.add_argument("--entity", default=None)
+    g_ex.add_argument("--fleet", default=None)
+    g_ex.set_defaults(func=cmd_governance_execute)
+    g_ver = gov_sub.add_parser("verify", help="Verify ProofBundle with package citation")
+    g_ver.add_argument("--bundle", required=True)
+    g_ver.set_defaults(func=cmd_governance_verify)
+    g_aud = gov_sub.add_parser("audit", help="Audit with package citation")
+    g_aud.add_argument("--run", default=None)
+    g_aud.set_defaults(func=cmd_governance_audit)
 
     run = sub.add_parser("run", help="Run agent")
     run.add_argument("--spec", default="agent.yaml")
@@ -574,6 +721,22 @@ def build_parser() -> argparse.ArgumentParser:
     pl_att.add_argument("path", help="plugin directory")
     pl_att.add_argument("--spec", default="agent.yaml")
     pl_att.set_defaults(func=cmd_plugin_attach)
+
+    pkg = sub.add_parser("package", help="Governance Package marketplace")
+    pkg_sub = pkg.add_subparsers(dest="pkg_cmd", required=True)
+    pk_search = pkg_sub.add_parser("search", help="Search local packages")
+    pk_search.add_argument("q", nargs="?", default=None)
+    pk_search.set_defaults(func=cmd_package_search)
+    pk_pub = pkg_sub.add_parser("publish", help="Publish package to local/remote registry")
+    pk_pub.add_argument("path", help="path to package YAML")
+    pk_pub.add_argument("--local", action="store_true")
+    pk_pub.add_argument("--registry-url", default=None)
+    pk_pub.add_argument("--registry-key", default=None)
+    pk_pub.set_defaults(func=cmd_package_publish)
+    pk_pull = pkg_sub.add_parser("pull", help="Pull provider@version and activate")
+    pk_pull.add_argument("provider")
+    pk_pull.add_argument("--version", default=None)
+    pk_pull.set_defaults(func=cmd_package_pull)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)

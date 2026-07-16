@@ -199,6 +199,46 @@ def run_certification(
         )
     )
 
+    # Constitution Compatible — supports: loadable (RFC-0009)
+    supports: list[str] = []
+    if constitution:
+        compat = (constitution.get("spec") or {}).get("compatibility") or {}
+        if isinstance(compat, dict):
+            supports = list(compat.get("supports") or [])
+    support_ok = True
+    support_detail = "no supports declared"
+    if supports:
+        try:
+            from .governance_runtime import ConstitutionRuntime
+
+            rt = ConstitutionRuntime(workspace)
+            loaded_ids: list[str] = []
+            missing: list[str] = []
+            for sid in supports:
+                # map eu-ai-act-v1 → provider eu-ai-act
+                provider = sid.rsplit("-v", 1)[0] if "-v" in sid else sid
+                try:
+                    rt.load(provider=provider)
+                    loaded_ids.append(sid)
+                except Exception:
+                    missing.append(sid)
+            support_ok = len(missing) == 0
+            support_detail = (
+                f"loaded={loaded_ids}" if support_ok else f"missing={missing}"
+            )
+        except Exception as e:
+            support_ok = False
+            support_detail = str(e)[:120]
+    checks.append(
+        _check(
+            "constitution_supports",
+            "Constitution Compatible supports loadable",
+            support_ok if supports else True,
+            "L1" if not supports else ("L3" if supports else "L1"),
+            support_detail,
+        )
+    )
+
     # ── L2 ──────────────────────────────────────────────
     completed_runs: list[str] = []
     failed_runs: list[str] = []

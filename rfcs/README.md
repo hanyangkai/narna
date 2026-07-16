@@ -3,7 +3,7 @@
 **Status:** Active  
 **Model:** Inspired by Kubernetes KEPs, Python PEPs, Rust RFCs
 
-NARNA does not define the entire Constitution Layer alone.  
+NARNA does not define the entire Governance Runtime alone.  
 Significant changes go through an **RFC** so the community can comment before normative freeze.
 
 ---
@@ -11,7 +11,7 @@ Significant changes go through an **RFC** so the community can comment before no
 ## Principles
 
 1. **Spec before code** for protocol changes.  
-2. **Never Replace. Always Extend.** — RFCs must not invent competing runtimes.  
+2. **Never Replace. Always Extend.** — RFCs must not invent competing **agent/model** runtimes. Governance Runtime RFCs are in-scope.  
 3. **Compatibility first** — prefer adapters and metadata over breaking host frameworks.  
 4. Anyone may propose; maintainers shepherd.
 
@@ -69,5 +69,8 @@ Every RFC **MUST** include:
 | RFC-0002 | Permission Manifest | Planned |
 | RFC-0003 | Passport | Planned |
 | RFC-0004 | Trust Score | Planned |
-| RFC-0005 | Manifest `narna.yaml` | Draft (this wave) |
+| [RFC-0005](./RFC-0005-narna-yaml-manifest.md) | Manifest `narna.yaml` | Draft |
 | RFC-0006 | Adapter Catalog | Planned |
+| [RFC-0007](./RFC-0007-governance-package.md) | Governance Package | Draft (G1) |
+| [RFC-0008](./RFC-0008-constitution-runtime.md) | Constitution Runtime | Draft (G1) |
+| [RFC-0009](./RFC-0009-constitution-compatibility.md) | Constitution Compatibility | Draft (G2) |

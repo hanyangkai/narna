@@ -10,6 +10,7 @@ const links = [
   { to: "/sdk", label: "SDK" },
   { to: "/registry", label: "Registry" },
   { to: "/plugins", label: "Plugins" },
+  { to: "/packages", label: "Packages" },
   { to: "/enterprise", label: "Enterprise" },
   { to: "/pricing", label: "Pricing" },
 ];

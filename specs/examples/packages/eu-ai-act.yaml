@@ -1,0 +1,42 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_eu_ai_act_v1
+  name: EU AI Act Compliance (stub)
+  version: "1.0.0"
+  provider: eu-ai-act
+  packageKind: Compliance
+  license: MIT
+  disclaimer: "Community stub for NARNA demos — not an official EU publication."
+  createdAt: "2026-07-16T00:00:00Z"
+spec:
+  supports:
+    - eu-ai-act-v1
+  riskLevel: high
+  principles:
+    - High-risk AI systems require human oversight.
+    - Logging and transparency for consequential decisions.
+  evidence:
+    mustProve:
+      - tool.receipt
+      - policy.decision
+    mustLog:
+      - human.review
+  humanReview:
+    requiredFor:
+      - decision.consequential
+      - wallet.transfer
+  rules:
+    - id: deny-unlogged-high-risk
+      effect: deny
+      action: decision.consequential
+      when: evidence.missing
+      description: Block consequential decisions without evidence
+    - id: require-human-high-risk
+      effect: require
+      action: decision.consequential
+      description: Human oversight required
+    - id: deny-biometric-surveillance
+      effect: deny
+      action: biometric.surveillance
+      description: Prohibit prohibited practices (stub)

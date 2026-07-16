@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="28" role="img" aria-label="Constitution Compatible">
+  <title>Constitution Compatible</title>
+  <rect width="220" height="28" rx="4" fill="#0B1F3A"/>
+  <rect x="0" width="88" height="28" rx="4" fill="#0E6655"/>
+  <text x="44" y="18" text-anchor="middle" fill="#fff" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="10" font-weight="600">Constitution</text>
+  <text x="154" y="18" text-anchor="middle" fill="#E8EEF5" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11">Compatible</text>
+</svg>

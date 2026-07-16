@@ -211,3 +211,39 @@ class PluginPublishResponse(BaseModel):
     pluginId: str
     status: str = "published"
     registryUrl: str
+
+
+class PackagePublishRequest(BaseModel):
+    packageId: str
+    name: str
+    version: str = "0.1.0"
+    provider: str = "local"
+    packageKind: str = "Compliance"
+    license: str = "MIT"
+    disclaimer: str = ""
+    spec: dict[str, Any] = Field(default_factory=dict)
+    packageHash: str | None = None
+    stars: int = 0
+    downloads: int = 0
+
+
+class PackageSummary(BaseModel):
+    packageId: str
+    name: str
+    version: str
+    provider: str
+    packageKind: str
+    license: str
+    disclaimer: str = ""
+    packageHash: str = ""
+    spec: dict[str, Any] = Field(default_factory=dict)
+    stars: int = 0
+    downloads: int = 0
+    publishedAt: str
+
+
+class PackagePublishResponse(BaseModel):
+    ok: bool = True
+    packageId: str
+    status: str = "published"
+    registryUrl: str

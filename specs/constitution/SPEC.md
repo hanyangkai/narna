@@ -107,7 +107,11 @@ JSON encoding **MAY** be used (`constitution.json`) if schema-valid.
 | `evidence` | MUST | What must be logged / proven |
 | `trust` | MUST | How trust is computed / thresholds |
 | `governance` | MAY | Org / fleet bindings |
-| `compatibility` | SHOULD | Declared integrators (MCP, OTel, …) |
+| `compatibility` | SHOULD | Integrator flags + `supports:` (multi-constitution ids) |
+| `provider` | MAY | Bound Governance Package provider slug |
+| `source` | MAY | Origin URI / registry ref for the charter |
+
+Constitution is a **Governance Package** kind. See [`../governance-package/SPEC.md`](../governance-package/SPEC.md) and [`../constitution-runtime/SPEC.md`](../constitution-runtime/SPEC.md).
 
 ---
 
@@ -291,7 +295,7 @@ Given Constitution `C` and Evidence/Proof under VAP:
 3. Identity `metadata.entityId` **MUST** remain stable if charter unchanged.
 4. Trust / Passport **MAY** update from new evidence but **MUST NOT** reset solely because the model vendor changed.
 
-This is the **Portable Trust** guarantee.
+This is the **Portable Trust** / **Portable Governance** guarantee.
 
 ---
 

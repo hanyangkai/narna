@@ -21,6 +21,7 @@ export default function Footer() {
           <Link to="/sdk">SDK</Link>
           <Link to="/registry">Registry</Link>
           <Link to="/plugins">Plugins</Link>
+          <Link to="/packages">Packages</Link>
         </div>
         <div className="footer-col">
           <h4>Product</h4>

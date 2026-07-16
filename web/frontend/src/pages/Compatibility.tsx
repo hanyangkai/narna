@@ -9,6 +9,12 @@ const BADGES = [
     src: "/badges/uap-compatible.svg",
   },
   {
+    id: "constitution-compatible",
+    title: "Constitution Compatible",
+    desc: "Governance Package loadable + supports: multi-constitution.",
+    src: "/badges/constitution-compatible.svg",
+  },
+  {
     id: "narna-certified",
     title: "Verified by NARNA",
     desc: "Certification ≥ L1.",

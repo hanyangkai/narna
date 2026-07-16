@@ -100,7 +100,7 @@ Developer short-form compiles to Constitution.
 - Certification L1/L2/L3 (C3)  
 - Registry / Passport / Cloud stamp  
 - Reference SDK: `Agent`, VAP, `publish`, `certify`  
-- Web aligned to Constitution Layer  
+- Web aligned to Constitution Layer / Governance Runtime  
 
 ### Remaining (Borrow the Wave — priority order)
 
@@ -116,15 +116,17 @@ Developer short-form compiles to Constitution.
 | P2 | Governance benchmark leaderboard | **done** |
 | P3 | Fleet Governance Spec (C4) | **done** |
 | P3 | Foundation / open governance charter | **done** (draft) |
-| P3 | TypeScript / Go reference SDKs | **TS stub done**; Go later |
-| Next | Deepen adapters with optional extras; plugin publish UX | continuous |
+| P3 | TypeScript / Go reference SDKs | **TS + Go stubs done** |
+| G1 | Governance Package + Constitution Runtime | **done** |
+| G2 | Package Marketplace + Constitution Compatible | **done** |
+| Next | Multi-package compose; official provider notarization | continuous |
 
 ---
 
 ## Non-goals (reinforce)
 
-- Do not build “the” agent runtime  
+- Do not build “the” **agent** runtime (Governance Runtime is the USP)  
 - Do not aim to “beat OpenAI”  
 - Do not invent another telemetry standard  
 
-Aim: **be the default governance metadata layer they all attach to.**
+Aim: **be the default Governance Runtime they all attach to.**

@@ -23,6 +23,7 @@ from .models import (
     Organization,
     PaymentInvoice,
     RegistryAgent,
+    RegistryGovernancePackage,
     RegistryPlugin,
     Run,
     RunEvent,
@@ -47,6 +48,9 @@ from .schemas import (
     PluginPublishRequest,
     PluginPublishResponse,
     PluginSummary,
+    PackagePublishRequest,
+    PackagePublishResponse,
+    PackageSummary,
     RegistryAgentSummary,
     RegistryPublishRequest,
     RegistryPublishResponse,
@@ -903,6 +907,11 @@ def compatibility_badges(request: Request) -> dict[str, Any]:
     return {
         "badges": [
             {"id": "uap-compatible", "title": "UAP Compatible", "path": "/badges/uap-compatible.svg"},
+            {
+                "id": "constitution-compatible",
+                "title": "Constitution Compatible",
+                "path": "/badges/constitution-compatible.svg",
+            },
             {"id": "narna-certified", "title": "Verified by NARNA", "path": "/badges/narna-certified.svg"},
             {"id": "narna-certified-plus", "title": "NARNA Certified+", "path": "/badges/narna-certified-plus.svg"},
             {"id": "enterprise-ready", "title": "Enterprise Ready", "path": "/badges/enterprise-ready.svg"},
@@ -975,6 +984,102 @@ def plugins_get(plugin_id: str, db: Session = Depends(get_db)) -> PluginSummary:
         name=row.name,
         version=row.version,
         license=row.license,
+        spec=json.loads(row.spec_json or "{}"),
+        stars=int(row.stars or 0),
+        downloads=int(row.downloads or 0),
+        publishedAt=row.published_at.isoformat() if row.published_at else "",
+    )
+
+
+@app.post("/v1/packages/publish", response_model=PackagePublishResponse)
+def packages_publish(
+    body: PackagePublishRequest,
+    request: Request,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> PackagePublishResponse:
+    row = db.query(RegistryGovernancePackage).filter(
+        RegistryGovernancePackage.package_id == body.packageId
+    ).first()
+    if row is None:
+        row = RegistryGovernancePackage(package_id=body.packageId, org_id=org.id)
+        db.add(row)
+    row.name = body.name
+    row.version = body.version
+    row.provider = body.provider
+    row.package_kind = body.packageKind
+    row.license = body.license
+    row.disclaimer = body.disclaimer or ""
+    row.package_hash = body.packageHash or ""
+    row.spec_json = json.dumps(body.spec or {})
+    row.stars = max(int(row.stars or 0), int(body.stars or 0))
+    row.downloads = max(int(row.downloads or 0), int(body.downloads or 0))
+    row.org_id = org.id
+    row.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    base = str(request.base_url).rstrip("/")
+    return PackagePublishResponse(
+        packageId=row.package_id,
+        registryUrl=f"{base}/v1/packages/{row.package_id}",
+        status="published",
+    )
+
+
+@app.get("/v1/packages", response_model=list[PackageSummary])
+def packages_list(
+    db: Session = Depends(get_db), q: str | None = None, limit: int = 50
+) -> list[PackageSummary]:
+    rows = (
+        db.query(RegistryGovernancePackage)
+        .order_by(RegistryGovernancePackage.updated_at.desc())
+        .limit(200)
+        .all()
+    )
+    out: list[PackageSummary] = []
+    for row in rows:
+        if q:
+            needle = q.lower()
+            if needle not in f"{row.name} {row.package_id} {row.provider}".lower():
+                continue
+        out.append(
+            PackageSummary(
+                packageId=row.package_id,
+                name=row.name,
+                version=row.version,
+                provider=row.provider,
+                packageKind=row.package_kind,
+                license=row.license,
+                disclaimer=row.disclaimer or "",
+                packageHash=row.package_hash or "",
+                spec=json.loads(row.spec_json or "{}"),
+                stars=int(row.stars or 0),
+                downloads=int(row.downloads or 0),
+                publishedAt=row.published_at.isoformat() if row.published_at else "",
+            )
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
+@app.get("/v1/packages/{package_id}", response_model=PackageSummary)
+def packages_get(package_id: str, db: Session = Depends(get_db)) -> PackageSummary:
+    row = (
+        db.query(RegistryGovernancePackage)
+        .filter(RegistryGovernancePackage.package_id == package_id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="package not found")
+    return PackageSummary(
+        packageId=row.package_id,
+        name=row.name,
+        version=row.version,
+        provider=row.provider,
+        packageKind=row.package_kind,
+        license=row.license,
+        disclaimer=row.disclaimer or "",
+        packageHash=row.package_hash or "",
         spec=json.loads(row.spec_json or "{}"),
         stars=int(row.stars or 0),
         downloads=int(row.downloads or 0),

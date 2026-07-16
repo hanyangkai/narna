@@ -1,0 +1,32 @@
+# Short-form Manifest with Constitution Runtime binding (G1)
+apiVersion: narna.ai/v1alpha1
+kind: Manifest
+metadata:
+  name: Research Agent
+  owner: local
+identity:
+  id: research-agent
+  version: "0.1.0"
+capabilities:
+  - research.query
+  - browser.read
+permissions:
+  - name: research.query
+    mode: allow
+  - name: browser.read
+    mode: allow
+constitution:
+  provider: anthropic
+  version: "3.0.0"
+  # alternatives:
+  #   path: ./specs/examples/packages/eu-ai-act.yaml
+  #   ref: registry://narna/packages/eu-ai-act@1.0.0
+runtime:
+  narna: true
+trust:
+  enabled: true
+  minimum_score: 0.7
+compatibility:
+  supports:
+    - anthropic-v3
+    - eu-ai-act-v1

@@ -53,22 +53,31 @@ print(ADAPTER_CATALOG)`,
   },
   "what-is-narna": {
     title: "What is NARNA?",
-    lead: "The Constitution Layer for Autonomous AI — in plain language.",
+    lead: "The Governance Runtime for Autonomous AI — in plain language.",
     sections: [
       {
         body: `${BRAND.contrast}`,
       },
       {
         heading: "Simple analogy",
-        body: "OpenTelemetry is like a dashcam — it records what happened. NARNA is like a driver’s license + traffic law — it says who the agent is, what it is allowed to do, and why others can trust it.",
+        body: "OpenTelemetry is like a dashcam — it records what happened. NARNA is the traffic court + license system — it loads the rules (Governance Packages), enforces them, and proves compliance across any car brand (model vendor).",
       },
       {
         heading: "What NARNA is not",
-        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP or OpenTelemetry. Those systems execute and observe. NARNA governs.",
+        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP or OpenTelemetry. Those systems execute and observe. NARNA is the Governance Runtime that sits above them.",
       },
       {
-        heading: "Three names to remember",
-        body: "NARNA = brand (Constitution Layer). UAP = protocol (Understand · Act · Prove). VAP = trust engine (Verify · Audit · Prove). Developer metadata = narna.yaml (compiles to constitution.yaml).",
+        heading: "Constitution Runtime",
+        body: "Load → Execute → Verify → Audit → Version → Switch. Bind provider@version (eu-ai-act, anthropic stub, medical…) without rewriting agent code.",
+        code: `from narna import ConstitutionRuntime
+rt = ConstitutionRuntime()
+rt.load(provider="eu-ai-act", version="1.0.0")
+print(rt.execute(action="biometric.surveillance"))
+# deny — package rule`,
+      },
+      {
+        heading: "Names to remember",
+        body: "NARNA = Governance Runtime. Constitution Runtime = core loop. Governance Package = distributable unit (Constitution is one kind). UAP = Understand · Act · Prove. VAP = Verify · Audit · Prove.",
       },
     ],
   },
@@ -309,7 +318,7 @@ const SIDEBAR = [
     ],
   },
   {
-    group: "Constitution Layer",
+    group: "Governance Runtime",
     items: [
       { slug: "identity", label: "Universal Identity" },
       { slug: "policy", label: "Policy" },

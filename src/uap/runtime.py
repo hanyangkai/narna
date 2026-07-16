@@ -15,6 +15,7 @@ from .ids import new_id
 from .memory import LocalMemoryAdapter
 from .model import create_model_adapter
 from .policy import PolicyEngine
+from .governance_runtime import ConstitutionRuntime
 from .spec import AgentSpec, load_agent_spec
 from .state import RunState, transition
 from .tools import execute_tool, load_tool_definition
@@ -60,6 +61,7 @@ class LocalRuntime:
         self.root = self.workspace / ".uap"
         self.runs_dir = self.root / "runs"
         self.policy = PolicyEngine(self.workspace)
+        self.governance = ConstitutionRuntime(self.workspace)
         self.evidence_store = EvidenceStore(self.workspace)
         # Phase 2: Verify → Audit → Prove (off by default for Phase 1 lightness)
         self.vap_enabled = False
@@ -347,6 +349,31 @@ class LocalRuntime:
         permissions = spec.raw["spec"].get("permissions", [])
 
         for perm in defn.get("requiredPermissions", []):
+            # Constitution Runtime Execute (package rules + fleet) — deny wins
+            gov = self.governance.execute(action=perm, agent_id=spec.agent_id)
+            if gov.get("packageId"):
+                log.append(
+                    event_id=new_id("evt"),
+                    event_type="GovernanceEvaluated",
+                    agent_id=spec.agent_id,
+                    run_id=ctx.run_id,
+                    ts=_now_rfc3339(),
+                    payload={"decision": gov},
+                )
+            if gov["decision"] == "deny":
+                raise AuthorizationError(f"governance denied: {perm} ({'; '.join(gov.get('reasons') or [])})")
+            if gov["decision"] == "ask" and not auto_approve_ask:
+                ctx.pending_ask = {"tool": tool_name, "input": tool_input, "permission": perm}
+                log.append(
+                    event_id=new_id("evt"),
+                    event_type="ActionExecuted",
+                    agent_id=spec.agent_id,
+                    run_id=ctx.run_id,
+                    ts=_now_rfc3339(),
+                    payload={"status": "awaiting_input", "tool": tool_name, "governance": gov},
+                )
+                raise UapRuntimeError("awaiting_input")
+
             decision = self.policy.evaluate(
                 policy_ref=policy_ref,
                 agent_permissions=permissions,

@@ -1,13 +1,12 @@
-"""NARNA SDK — The Constitution Layer for Autonomous AI.
+"""NARNA SDK — The Governance Runtime for Autonomous AI.
 
 Strategy: docs/STRATEGY.md · docs/BORROW-THE-WAVE.md
 Never Replace. Always Extend.
 
-    from narna import wrap, track
+    from narna import wrap, track, ConstitutionRuntime
     agent = wrap(my_openai_agent, vap=True)
-
-    @track
-    def research(q: str) -> str: ...
+    rt = ConstitutionRuntime()
+    rt.load(provider="eu-ai-act", version="1.0.0")
 """
 
 from __future__ import annotations
@@ -15,6 +14,7 @@ from __future__ import annotations
 from uap.agent import Agent
 from uap.constitution import load_constitution, write_constitution
 from uap.evidence import EvidenceStore
+from uap.governance_runtime import ConstitutionRuntime, GovernanceRuntime
 from uap.identity import ENTITY_KINDS, IdentityStore
 from uap.manifest import (
     compile_manifest_to_constitution,
@@ -33,6 +33,8 @@ __all__ = [
     "wrap",
     "track",
     "ADAPTER_CATALOG",
+    "ConstitutionRuntime",
+    "GovernanceRuntime",
     "load_constitution",
     "write_constitution",
     "load_manifest",

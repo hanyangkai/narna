@@ -1,17 +1,17 @@
-/** NARNA brand — Constitution Layer. UAP = protocol. VAP = trust engine. */
+/** NARNA brand — Universal AI Governance Runtime. UAP = protocol. VAP = trust engine. */
 
 export const BRAND = {
   name: "NARNA",
   expand: "Neural Autonomous Rules Native Architecture",
-  // R = Rules (constitution). Second N = Native (protocol-native) — not Network.
+  // R = Rules (constitution). Governance Runtime is the USP — not agent executor.
   letters: ["Neural", "Autonomous", "Rules", "Native", "Architecture"] as const,
-  tagline: "The Constitution Layer for Autonomous AI.",
+  tagline: "The Governance Runtime for Autonomous AI.",
   mission:
-    "Define who autonomous AI is, what it may do, and why others can trust it — above any model or framework.",
+    "Load, enforce, and prove Governance Packages — constitutions, compliance, and org policy — above any model or framework.",
   elevator:
-    "NARNA is the Constitution Layer for Autonomous AI — portable identity, policy, evidence, trust, passport, and certification across any model or agent framework.",
+    "NARNA is the Governance Runtime for Autonomous AI — portable Governance Packages that load, enforce, and prove across any model or agent framework.",
   contrast:
-    "OpenTelemetry records what AI did. NARNA defines who AI is, what it is allowed to do, and why others can trust it.",
+    "OpenTelemetry records what AI did. NARNA proves what AI was allowed to do.",
   github: "https://github.com/hanyangkai/narna",
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
@@ -32,14 +32,16 @@ export const TRUST = {
 } as const;
 
 export const PRODUCT_FAMILY = [
-  "NARNA Constitution",
+  "NARNA Governance Runtime",
+  "NARNA Constitution Runtime",
+  "NARNA Governance Packages",
+  "NARNA Constitution Marketplace",
   "NARNA Identity",
   "NARNA Passport",
-  "NARNA Policy",
   "NARNA Evidence / VAP",
   "NARNA Certification",
   "NARNA Registry",
-  "NARNA Governance",
+  "NARNA Fleet Governance",
   "NARNA Cloud",
   "NARNA SDK",
   "UAP Specification",

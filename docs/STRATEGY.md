@@ -1,4 +1,4 @@
-# NARNA Strategy Lock — AI Constitution Layer
+# NARNA Strategy Lock — Universal AI Governance Runtime
 
 **Status:** Locked  
 **Date:** 2026-07-16  
@@ -10,7 +10,7 @@ This document freezes positioning. Implementation follows the specs, not the oth
 
 ## North star (one sentence)
 
-> **OpenTelemetry records what AI did. NARNA defines who AI is, what it is allowed to do, and why others can trust it.**
+> **OpenTelemetry records what AI did. NARNA loads, enforces, and proves the governance that decides what AI may do.**
 
 ---
 
@@ -21,32 +21,41 @@ This document freezes positioning. Implementation follows the specs, not the oth
 | They own / will own | We do **not** fight there |
 |---------------------|---------------------------|
 | Models | GPT · Claude · Gemini · Llama |
-| Runtimes / agent SDKs | OpenAI Agents · LangGraph · CrewAI · AutoGen |
+| Agent / model execution runtimes | OpenAI Agents · LangGraph · CrewAI · AutoGen |
 | Tool protocols | MCP · OpenShell |
 | Telemetry | OpenTelemetry |
 | Cloud compute | Their clouds |
 
 | We own | Why they under-invest |
 |--------|------------------------|
+| **Governance Runtime** (Load → Execute → Verify → Audit → Version → Switch) | Not a model differentiator |
+| **Governance Packages** (Constitution, Compliance, OrgPolicy, Risk, HumanApproval) | Each org invents siloed PDFs |
 | **Identity** (universal, portable) | Vendor lock-in prefers siloed IDs |
-| **Capability & Permission** | Each framework invents its own |
-| **Policy / Constitution** | Not a model differentiator |
 | **Evidence → Trust** | Compliance is “someone else’s problem” until enterprise |
 | **Passport & Certification** | Cross-vendor trust dilutes walled gardens |
-| **Governance (fleet)** | Starts after 100+ agents — late for them |
+| **Constitution Marketplace** | Network effects for lawyers / banks / governments |
 
 ---
 
 ## What NARNA is
 
 ```text
-NARNA = AI Constitution Layer
-        Identity + Governance + Trust
+NARNA = Universal AI Governance Runtime
+        Constitution Runtime + Governance Packages
+        Identity + Trust + Passport + Certification
 ```
 
-Not a runtime. Not a model. Not a replacement for OpenTelemetry / MCP / LangGraph.
+**Not** an agent/model execution runtime.  
+**Not** a model.  
+**Not** a replacement for OpenTelemetry / MCP / LangGraph.
+
+**Is** the runtime that **loads, executes, verifies, audits, versions, and switches** Governance Packages on top of any host AI stack.
 
 **Slogan (canonical):**
+
+> The Governance Runtime for Autonomous AI.
+
+**Alt (charter surface):**
 
 > The Constitution Layer for Autonomous AI.
 
@@ -54,17 +63,25 @@ Not a runtime. Not a model. Not a replacement for OpenTelemetry / MCP / LangGrap
 
 > Identity, Governance and Trust for Autonomous Systems.
 
+**Moat phrase:**
+
+> Portable Governance — switch OpenAI → Claude → Gemini; constitution, trust, and evidence remain.
+
 ---
 
 ## Architecture (locked)
 
 ```text
                  NARNA
-        AI Constitution Layer
+     Universal AI Governance Runtime
 ────────────────────────────────────
- Identity · Capability · Permission
- Policy · Evidence · Trust
- Passport · Certification · Governance
+ Identity · Passport · Trust · Certification
+────────────────────────────────────
+        Constitution Runtime
+   Load · Execute · Verify · Audit · Version · Switch
+────────────────────────────────────
+        Governance Packages
+ Constitution · Compliance · OrgPolicy · RiskProfile · HumanApproval
 ────────────────────────────────────
  OpenTelemetry · MCP · OpenAI SDK
  LangGraph · CrewAI · OpenShell · …
@@ -80,39 +97,43 @@ NARNA sits **above** frameworks. Compatibility first. Never replace them.
 
 | Name | Role |
 |------|------|
-| **NARNA** | Brand / company / Constitution Layer product |
+| **NARNA** | Brand / Universal AI Governance Runtime |
+| **Constitution Runtime** | Core loop: Load → Execute → Verify → Audit → Version → Switch |
+| **Governance Package** | Distributable unit (Constitution is one kind) |
 | **UAP** | Protocol: Understand → Act → Prove |
 | **VAP** | Trust engine: Verify → Audit → Prove |
-| **Constitution** | Normative artifact: `constitution.yaml` |
+| **Constitution** | Normative charter artifact: `constitution.yaml` (a Governance Package kind) |
 
 ---
 
 ## Ten USPs (priority order)
 
-1. **Universal AI Identity** — every AI entity (prompt, agent, tool, MCP server, workflow, dataset, plugin, memory) has a portable identity.
-2. **AI Passport** — public trust view (Apple Dev / GitHub Verified / SSL analog).
-3. **Capability Registry** — declared `supports:` like `package.json`.
-4. **Policy Manifest** — Android Manifest analog for permissions.
-5. **AI Constitution** — `constitution.yaml` rules independent of any model vendor.
-6. **Evidence Package** — proof, not mere traces.
-7. **Trust Passport** — rule + evidence → trust (not “AI grades AI”).
-8. **Certification** — NARNA Certified L1 / L2 / Enterprise Ready.
-9. **Governance** — who may do what across hundreds of agents.
+1. **Universal AI Governance Runtime** — load / enforce / prove governance on any host.
+2. **Constitution Runtime** — portable Load → Execute → Verify → Audit → Version → Switch.
+3. **Governance Packages** — Constitution, Compliance (EU AI Act, HIPAA…), OrgPolicy, Risk, HumanApproval.
+4. **Constitution-as-Code** — `constitution.yaml` / package YAML, community RFCs.
+5. **Constitution Marketplace** — Anthropic / banks / WHO / EU publish; NARNA loads.
+6. **Portable Governance** — vendor switch does not reset charter, trust, or evidence.
+7. **Constitution Compatibility** — `supports:` multi-constitution + badge.
+8. **Universal AI Identity + Passport** — portable birth + public trust view.
+9. **Evidence Package + Certification** — proof, not eloquence; L1 / L2 / Enterprise Ready.
 10. **Compatibility First** — integrate OTel, MCP, OpenAI, Anthropic, Google, Docker, K8s.
 
-**Moat:** Portable Trust — switch OpenAI → Claude → Gemini; identity, policy, evidence, trust, passport remain.
+**Moat:** Portable Governance — same package hash across OpenAI → Claude → Gemini.
 
 ---
 
 ## Artifact of record
 
-Every autonomous system **SHOULD** ship:
+Every autonomous system **SHOULD** ship or bind:
 
 ```text
-constitution.yaml
+constitution.yaml   # or a Governance Package ref (provider@version)
 ```
 
-Normative definition: [`../specs/constitution/SPEC.md`](../specs/constitution/SPEC.md)
+Normative: [`../specs/constitution/SPEC.md`](../specs/constitution/SPEC.md),  
+[`../specs/governance-package/SPEC.md`](../specs/governance-package/SPEC.md),  
+[`../specs/constitution-runtime/SPEC.md`](../specs/constitution-runtime/SPEC.md).
 
 ---
 
@@ -120,26 +141,29 @@ Normative definition: [`../specs/constitution/SPEC.md`](../specs/constitution/SP
 
 | Demote | Keep as |
 |--------|---------|
-| “NARNA Runtime” as product USP | Optional **reference** executor only |
+| “NARNA Runtime” as **agent executor** USP | Optional **reference** UAP executor only |
 | Competing with agent frameworks | Thin `narna.wrap()` adapters |
-| “Runtime for AI Agents” slogan | Constitution Layer slogan |
+| “Runtime for AI Agents” slogan | **Governance Runtime** slogan |
 | Building another OTel | Consume / annotate OTel; own Evidence + Trust |
 
-Existing SDK (`Agent()`, VAP, Registry, Certification) remains a **reference implementation and virus entry** — not the strategic center.
+Clarification: **Governance Runtime is the USP.** “Not a runtime” means **not an agent/model execution runtime**.
+
+Existing SDK (`Agent()`, VAP, Registry, Certification) remains a **reference implementation and virus entry**. Specs + Constitution Runtime semantics are the strategic center.
 
 ---
 
 ## Spec → product order (locked)
 
 ```text
-1. Constitution Spec + schemas     ← done
-2. Universal Identity Spec         ← done (C1)
-3. Passport cites constitution     ← done
-4. Certification levels (C3)       ← done
-5. Evidence + Trust (VAP)          ← keep
-6. Governance (fleet) Spec         ← next
-7. Compatibility adapters          ← continuous
-8. Cloud / Enterprise              ← after spec gravity
+1. Constitution Spec + schemas              ← done
+2. Universal Identity Spec                  ← done
+3. Passport cites constitution              ← done
+4. Certification levels                     ← done
+5. Evidence + Trust (VAP)                   ← keep
+6. Governance Package + Constitution Runtime ← now
+7. Package Marketplace + Compatibility      ← with (6)
+8. Fleet wired into Execute                 ← with (6)
+9. Cloud / Enterprise                       ← after spec gravity
 ```
 
 Cloud is an **upsell of governance + certification**, not the core.
@@ -150,7 +174,7 @@ Cloud is an **upsell of governance + certification**, not the core.
 
 Not “1M users.”
 
-> **1M autonomous entities with a NARNA Constitution / Passport.**
+> **1M autonomous entities bound to a NARNA Governance Package / Passport.**
 
 ---
 
@@ -158,8 +182,9 @@ Not “1M users.”
 
 - Replacing LangGraph / CrewAI / OpenAI Agents SDK
 - Owning model inference
-- Being “the” agent runtime
+- Being “the” agent execution runtime
 - Forcing vendors off their SDKs
+- Claiming official endorsement of EU / Anthropic / bank packages unless they publish via RFC / Marketplace
 
 ---
 

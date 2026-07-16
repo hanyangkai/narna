@@ -58,6 +58,8 @@ spec:
 2. Role denies **MUST** override agent Constitution allows (deny wins).  
 3. `minCertification` **SHOULD** block publish to production Registry if unmet.  
 4. Audit export **MUST** include fleetId + orgId on every ProofBundle when governed.
+5. Fleet **SHOULD** bind default Governance Packages (`defaults.packages`) that Constitution Runtime Loads for all members.
+6. Role denies **MUST** be evaluated during Constitution Runtime Execute (not only CLI inspection).
 
 ---
 

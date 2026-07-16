@@ -13,6 +13,7 @@ The **NARNA Compatibility Program** issues public badges so projects can signal 
 | Badge | Code | Meaning |
 |-------|------|---------|
 | **UAP Compatible** | `uap-compatible` | Ships valid Manifest/Constitution + Identity |
+| **Constitution Compatible** | `constitution-compatible` | Loadable Governance Package / Constitution + declared `supports:` (RFC-0009) |
 | **Verified by NARNA** | `narna-certified` | Certification ≥ L1 |
 | **NARNA Certified+** | `narna-certified-plus` | Certification ≥ L2 |
 | **Enterprise Ready** | `enterprise-ready` | Certification = L3 |
@@ -23,7 +24,9 @@ The **NARNA Compatibility Program** issues public badges so projects can signal 
 
 1. Badges **MUST** be earned via deterministic checks (Certification Spec), not marketing claims alone.  
 2. Badge SVGs **MAY** be embedded; linking to `/passport/{id}` or `/compatibility` **SHOULD** be preferred.  
-3. **Never Replace:** Compatibility does not imply replacing host frameworks.
+4. **Never Replace:** Compatibility does not imply replacing host frameworks.
+5. **Constitution Compatible** requires Constitution Runtime Load success for the active or declared package (see RFC-0009).
+6. Agents **MAY** declare `supports: [eu-ai-act-v1, anthropic-v3, …]` for multi-constitution readiness.
 
 ---
 
