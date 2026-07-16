@@ -10,7 +10,7 @@ export const BRAND = {
     "Build the open infrastructure that enables every AI Agent to operate safely, transparently, and verifiably.",
   elevator:
     "NARNA is an open runtime and trust layer for AI Agents. It provides identity, permissions, policies, execution tracing, evidence, and verification — on top of any LLM.",
-  github: "https://github.com/narna-ai/narna",
+  github: "https://github.com/hanyangkai/narna",
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
 } as const;
