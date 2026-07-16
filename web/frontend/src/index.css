@@ -91,11 +91,9 @@ code,
 }
 
 .nav-logo {
-  height: 42px;
+  height: 36px;
   width: auto;
   display: block;
-  border-radius: 8px;
-  background: #000;
 }
 
 .nav-links {
@@ -230,10 +228,14 @@ code,
 
 .hero-brand-mark {
   display: block;
-  height: 88px;
+  height: 72px;
   width: auto;
+  max-width: min(100%, 420px);
   margin-bottom: 1.25rem;
-  border-radius: 12px;
+}
+
+.hero-navy .hero-brand-mark {
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.35));
 }
 
 .hero h1 {

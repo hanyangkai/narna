@@ -10,7 +10,7 @@ export default function Footer() {
             <img
               src="/brand/narna-logo.png"
               alt="NARNA"
-              style={{ height: 56, width: "auto", borderRadius: 8, background: "#000", marginBottom: 8 }}
+              style={{ height: 48, width: "auto", marginBottom: 8 }}
             />
           </Link>
           <p>

@@ -68,7 +68,7 @@ export default function Landing() {
           <div>
             <img
               src="/brand/narna-logo.png"
-              alt="NARNA — Identity · Governance · Trust"
+              alt="NARNA — Govern Once. Run Anywhere."
               className="hero-brand-mark"
             />
             <p className="pill-label">Infrastructure · {SPEC.name} v0.1</p>
