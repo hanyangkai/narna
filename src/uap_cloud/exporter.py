@@ -147,12 +147,15 @@ def submit_certification(
     api_key: str,
     base_url: str = "http://localhost:8000",
 ) -> dict[str, Any]:
-    """Submit a local certification result to NARNA Cloud (Phase 4)."""
+    """Submit a local certification result to NARNA Cloud (C3 levels)."""
     payload = {
         "agentId": certificate.get("agentId"),
         "certificationId": certificate.get("certificationId"),
         "status": certificate.get("status"),
+        "level": certificate.get("level"),
+        "targetLevel": certificate.get("targetLevel"),
         "badge": certificate.get("badge"),
+        "levelLabel": certificate.get("levelLabel"),
         "algorithm": certificate.get("algorithm"),
         "issuedAt": certificate.get("issuedAt"),
         "expiresAt": certificate.get("expiresAt"),
@@ -161,6 +164,8 @@ def submit_certification(
         "runId": certificate.get("runId"),
         "proofHash": certificate.get("proofHash"),
         "passportHash": certificate.get("passportHash"),
+        "constitutionId": certificate.get("constitutionId"),
+        "constitutionHash": certificate.get("constitutionHash"),
     }
     headers = {"Content-Type": "application/json"}
     if api_key:

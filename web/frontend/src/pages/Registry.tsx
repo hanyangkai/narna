@@ -18,6 +18,8 @@ type AgentRow = {
   passportUrl: string;
   verified?: boolean;
   badge?: string | null;
+  level?: string | null;
+  levelLabel?: string | null;
 };
 
 export default function Registry() {
@@ -137,7 +139,10 @@ function AgentTable({ rows, empty }: { rows: AgentRow[]; empty: string }) {
               <td>{a.trustScore != null ? a.trustScore.toFixed(2) : "—"}</td>
               <td>
                 {a.verified ? (
-                  <span className="badge badge-ok">{a.badge || "Verified by NARNA"}</span>
+                  <span className="badge badge-ok">
+                    {a.badge || "NARNA Certified"}
+                    {a.level ? ` · ${a.level}` : ""}
+                  </span>
                 ) : (
                   <span style={{ color: "var(--muted)" }}>—</span>
                 )}

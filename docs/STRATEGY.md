@@ -134,10 +134,10 @@ Existing SDK (`Agent()`, VAP, Registry, Certification) remains a **reference imp
 ```text
 1. Constitution Spec + schemas     ← done
 2. Universal Identity Spec         ← done (C1)
-3. Passport / Certification Spec   ← passport cites constitution (C1)
-4. Capability + Policy Manifest    ← in Constitution
+3. Passport cites constitution     ← done
+4. Certification levels (C3)       ← done
 5. Evidence + Trust (VAP)          ← keep
-6. Governance (fleet) Spec         ← later
+6. Governance (fleet) Spec         ← next
 7. Compatibility adapters          ← continuous
 8. Cloud / Enterprise              ← after spec gravity
 ```

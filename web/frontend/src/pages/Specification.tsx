@@ -15,6 +15,12 @@ const SPECS = [
     path: "identity/SPEC.md",
   },
   {
+    id: "certification",
+    name: "Certification",
+    desc: "L1 NARNA Certified · L2 Certified+ · L3 Enterprise Ready",
+    path: "certification/SPEC.md",
+  },
+  {
     id: "uap-core",
     name: "UAP-Core",
     desc: "AgentSpec, Passport, Capability, Permission, Policy, Event model",

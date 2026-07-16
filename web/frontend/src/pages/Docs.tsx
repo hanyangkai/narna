@@ -105,12 +105,13 @@ print(agent.constitution()["metadata"]["id"])`,
         code: 'passport = agent.passport(refresh=True)\nprint(passport["constitution"])',
       },
       {
-        heading: "4. Certify",
-        code: 'cert = agent.certify(remote=False)\nprint(cert["badge"])  # Verified by NARNA',
+        heading: "4. Certify (levels)",
+        body: "L1 charter · L2 proof · L3 enterprise.",
+        code: 'cert = agent.certify(level="L2", remote=False)\nprint(cert["level"], cert["badge"])',
       },
       {
         heading: "CLI",
-        code: "narna init\nnarna run --vap --input \"btc price\"\nnarna constitution\nnarna certify --vap --local",
+        code: "narna init\nnarna run --vap --input \"btc price\"\nnarna constitution\nnarna certify --vap --level L3 --local",
       },
     ],
   },
@@ -194,6 +195,28 @@ print(identity["identityId"], identity["kind"])`,
       },
     ],
   },
+  certification: {
+    title: "Certification",
+    lead: "L1 · L2 · Enterprise Ready — like Kubernetes Certified for agents.",
+    sections: [
+      {
+        body: "Certification is rule-based against your Constitution. It does not use “AI grades AI” as the sole authority.",
+      },
+      {
+        heading: "Levels (easy map)",
+        body: "L1 NARNA Certified = charter + identity + passport. L2 NARNA Certified+ = L1 + VAP proof + trust threshold. L3 Enterprise Ready = L2 + governance, retention ≥90d, human review, hard policy rules.",
+        code: `agent.enable_vap()
+agent.run("btc price")
+cert = agent.certify(level="L3")
+print(cert["level"], cert["badge"])
+# L3  Enterprise Ready`,
+      },
+      {
+        heading: "CLI",
+        code: "narna certify --level L1 --local\nnarna certify --vap --level L2 --local\nnarna certify --vap --level L3 --local",
+      },
+    ],
+  },
   examples: {
     title: "Examples",
     lead: "Specs and sample agents in the repository.",
@@ -249,6 +272,7 @@ const SIDEBAR = [
       { slug: "policy", label: "Policy" },
       { slug: "evidence", label: "Evidence" },
       { slug: "passport", label: "Passport" },
+      { slug: "certification", label: "Certification" },
       { slug: "compatibility", label: "Compatibility" },
     ],
   },

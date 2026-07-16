@@ -99,6 +99,11 @@ def default_constitution_for_agent(
                 "minScore": 0.7,
                 "inputs": ["evidence", "policy", "execution", "feedback"],
             },
+            "governance": {
+                "orgId": f"org_{owner}",
+                "fleetId": "fleet_default",
+                "roles": ["operator", "auditor"],
+            },
             "compatibility": {
                 "opentelemetry": True,
                 "mcp": True,

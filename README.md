@@ -56,11 +56,24 @@ print(result.trust_score)
 agent.publish()
 ```
 
-## Phase 4 — Certification
+## Phase 4 — Certification levels
 
 ```python
-cert = agent.certify()
-print(cert["badge"])  # Verified by NARNA
+agent.enable_vap()
+agent.run("btc price")
+cert = agent.certify(level="L3")
+print(cert["level"], cert["badge"])
+# L3  Enterprise Ready
+```
+
+| Level | Badge | Meaning |
+|-------|-------|---------|
+| L1 | NARNA Certified | Constitution + Identity + Passport |
+| L2 | NARNA Certified+ | L1 + VAP proof + trust threshold |
+| L3 | Enterprise Ready | L2 + governance + retention + human review |
+
+```bash
+narna certify --vap --level L3 --local
 ```
 
 ## Constitution (center)

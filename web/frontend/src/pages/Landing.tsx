@@ -16,7 +16,7 @@ const features = [
   { title: "Permission", desc: "Android-style policy manifest." },
   { title: "Evidence", desc: "Proof packages — not mere traces." },
   { title: "Passport", desc: "Public trust view enterprises understand." },
-  { title: "Certification", desc: "Verified by NARNA — portable trust." },
+  { title: "Certification", desc: "L1 · L2 · Enterprise Ready badges." },
 ];
 
 const howSteps = [

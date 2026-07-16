@@ -18,10 +18,10 @@ Phase 3 (Registry)::
 
     agent.publish()
 
-Phase 4 (Certification)::
+Phase 4 (Certification levels)::
 
-    cert = agent.certify()
-    print(cert["badge"])  # Verified by NARNA
+    cert = agent.certify(level="L3")
+    print(cert["level"], cert["badge"])  # L3 Enterprise Ready
 
 Constitution::
 

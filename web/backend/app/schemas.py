@@ -142,6 +142,8 @@ class RegistryAgentSummary(BaseModel):
     passportUrl: str
     verified: bool = False
     badge: str | None = None
+    level: str | None = None
+    levelLabel: str | None = None
 
 
 class RegistryPublishResponse(BaseModel):
@@ -156,8 +158,11 @@ class CertificationSubmitRequest(BaseModel):
     agentId: str
     certificationId: str
     status: str
+    level: str | None = None
+    targetLevel: str | None = None
     badge: str | None = None
-    algorithm: str = "narna-cert-v0"
+    levelLabel: str | None = None
+    algorithm: str = "narna-cert-v1"
     issuedAt: str
     expiresAt: str | None = None
     trustScore: float | None = None
@@ -165,6 +170,8 @@ class CertificationSubmitRequest(BaseModel):
     runId: str | None = None
     proofHash: str | None = None
     passportHash: str | None = None
+    constitutionId: str | None = None
+    constitutionHash: str | None = None
 
 
 class CertificationSubmitResponse(BaseModel):
@@ -172,5 +179,7 @@ class CertificationSubmitResponse(BaseModel):
     agentId: str
     verified: bool
     badge: str | None = None
+    level: str | None = None
+    levelLabel: str | None = None
     passportUrl: str
     status: str

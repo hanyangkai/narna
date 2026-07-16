@@ -61,8 +61,8 @@ class Agent:
 
     Phase 4::
 
-        cert = agent.certify()
-        print(cert["badge"])  # Verified by NARNA
+        cert = agent.certify(level="L3")
+        print(cert["badge"])  # Enterprise Ready
     """
 
     def __init__(
@@ -416,27 +416,35 @@ class Agent:
     def certify(
         self,
         *,
+        level: str = "L2",
         remote: bool = True,
-        min_trust: float = 0.7,
+        min_trust: float | None = None,
         registry_url: str | None = None,
         api_key: str | None = None,
     ) -> dict[str, Any]:
-        """Phase 4: run Certification suite → Verified by NARNA.
+        """C3: Certification levels — L1 / L2 / Enterprise Ready (L3).
 
         Example::
 
             agent.enable_vap()
             agent.run("btc price")
-            cert = agent.certify()
-            assert cert["badge"] == "Verified by NARNA"
+            cert = agent.certify(level="L2")
+            print(cert["level"], cert["badge"])
         """
         import os
 
         from .certify import load_certificate, run_certification, save_certificate
 
         IdentityStore(self.workspace).issue(self.spec)
-        identity = IdentityStore(self.workspace).load()
+        identity = IdentityStore(self.workspace).load_entity(self.spec.agent_id) or IdentityStore(
+            self.workspace
+        ).load()
         passport = self.passport(refresh=True)
+        try:
+            constitution = self.constitution()
+        except Exception:
+            constitution = None
+
         result = run_certification(
             agent_id=self.spec.agent_id,
             workspace=self.workspace,
@@ -444,30 +452,34 @@ class Agent:
             runs=self.runtime.list_runs(),
             load_events=self.runtime.load_events,
             passport=passport,
+            constitution=constitution,
+            target_level=level,
             min_trust=min_trust,
         )
         path = save_certificate(self.workspace, result)
         out = result.to_dict()
         out["localPath"] = str(path)
 
-        # Stamp local registry listing when present
         reg = AgentRegistry(self.workspace)
         entry = reg.get(self.spec.agent_id)
         if entry is None:
-            # ensure local listing exists
             self.publish(remote=False)
             entry = reg.get(self.spec.agent_id) or {}
-        entry["verified"] = result.status == "passed"
+        entry["verified"] = result.level in {"L1", "L2", "L3"}
         entry["certification"] = {
             "certificationId": result.certificationId,
             "status": result.status,
+            "level": result.level,
+            "targetLevel": result.targetLevel,
             "badge": result.badge,
+            "levelLabel": result.levelLabel,
             "issuedAt": result.issuedAt,
             "expiresAt": result.expiresAt,
             "trustScore": result.trustScore,
             "algorithm": result.algorithm,
+            "constitutionId": result.constitutionId,
         }
-        if result.status == "passed" and result.trustScore is not None:
+        if result.trustScore is not None:
             entry["trustScore"] = result.trustScore
         (reg.root / f"{self.spec.agent_id}.json").write_text(
             json.dumps(entry, indent=2), encoding="utf-8"
@@ -475,10 +487,12 @@ class Agent:
         out["registry"] = {
             "agentId": self.spec.agent_id,
             "verified": entry.get("verified"),
+            "level": result.level,
             "badge": result.badge,
         }
 
-        if remote and result.status == "passed":
+        # Submit when target passed OR any level achieved (stamp highest)
+        if remote and result.level in {"L1", "L2", "L3"}:
             base = (
                 registry_url
                 or os.environ.get("NARNA_REGISTRY_URL")
@@ -501,25 +515,27 @@ class Agent:
                         base_url=base,
                     )
                     out["remote"] = remote_resp
-                    out["message"] = "Certified locally + submitted to NARNA Registry."
+                    out["message"] = (
+                        f"Achieved {result.levelLabel} ({result.badge}). "
+                        "Submitted to NARNA Registry."
+                    )
                 except Exception as e:
                     out["remoteError"] = str(e)
                     out["message"] = (
-                        "Certified locally. Remote submit unavailable "
-                        f"({e}). Set NARNA_REGISTRY_URL to sync."
+                        f"Achieved {result.levelLabel} ({result.badge}) locally. "
+                        f"Remote submit unavailable ({e})."
                     )
             else:
-                out["message"] = "Certified locally (Verified by NARNA)."
+                out["message"] = f"Achieved {result.levelLabel} ({result.badge}) locally."
         elif result.status == "passed":
-            out["message"] = "Certified locally (Verified by NARNA)."
+            out["message"] = f"Achieved {result.levelLabel} ({result.badge}) locally."
         else:
             out["message"] = (
-                "Certification failed: " + "; ".join(result.failures)
+                f"Target {result.targetLevel} failed (achieved {result.level}): "
+                + "; ".join(result.failures)
             )
 
-        # refresh cached load path
-        cached = load_certificate(self.workspace, self.spec.agent_id)
-        if cached:
+        if load_certificate(self.workspace, self.spec.agent_id):
             out["cached"] = True
         return out
 

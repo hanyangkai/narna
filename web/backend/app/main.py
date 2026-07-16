@@ -607,7 +607,21 @@ def _registry_summary(row: RegistryAgent, request: Request | None = None) -> Reg
     if request is not None:
         base = str(request.base_url).rstrip("/")
     verified = bool(getattr(row, "verified", 0))
-    badge = "Verified by NARNA" if verified else None
+    cert = None
+    if getattr(row, "certification_json", None):
+        try:
+            cert = json.loads(row.certification_json)
+        except Exception:
+            cert = None
+    badge = None
+    level = None
+    level_label = None
+    if isinstance(cert, dict):
+        badge = cert.get("badge")
+        level = cert.get("level")
+        level_label = cert.get("levelLabel")
+    if verified and not badge:
+        badge = "NARNA Certified"
     return RegistryAgentSummary(
         agentId=row.agent_id,
         name=row.name,
@@ -623,6 +637,8 @@ def _registry_summary(row: RegistryAgent, request: Request | None = None) -> Reg
         passportUrl=f"{base}/v1/passport/{row.agent_id}" if base else f"/v1/passport/{row.agent_id}",
         verified=verified,
         badge=badge,
+        level=level,
+        levelLabel=level_label,
     )
 
 
@@ -741,6 +757,15 @@ def public_passport(agent_id: str, db: Session = Depends(get_db)) -> dict[str, A
     passport = json.loads(row.passport_json) if row.passport_json else None
     cert = json.loads(row.certification_json) if getattr(row, "certification_json", None) else None
     verified = bool(getattr(row, "verified", 0))
+    badge = None
+    level = None
+    level_label = None
+    if isinstance(cert, dict):
+        badge = cert.get("badge")
+        level = cert.get("level")
+        level_label = cert.get("levelLabel")
+    if verified and not badge:
+        badge = "NARNA Certified"
     return {
         "agentId": row.agent_id,
         "name": row.name,
@@ -755,7 +780,9 @@ def public_passport(agent_id: str, db: Session = Depends(get_db)) -> dict[str, A
         "publishedAt": row.published_at.isoformat() if row.published_at else "",
         "passport": passport,
         "verified": verified,
-        "badge": "Verified by NARNA" if verified else None,
+        "badge": badge,
+        "level": level,
+        "levelLabel": level_label,
         "certification": cert,
     }
 
@@ -767,19 +794,43 @@ def certification_submit(
     org: Organization = Depends(get_org_from_api_key),
     db: Session = Depends(get_db),
 ) -> CertificationSubmitResponse:
-    """Accept a local certification result and stamp the Registry agent."""
-    if body.status != "passed":
-        raise HTTPException(status_code=400, detail="only passed certifications can be submitted")
+    """Accept certification result and stamp Registry with level badge."""
+    level = (body.level or "").upper()
+    if level not in {"L1", "L2", "L3"} and body.status != "passed":
+        raise HTTPException(
+            status_code=400,
+            detail="submit requires achieved level L1/L2/L3 or status=passed",
+        )
+    if level not in {"L1", "L2", "L3"} and body.status == "passed":
+        level = (body.targetLevel or "L2").upper()
+        if level not in {"L1", "L2", "L3"}:
+            level = "L2"
+
+    badges = {
+        "L1": "NARNA Certified",
+        "L2": "NARNA Certified+",
+        "L3": "Enterprise Ready",
+    }
+    labels = {
+        "L1": "Level 1",
+        "L2": "Level 2",
+        "L3": "Enterprise Ready",
+    }
+    badge = body.badge or badges.get(level, "NARNA Certified")
+    level_label = body.levelLabel or labels.get(level)
+
     row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == body.agentId).first()
     if row is None:
-        # auto-create a minimal listing so certify-after-publish order is flexible
         row = RegistryAgent(agent_id=body.agentId, org_id=org.id, name=body.agentId)
         db.add(row)
     cert_payload = {
         "certificationId": body.certificationId,
         "agentId": body.agentId,
         "status": body.status,
-        "badge": body.badge or "Verified by NARNA",
+        "level": level,
+        "targetLevel": body.targetLevel,
+        "badge": badge,
+        "levelLabel": level_label,
         "algorithm": body.algorithm,
         "issuedAt": body.issuedAt,
         "expiresAt": body.expiresAt,
@@ -788,6 +839,8 @@ def certification_submit(
         "runId": body.runId,
         "proofHash": body.proofHash,
         "passportHash": body.passportHash,
+        "constitutionId": body.constitutionId,
+        "constitutionHash": body.constitutionHash,
         "orgId": org.id,
     }
     row.certification_json = json.dumps(cert_payload)
@@ -801,7 +854,9 @@ def certification_submit(
     return CertificationSubmitResponse(
         agentId=row.agent_id,
         verified=True,
-        badge="Verified by NARNA",
+        badge=badge,
+        level=level,
+        levelLabel=level_label,
         passportUrl=f"{base}/v1/passport/{row.agent_id}",
         status="verified",
     )

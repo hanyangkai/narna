@@ -189,6 +189,7 @@ def cmd_certify(args: argparse.Namespace) -> int:
         if not agent.runtime.list_runs():
             agent.run(input=args.input or "certification probe")
     cert = agent.certify(
+        level=args.level,
         remote=not args.local,
         min_trust=args.min_trust,
         registry_url=args.registry_url,
@@ -376,12 +377,16 @@ def build_parser() -> argparse.ArgumentParser:
     pub.add_argument("--registry-key", default=None)
     pub.set_defaults(func=cmd_publish)
 
-    cert = sub.add_parser("certify", help="Run Certification suite (Phase 4 — Verified by NARNA)")
+    cert = sub.add_parser(
+        "certify",
+        help="Certification levels: L1 / L2 / L3 Enterprise Ready",
+    )
     cert.add_argument("--spec", default="agent.yaml")
+    cert.add_argument("--level", default="L2", help="Target level: L1, L2, or L3")
     cert.add_argument("--local", action="store_true", help="Local certificate only")
     cert.add_argument("--vap", action="store_true", help="Enable VAP + probe run if needed")
     cert.add_argument("--input", default=None, help="Input for probe run with --vap")
-    cert.add_argument("--min-trust", type=float, default=0.7)
+    cert.add_argument("--min-trust", type=float, default=None)
     cert.add_argument("--registry-url", default=None)
     cert.add_argument("--registry-key", default=None)
     cert.set_defaults(func=cmd_certify)
