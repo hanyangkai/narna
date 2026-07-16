@@ -1,33 +1,41 @@
 # Architecture (normative orientation)
 
-**Status:** Draft — aligned with strategy lock **Universal AI Governance Runtime**  
-**Audience:** Spec authors and implementers  
-**Strategy:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)
+**Status:** Draft — infrastructure-layer lock  
+**Strategy:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md) · **Positioning:** [`../docs/POSITIONING.md`](../docs/POSITIONING.md)
 
 ---
 
 ## Stack (locked)
 
 ```text
-                 NARNA
-     Universal AI Governance Runtime
-────────────────────────────────────
- Identity · Passport · Trust · Certification
-────────────────────────────────────
-        Constitution Runtime
-   Load · Execute · Verify · Audit · Version · Switch
-────────────────────────────────────
-        Governance Packages
- Constitution · Compliance · OrgPolicy · RiskProfile · HumanApproval
-────────────────────────────────────
- OpenTelemetry · MCP · OpenAI SDK
- LangGraph · CrewAI · OpenShell · …
-────────────────────────────────────
- GPT · Claude · Gemini · Llama · …
+                    Applications
+────────────────────────────────────────────
+            AI Products & AI Companies
+────────────────────────────────────────────
+        OpenAI · Claude · Gemini · Llama
+────────────────────────────────────────────
+ OpenAI SDK · LangGraph · CrewAI · AutoGen
+────────────────────────────────────────────
+     OpenTelemetry · MCP · OpenShell
+────────────────────────────────────────────
+              ★ NARNA Runtime ★
+     Identity · Governance · Policy
+     Permission · Evidence · Trust · Certification
+────────────────────────────────────────────
+     Docker · Kubernetes · Linux · Cloud
 ```
 
-NARNA does **not** replace the middle (host frameworks) or bottom (models) bands.  
-It **governs** entities that run there via the Constitution Runtime.
+NARNA does **not** replace frameworks or models. It is the **governance infrastructure** they attach to.
+
+---
+
+## Open standard vs brand
+
+| Name | Role |
+|------|------|
+| **UGS** | Universal Governance Specification — open contracts |
+| **NARNA** | Brand + reference runtime implementing UGS |
+| **VAP** | Trust engine (Verify → Audit → Prove) |
 
 ---
 
@@ -35,48 +43,29 @@ It **governs** entities that run there via the Constitution Runtime.
 
 | Plane | Owns | Examples |
 |-------|------|----------|
-| **Governance Runtime (NARNA)** | Load / Execute / Verify / Audit / Version / Switch packages | `governance_runtime`, active binding |
+| **Governance Runtime (NARNA)** | Load / Validate / Enforce / Audit / Verify / Certify | `governance_runtime`, active binding |
 | **Governance Packages** | Who / may / must / risk / human gates | Constitution, Compliance packs |
 | **Execution (others)** | How tokens/tools run | LangGraph, OpenAI Agents, CrewAI, MCP |
-| **Observability (others)** | What happened (spans/logs) | OpenTelemetry |
-| **Proof (NARNA VAP)** | Whether it can be believed | Evidence Package, ProofBundle, Trust Score |
+| **Observability (others)** | What happened | OpenTelemetry |
+| **Proof (VAP)** | Whether it can be believed | Evidence, ProofBundle, Trust Score |
 
 ---
 
 ## Artifact flow
 
 ```text
-Governance Package (or constitution.yaml)
+Governance Package
         ↓
-Constitution Runtime: Load → bind active package
+NARNA Runtime: Load → Validate → bind active package
         ↓
-Execute (authorize via package rules + fleet denies)
+Enforce (authorize) → host side effects
         ↓
-(side effect via any host runtime / tool / MCP)
+Evidence → Verify / Audit (VAP)
         ↓
-Evidence Package  →  Verify / Audit (VAP)
-        ↓
-Version / Switch (optional) → new packageHash on next run
-        ↓
-Passport  →  Certification  →  Registry / Marketplace
+Passport → Certification → Registry / Marketplace
 ```
 
 **Portable Governance:** changing model vendor **MUST NOT** alone invalidate identity or reset trust without package change.
-
----
-
-## Source of truth
-
-| Artifact | Authoritative? | Notes |
-|----------|----------------|-------|
-| Governance Package / Constitution | **Yes** (charter) | Versioned; signature optional |
-| Active binding (`.uap/runtime/active-governance.json`) | **Yes** (what is enforced now) | Includes packageId + hash |
-| Event / execution log | **Yes** (what ran) | May live in host runtime or OTel + NARNA evidence |
-| Evidence metadata + hashes | **Yes** | Blobs optional via URI |
-| Identity | **Yes** (immutable until rotation) | Universal AI Identity |
-| Passport | **No** | Materialized public view |
-| TrustScore | **Derived** | Rule + evidence (VAP) |
-| Model prompts / CoT | **Not required for proof** | |
 
 ---
 
@@ -84,24 +73,17 @@ Passport  →  Certification  →  Registry / Marketplace
 
 | Package | Owns |
 |---------|------|
-| Specs (`specs/`) | Contracts only — **source of product truth** |
-| `narna` / `uap` SDK | Constitution Runtime reference; Identity; Passport; certify; wrap adapters |
-| Reference UAP executor | Optional local loop for demos — **not** the agent-runtime USP |
-| `vap` / VAP modules | Verify, Audit, ProofBundle, TrustScore |
-| Cloud | Package Marketplace, Registry, Certification stamp — optional |
-
-Company brand is **NARNA**. Protocols remain **UAP** / **VAP**.  
-Charter artifact **Constitution** is a **Governance Package** kind.
+| Specs (`specs/`) | UGS contracts — source of truth |
+| `narna` / `uap` SDK | Reference runtime + adapters (`uap` = legacy path) |
+| Cloud | Marketplace, Registry, Certification stamp — optional |
 
 ---
 
 ## Conformance layers
 
-1. **Governance-Package-conformant** — load/validate package schema  
-2. **Constitution-Runtime-conformant** — Load → Execute → Verify → Audit → Version → Switch  
-3. **Constitution-conformant** — load/validate `constitution.yaml`; enforce permission/policy; evidence  
-4. **UAP-Core-conformant** — AgentSpec / Identity / Events / Permissions  
-5. **VAP-conformant** — ProofBundle + TrustScore + offline verify  
-6. **Certified** — NARNA Certification levels against Constitution + Evidence  
+1. **UGS-conformant** — Identity / Package / Evidence / Trust contracts  
+2. **Constitution-Runtime-conformant** — Load → Enforce → Verify → Audit → Switch  
+3. **VAP-conformant** — ProofBundle + TrustScore + offline verify  
+4. **Certified** — NARNA Certification levels  
 
-Aim reference code at (2) then (3); treat host frameworks as execution adapters.
+Aim reference code at (2); treat host frameworks as execution adapters.

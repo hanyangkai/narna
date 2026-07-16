@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
-import { BRAND, PROTOCOL } from "../brand";
+import { BRAND, SPEC } from "../brand";
 
 type DocPage = {
   title: string;
@@ -53,31 +53,55 @@ print(ADAPTER_CATALOG)`,
   },
   "what-is-narna": {
     title: "What is NARNA?",
-    lead: "The Governance Runtime for Autonomous AI — in plain language.",
+    lead: "The Governance Runtime for Autonomous Intelligence — an infrastructure layer.",
     sections: [
       {
-        body: `${BRAND.contrast}`,
+        body: `${BRAND.oneLiner} ${BRAND.primary}`,
+      },
+      {
+        heading: "Category",
+        body: "NARNA is positioned like Docker, Kubernetes, Git, or OpenTelemetry — infrastructure, not an AI application. It owns AI Governance; others own intelligence, compute, containers, orchestration, and observability.",
       },
       {
         heading: "Simple analogy",
-        body: "OpenTelemetry is like a dashcam — it records what happened. NARNA is the traffic court + license system — it loads the rules (Governance Packages), enforces them, and proves compliance across any car brand (model vendor).",
+        body: "OpenTelemetry is a dashcam. NARNA is the license + traffic law system — loadable rules (Governance Packages) enforced across any vehicle brand (model vendor).",
       },
       {
         heading: "What NARNA is not",
-        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP or OpenTelemetry. Those systems execute and observe. NARNA is the Governance Runtime that sits above them.",
+        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP, OpenTelemetry, or Docker. Those systems execute and observe. NARNA governs.",
       },
       {
-        heading: "Constitution Runtime",
-        body: "Load → Execute → Verify → Audit → Version → Switch. Bind provider@version (eu-ai-act, anthropic stub, medical…) without rewriting agent code.",
+        heading: "UGS — Universal Governance Specification",
+        body: "The open standard for AI governance (Identity, Capability, Permission, Policy, Governance Package, Evidence, Trust, Certification). NARNA Runtime is the reference implementation. Formerly called UAP (a workflow name); public brand is UGS.",
         code: `from narna import ConstitutionRuntime
 rt = ConstitutionRuntime()
 rt.load(provider="eu-ai-act", version="1.0.0")
-print(rt.execute(action="biometric.surveillance"))
-# deny — package rule`,
+print(rt.execute(action="biometric.surveillance"))`,
       },
       {
-        heading: "Names to remember",
-        body: "NARNA = Governance Runtime. Constitution Runtime = core loop. Governance Package = distributable unit (Constitution is one kind). UAP = Understand · Act · Prove. VAP = Verify · Audit · Prove.",
+        heading: "Names",
+        body: "NARNA = brand + runtime. UGS = open specification. VAP = Verify · Audit · Prove (trust engine). Governance Package = portable unit of rules.",
+      },
+    ],
+  },
+  ugs: {
+    title: "UGS — Universal Governance Specification",
+    lead: "The open standard for AI governance. NARNA Runtime is the reference implementation.",
+    sections: [
+      {
+        body: "UGS defines Identity, Capability, Permission, Policy, Governance Package, Evidence, Trust, and Certification — so any vendor can implement the same contracts.",
+      },
+      {
+        heading: "Why rename from UAP?",
+        body: "Understand → Act → Prove described a runtime workflow. UGS names the governance standard — the same category language as OCI, OTel, and MCP. Legacy code may still use the uap module path.",
+      },
+      {
+        heading: "Relationship",
+        body: "NARNA = brand and reference runtime. UGS = open specification anyone may implement. VAP = trust engine (Verify · Audit · Prove) within UGS.",
+      },
+      {
+        heading: "Read the normative docs",
+        body: "Start at /specification and specs/ in the repository. Strategy lock: docs/STRATEGY.md · Positioning: docs/POSITIONING.md.",
       },
     ],
   },
@@ -311,6 +335,7 @@ const SIDEBAR = [
     group: "Start here",
     items: [
       { slug: "what-is-narna", label: "What is NARNA?" },
+      { slug: "ugs", label: "UGS Spec" },
       { slug: "borrow-the-wave", label: "Borrow the Wave" },
       { slug: "constitution", label: "Constitution" },
       { slug: "install", label: "Install" },
@@ -393,7 +418,7 @@ export default function Docs() {
           )}
         </div>
         <header className="page-header" style={{ border: "none", paddingTop: 0 }}>
-          <p className="pill-label">{BRAND.name} Docs · {PROTOCOL.name}</p>
+          <p className="pill-label">{BRAND.name} Docs · {SPEC.name}</p>
           <h1>{page.title}</h1>
           <p>{page.lead}</p>
         </header>

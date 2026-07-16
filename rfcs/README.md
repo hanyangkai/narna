@@ -74,3 +74,4 @@ Every RFC **MUST** include:
 | [RFC-0007](./RFC-0007-governance-package.md) | Governance Package | Draft (G1) |
 | [RFC-0008](./RFC-0008-constitution-runtime.md) | Constitution Runtime | Draft (G1) |
 | [RFC-0009](./RFC-0009-constitution-compatibility.md) | Constitution Compatibility | Draft (G2) |
+| [RFC-0010](./RFC-0010-ugs-rename.md) | Rename open standard UAP → UGS | Draft |

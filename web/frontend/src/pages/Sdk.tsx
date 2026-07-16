@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BRAND, PROTOCOL } from "../brand";
+import { BRAND, SPEC } from "../brand";
 
 const LANGS = [
   {
@@ -40,10 +40,10 @@ export default function Sdk() {
     <div className="layout-wide">
       <header className="page-header">
         <p className="pill-label">Reference SDK</p>
-        <h1>Try the Constitution Layer locally</h1>
+        <h1>Try the Governance Runtime locally</h1>
         <p>
-          The SDK is a <strong>virus entry</strong> — not the strategic USP. Specs are the source of truth.
-          Use it to load <code>constitution.yaml</code>, issue identity, prove actions, and certify.
+          The SDK is the <strong>virus entry</strong> for {SPEC.name} — not a competing agent framework.
+          Specs are the source of truth. Load Governance Packages, prove actions, and certify.
         </p>
       </header>
 
@@ -51,7 +51,7 @@ export default function Sdk() {
         <div className="install-block" style={{ maxWidth: 440 }}>
           <label>Python (available now)</label>
           <div className="install-cmd">
-            <code>{PROTOCOL.install}</code>
+            <code>{SPEC.install}</code>
             <Link to="/docs/install" className="btn btn-primary" style={{ flexShrink: 0 }}>
               Install
             </Link>

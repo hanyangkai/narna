@@ -28,13 +28,13 @@ const SPECS = [
   },
   {
     id: "uap-core",
-    name: "UAP-Core",
+    name: "UGS-Core",
     desc: "AgentSpec, Passport, Capability, Permission, Policy, Event model",
     path: "uap-core/SPEC.md",
   },
   {
     id: "uap-evidence",
-    name: "UAP-Evidence",
+    name: "UGS-Evidence",
     desc: "Evidence object, hashing, provenance, retention",
     path: "uap-evidence/SPEC.md",
   },
@@ -46,7 +46,7 @@ const SPECS = [
   },
   {
     id: "uap-execution",
-    name: "UAP-Execution",
+    name: "UGS-Execution",
     desc: "Reference / adapter lifecycle (not the USP)",
     path: "uap-execution/SPEC.md",
   },
@@ -81,11 +81,11 @@ export default function Specification() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Normative · Spec first</p>
-        <h1>NARNA Specification</h1>
+        <p className="pill-label">UGS · Normative · Spec first</p>
+        <h1>Universal Governance Specification</h1>
         <p>
-          Version 0.1 — Draft. The Constitution Layer contracts: who AI is, what it may do, and why
-          others can trust it. MIT licensed. Frameworks execute; this layer governs.
+          Open contracts for AI governance — Identity, Policy, Evidence, Trust, Certification.
+          MIT licensed. Frameworks execute; NARNA / UGS governs. {BRAND.primary}
         </p>
       </header>
 

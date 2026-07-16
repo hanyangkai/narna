@@ -54,7 +54,7 @@ export default function Pricing() {
         <p className="pill-label">Pricing</p>
         <h1>SDK is free. Cloud is optional.</h1>
         <p>
-          Like GitHub: UAP is open. NARNA Cloud is the hosted layer. Pay only for audit, logs, and history when you need it.
+          Like GitHub: UGS is open. NARNA Cloud is the hosted layer. Pay only for audit, logs, and history when you need it.
         </p>
       </header>
 

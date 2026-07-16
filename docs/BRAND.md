@@ -2,95 +2,118 @@
 
 **NARNA** = Neural Autonomous **Rules** Native Architecture
 
-> *The Governance Runtime for Autonomous AI.*
+> *The Governance Runtime for Autonomous Intelligence.*
 
-Second **N** = **Native** (protocol-native contracts) — not Network.  
-**R** = **Rules** (constitution / governance) — Runtime here means **Governance Runtime**, not agent executor.
+**Primary:** Govern Once. Run Anywhere.
+
+Second **N** = **Native** (protocol-native contracts).  
+**R** = **Rules** / governance runtime — not agent executor.
 
 Do not let the acronym drive architecture. Architecture gives meaning to the acronym.
 
 ---
 
-## Strategy lock
+## Category
 
-Canonical strategy: [`STRATEGY.md`](./STRATEGY.md)
-
-North star:
-
-> OpenTelemetry records what AI did. NARNA loads, enforces, and proves the governance that decides what AI may do.
+**Infrastructure layer** — peer class: Docker, Kubernetes, Git, OpenTelemetry.  
+**Not** an AI app, chatbot, or model company.
 
 ---
 
-## Three names
+## Strategy lock
+
+Canonical: [`STRATEGY.md`](./STRATEGY.md) · Full copy: [`POSITIONING.md`](./POSITIONING.md)
+
+---
+
+## Name stack
 
 | Layer | Name | Role |
 |-------|------|------|
-| **Brand / company** | NARNA | Universal AI Governance Runtime |
-| **Core loop** | Constitution Runtime | Load · Execute · Verify · Audit · Version · Switch |
-| **Distributable unit** | Governance Package | Constitution is one kind |
-| **Protocol** | UAP | Understand → Act → Prove |
+| **Brand / runtime** | NARNA | Universal AI Governance Runtime (reference impl) |
+| **Open standard** | **UGS** | Universal Governance Specification |
 | **Trust engine** | VAP | Verify → Audit → Prove |
-| **Charter artifact** | Constitution | `constitution.yaml` |
+| **Package** | Governance Package | Constitution · Compliance · OrgPolicy · … |
+| **Charter kind** | Constitution | `constitution.yaml` |
+
+**Legacy:** *UAP (Understand → Act → Prove)* was a workflow name. Public specification is **UGS**. Python module path `uap` remains as implementation alias until a major package rename.
 
 ---
 
-## Positioning
+## Positioning table
 
-- NARNA is **not** an AI model.
-- NARNA is **not** an AI application.
-- NARNA is **not** competing to own the agent execution runtime (LangGraph, OpenAI Agents, CrewAI, …).
-- NARNA **is** the **Governance Runtime** that sits **above** those systems and runs Governance Packages.
+| Company | Owns |
+|---------|------|
+| OpenAI | Intelligence |
+| Anthropic | Safety models |
+| NVIDIA | Compute |
+| Docker | Containers |
+| Kubernetes | Orchestration |
+| OpenTelemetry | Observability |
+| MCP | Tool protocol |
+| **NARNA** | **AI Governance** |
 
-## Elevator pitch
+---
 
-> NARNA is the Governance Runtime for Autonomous AI — portable Governance Packages (constitutions, compliance, org policy) that load, enforce, and prove across any model or agent framework.
+## Elevator
+
+> NARNA governs AI. Others execute it. Portable Governance Packages load, enforce, and prove across every model and agent framework — without replacing them.
+
+---
 
 ## Taglines
 
 | Use | Text |
 |-----|------|
-| Canonical | The Governance Runtime for Autonomous AI. |
-| Charter surface | The Constitution Layer for Autonomous AI. |
-| Enterprise | Identity, Governance and Trust for Autonomous Systems. |
+| Primary | Govern Once. Run Anywhere. |
+| Product | The Governance Runtime for Autonomous Intelligence. |
+| Alt | Universal Governance for Autonomous Intelligence. |
+| Enterprise | Trust Every Autonomous Decision. |
+| Technical | Identity. Governance. Evidence. Trust. |
+| Community | Open Governance for the AI Era. |
 | Contrast | OpenTelemetry records what AI did. NARNA proves what AI was allowed to do. |
-| Moat | Portable Governance — switch vendors; keep the charter. |
 
 ---
 
-## Product family (priority)
+## Product family
 
 ```text
-NARNA Governance Runtime   ← center (USP)
-NARNA Constitution Runtime ← core loop
-NARNA Governance Packages  ← Constitution · Compliance · …
-NARNA Constitution Marketplace
-NARNA Identity
-NARNA Passport
-NARNA Evidence / VAP
-NARNA Certification
+NARNA Runtime
+NARNA SDK
+NARNA CLI
 NARNA Registry
-NARNA Fleet Governance
-NARNA Cloud                ← optional upsell
-NARNA SDK                  ← reference client / virus entry
-UAP Specification
+NARNA Identity
+NARNA Trust
+NARNA Passport
+NARNA Policy
+NARNA Evidence
+NARNA Certification
+NARNA Cloud
+NARNA Enterprise
+UGS (open specification)
 ```
-
-**Demoted as USP:** “NARNA Runtime” as agent executor — may exist only as a thin reference UAP loop.
 
 ---
 
 ## Compatibility first
 
-NARNA integrates with — does not replace:
-
-OpenTelemetry · MCP · OpenAI · Anthropic · Google · LangGraph · CrewAI · OpenShell · Docker · Kubernetes
+✓ OpenAI · Anthropic · Google · NVIDIA · MCP · OpenTelemetry · LangGraph · CrewAI · AutoGen · Docker · Kubernetes · OpenShell
 
 ---
 
-## SDK package
+## Developer entry
 
 ```bash
 pip install narna
 ```
 
-Protocol crates / modules may still use the `uap` name internally.
+```python
+from narna import Agent, ConstitutionRuntime
+
+rt = ConstitutionRuntime()
+rt.load(provider="eu-ai-act", version="1.0.0")
+agent = Agent()
+agent.run()
+```
+
+No vendor lock-in. No runtime replacement. Works with your existing stack.

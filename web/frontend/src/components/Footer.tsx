@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BRAND, PROTOCOL } from "../brand";
+import { BRAND, SPEC } from "../brand";
 
 export default function Footer() {
   return (
@@ -14,12 +14,13 @@ export default function Footer() {
             />
           </Link>
           <p>
-            {BRAND.tagline} {PROTOCOL.name}: {PROTOCOL.expand}.
+            {BRAND.primary} {BRAND.tagline} {SPEC.name}: {SPEC.expand}.
           </p>
         </div>
         <div className="footer-col">
           <h4>Learn</h4>
           <Link to="/docs/what-is-narna">What is NARNA?</Link>
+          <Link to="/docs/ugs">UGS Spec</Link>
           <Link to="/docs/constitution">Constitution</Link>
           <Link to="/specification">Specification</Link>
           <Link to="/compatibility">Compatibility</Link>
@@ -48,7 +49,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="layout-wide footer-bottom">
-        {BRAND.name} · Governance Runtime · {PROTOCOL.name} v0.1 · MIT
+        {BRAND.name} · {BRAND.primary} · {SPEC.name} v0.1 · MIT
       </div>
     </footer>
   );

@@ -252,11 +252,26 @@ code,
   margin: 0 0 1.5rem;
 }
 
+.hero-primary {
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.02em;
+}
+
 .hero-sub {
   font-size: 1rem;
   color: var(--muted);
   max-width: 560px;
   margin-bottom: 2rem;
+}
+
+.arch-layer-accent {
+  border-color: rgba(0, 194, 215, 0.45);
+  background: rgba(0, 194, 215, 0.12);
+  color: #e0f7fa;
+  font-weight: 600;
 }
 
 .hero-actions {

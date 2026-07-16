@@ -4,8 +4,8 @@ import { BRAND } from "../brand";
 const BADGES = [
   {
     id: "uap-compatible",
-    title: "UAP Compatible",
-    desc: "Ships narna.yaml / Constitution + Identity.",
+    title: "UGS Compatible",
+    desc: "Ships valid Manifest/Constitution + Identity (UGS).",
     src: "/badges/uap-compatible.svg",
   },
   {

@@ -1,47 +1,63 @@
 import { Link } from "react-router-dom";
 import HeroFlow from "../components/HeroFlow";
-import { BRAND, PROTOCOL, PRODUCT_FAMILY, TRUST } from "../brand";
+import {
+  BRAND,
+  COMPATIBILITY,
+  POSITIONING,
+  PRODUCT_FAMILY,
+  SPEC,
+  TRUST,
+} from "../brand";
 
 const problems = [
-  "No portable identity",
-  "No constitution / policy",
-  "No permission manifest",
-  "No evidence package",
-  "No cross-vendor trust",
+  "No portable identity across vendors",
+  "No shared governance standard",
+  "Policies rewritten per framework",
+  "Traces without proof",
+  "No cross-stack trust",
 ];
 
-const features = [
-  { title: "Identity", desc: "Universal AI Identity — every entity." },
-  { title: "Constitution", desc: "constitution.yaml governs, not prompts." },
-  { title: "Permission", desc: "Android-style policy manifest." },
-  { title: "Evidence", desc: "Proof packages — not mere traces." },
-  { title: "Passport", desc: "Public trust view enterprises understand." },
-  { title: "Certification", desc: "L1 · L2 · Enterprise Ready badges." },
+const does = [
+  { title: "Identity", desc: "Know who AI is." },
+  { title: "Policy", desc: "Know what AI may do." },
+  { title: "Evidence", desc: "Know what AI actually did." },
+  { title: "Governance", desc: "Enforce organizational rules." },
+  { title: "Trust", desc: "Measure confidence through evidence." },
+  { title: "Certification", desc: "Prove compliance with governance." },
+];
+
+const doesNot = [
+  "Train models",
+  "Build LLMs",
+  "Replace agent frameworks",
+  "Replace OpenTelemetry",
+  "Replace MCP",
+  "Replace Docker / Kubernetes",
+];
+
+const principles = [
+  { title: "Universal", desc: "Works with every AI stack. No vendor lock-in." },
+  { title: "Portable", desc: "Write governance once. Run everywhere." },
+  { title: "Compatible", desc: "Integrate — never replace — OTel, MCP, OpenAI, Anthropic…" },
+  { title: "Verifiable", desc: "Every autonomous decision can be verified." },
+  { title: "Open", desc: "Open specification. Open SDK. Community driven." },
+];
+
+const stackLayers = [
+  "Applications · AI Products",
+  "OpenAI · Claude · Gemini · Llama",
+  "OpenAI SDK · LangGraph · CrewAI · AutoGen",
+  "OpenTelemetry · MCP · OpenShell",
+  "★ NARNA Runtime — Identity · Governance · Evidence · Trust",
+  "Docker · Kubernetes · Linux · Cloud",
 ];
 
 const howSteps = [
-  { title: "Write a Constitution", desc: "constitution.yaml — who / may / must" },
-  { title: "Attach to any runtime", desc: "LangGraph · CrewAI · MCP · OpenAI …" },
-  { title: "Enforce policy", desc: "Deny by default before side effects" },
-  { title: "Collect evidence", desc: "Proof packages via VAP" },
-  { title: "Issue Passport / Certify", desc: "Portable trust across vendors" },
-];
-
-const archLayers = [
-  "NARNA Governance Runtime",
-  "Constitution Runtime · Load → Execute → Switch",
-  "Governance Packages · Marketplace · Passport",
-  "OpenTelemetry · MCP · Agent SDKs",
-  "LangGraph · CrewAI · OpenShell · …",
-  "Any Model",
-];
-
-const brandLetters = [
-  { letter: "N", meaning: "Neural", desc: "Any LLM. Any reasoning engine." },
-  { letter: "A", meaning: "Autonomous", desc: "Agents. Automation. Decisions." },
-  { letter: "R", meaning: "Rules", desc: "Constitution & governance — not another runtime." },
-  { letter: "N", meaning: "Native", desc: "Protocol-native contracts. Spec first." },
-  { letter: "A", meaning: "Architecture", desc: "Identity · Governance · Trust layer." },
+  { title: "Define a Governance Package", desc: "identity · permissions · policies · trust" },
+  { title: "Load into NARNA Runtime", desc: "provider@version or local YAML" },
+  { title: "Attach to any host", desc: "OpenAI · Claude · LangGraph · MCP …" },
+  { title: "Enforce · Audit · Verify", desc: "Deny by default; evidence required" },
+  { title: "Certify & Passport", desc: "Portable trust across vendors" },
 ];
 
 export default function Landing() {
@@ -55,20 +71,21 @@ export default function Landing() {
               alt="NARNA — Identity · Governance · Trust"
               className="hero-brand-mark"
             />
-            <p className="pill-label">{PROTOCOL.name} Protocol v0.1</p>
+            <p className="pill-label">Infrastructure · {SPEC.name} v0.1</p>
             <h1>{BRAND.tagline}</h1>
+            <p className="hero-primary">{BRAND.primary}</p>
             <div className="uap-loop">
-              {PROTOCOL.steps.map((s) => (
+              {SPEC.pillars.map((s) => (
                 <span key={s}>{s}</span>
               ))}
             </div>
             <p className="hero-sub">
-              {BRAND.contrast} Compatibility first — sits above OpenTelemetry, MCP, and any agent SDK.
+              {BRAND.oneLiner} {BRAND.contrast} Like Docker for containers — NARNA for AI governance.
             </p>
             <div className="install-block">
               <label>Install NARNA SDK</label>
               <div className="install-cmd">
-                <code>{PROTOCOL.install}</code>
+                <code>{SPEC.install}</code>
                 <Link to="/docs/install" className="btn btn-secondary" style={{ flexShrink: 0 }}>
                   Guide →
                 </Link>
@@ -80,14 +97,14 @@ export default function Landing() {
               </Link>
               <Link
                 className="btn btn-secondary"
-                to="/docs/borrow-the-wave"
+                to="/specification"
                 style={{
                   background: "rgba(255,255,255,0.1)",
                   borderColor: "rgba(255,255,255,0.25)",
                   color: "#fff",
                 }}
               >
-                Borrow the Wave
+                Read {SPEC.name}
               </Link>
             </div>
           </div>
@@ -96,32 +113,44 @@ export default function Landing() {
       </section>
 
       <div className="trusted-bar">
-        <p>Open source · Open specification · Self-host first</p>
+        <p>Open source · Open specification ({SPEC.name}) · Self-host first · Infrastructure layer</p>
       </div>
 
       <div className="layout-wide">
         <section className="section">
-          <p className="section-label">Brand</p>
-          <h2>{BRAND.expand}</h2>
-          <p className="section-desc">{BRAND.elevator}</p>
-          <div className="feature-grid">
-            {brandLetters.map((b) => (
-              <div key={b.meaning} className="card feature-card">
-                <h3>
-                  <span style={{ color: "var(--accent)" }}>{b.letter}</span> — {b.meaning}
-                </h3>
-                <p>{b.desc}</p>
-              </div>
-            ))}
+          <p className="section-label">Category</p>
+          <h2>{BRAND.oneLiner}</h2>
+          <p className="section-desc">{BRAND.category}</p>
+          <div className="card" style={{ overflowX: "auto", marginTop: "1.25rem" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Owns</th>
+                </tr>
+              </thead>
+              <tbody>
+                {POSITIONING.map((row) => (
+                  <tr key={row.company}>
+                    <td>
+                      <strong>{row.company}</strong>
+                    </td>
+                    <td style={row.company === "NARNA" ? { color: "var(--accent)", fontWeight: 600 } : undefined}>
+                      {row.owns}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
         <section className="section two-col">
           <div>
             <p className="section-label">Problem</p>
-            <h2>Today&apos;s agents have prompts — not a constitution</h2>
+            <h2>Intelligence without governance</h2>
             <p className="section-desc">
-              Frameworks own execution. Nobody owns portable identity, policy, and trust across vendors.
+              Frameworks execute. Models reason. Nobody owns portable identity, policy, and trust across vendors.
             </p>
           </div>
           <ul className="problem-list">
@@ -134,59 +163,73 @@ export default function Landing() {
           </ul>
         </section>
 
-        <section className="section">
-          <p className="section-label">UAP Protocol</p>
-          <h2>Understand · Act · Prove</h2>
-          <p className="section-desc">Every autonomous action should be explainable, verifiable, and trusted.</p>
-          <div className="pipeline">
-            {PROTOCOL.steps.map((s, i) => (
-              <span key={s} style={{ display: "contents" }}>
-                <div className="pipeline-step">{s}</div>
-                {i < PROTOCOL.steps.length - 1 && <span className="pipeline-arrow">→</span>}
-              </span>
+        <section className="section two-col">
+          <div>
+            <p className="section-label">The AI stack</p>
+            <h2>Governance sits with the infrastructure</h2>
+            <p className="section-desc">
+              {BRAND.mission}
+            </p>
+          </div>
+          <div className="arch-stack">
+            {stackLayers.map((layer, i) => (
+              <div key={layer}>
+                <div className={`arch-layer${layer.includes("NARNA") ? " arch-layer-accent" : ""}`}>
+                  {layer}
+                </div>
+                {i < stackLayers.length - 1 && <div className="arch-arrow">↓</div>}
+              </div>
             ))}
           </div>
         </section>
 
         <section className="section">
-          <p className="section-label">VAP Engine</p>
-          <h2>Verify · Audit · Prove</h2>
-          <p className="section-desc">Trust is not assumed. Trust is earned through evidence.</p>
+          <p className="section-label">Principles</p>
+          <h2>Infrastructure principles</h2>
+          <div className="feature-grid" style={{ marginTop: "1.5rem" }}>
+            {principles.map((p) => (
+              <div key={p.title} className="card feature-card">
+                <h3>{p.title}</h3>
+                <p>{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="section">
+          <p className="section-label">Open specification</p>
+          <h2>{SPEC.name} — {SPEC.expand}</h2>
+          <p className="section-desc">
+            The open standard for AI governance. NARNA Runtime is the reference implementation.
+            Anyone can implement UGS — like anyone can implement OCI or OTel.
+          </p>
           <div className="pipeline">
-            {TRUST.steps.map((s, i) => (
+            {SPEC.pillars.map((s, i) => (
               <span key={s} style={{ display: "contents" }}>
                 <div className="pipeline-step">{s}</div>
+                {i < SPEC.pillars.length - 1 && <span className="pipeline-arrow">→</span>}
+              </span>
+            ))}
+          </div>
+          <div className="pipeline" style={{ marginTop: "1rem" }}>
+            {TRUST.steps.map((s, i) => (
+              <span key={s} style={{ display: "contents" }}>
+                <div className="pipeline-step">{TRUST.name}: {s}</div>
                 {i < TRUST.steps.length - 1 && <span className="pipeline-arrow">→</span>}
               </span>
             ))}
           </div>
-        </section>
-
-        <section className="section two-col">
-          <div>
-            <p className="section-label">Architecture</p>
-            <h2>Governance Runtime. Any framework. Any model.</h2>
-            <p className="section-desc">
-              {BRAND.name} sits above OpenTelemetry, MCP, and agent SDKs — loading Governance Packages that say who AI is, what it may do, and why it can be trusted.
-            </p>
-            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-              {BRAND.name} is not a model, not an app, and not competing to own the agent executor. It is the Governance Runtime for autonomous AI.
-            </p>
-          </div>
-          <div className="arch-stack">
-            {archLayers.map((layer, i) => (
-              <div key={layer}>
-                <div className="arch-layer">{layer}</div>
-                {i < archLayers.length - 1 && <div className="arch-arrow">↓</div>}
-              </div>
-            ))}
+          <div style={{ marginTop: "1.25rem" }}>
+            <Link to="/specification" className="btn btn-primary">
+              Read the Spec
+            </Link>
           </div>
         </section>
 
         <section className="section two-col">
           <div>
             <p className="section-label">How it works</p>
-            <h2>Five steps to portable trust</h2>
+            <h2>{BRAND.primary}</h2>
           </div>
           <div className="steps">
             {howSteps.map((s, i) => (
@@ -202,10 +245,10 @@ export default function Landing() {
         </section>
 
         <section className="section">
-          <p className="section-label">Features</p>
-          <h2>Built for governance, not demos</h2>
+          <p className="section-label">Capabilities</p>
+          <h2>What NARNA does</h2>
           <div className="feature-grid" style={{ marginTop: "1.5rem" }}>
-            {features.map((f) => (
+            {does.map((f) => (
               <div key={f.title} className="card feature-card">
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
@@ -214,91 +257,58 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="section two-col">
+          <div>
+            <p className="section-label">Non-goals</p>
+            <h2>What NARNA does not do</h2>
+            <p className="section-desc">
+              Instead, NARNA makes them work together under one governance standard.
+            </p>
+          </div>
+          <ul className="problem-list">
+            {doesNot.map((p) => (
+              <li key={p}>
+                <span className="x">✕</span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section className="section">
-          <p className="section-label">Product family</p>
-          <h2>Brand · Protocol · Engine</h2>
+          <p className="section-label">Compatibility first</p>
+          <h2>Integrates with your stack</h2>
           <div className="feature-grid" style={{ marginTop: "1.5rem" }}>
-            {PRODUCT_FAMILY.map((name) => (
-              <div key={name} className="card feature-card">
-                <h3>{name}</h3>
-                <p>
-                  {name.includes("Constitution")
-                    ? "Who / may / must — the charter"
-                    : name.includes("Identity")
-                      ? "Universal AI Identity"
-                      : name.includes("Passport")
-                        ? "Public trust view"
-                        : name.includes("Certification")
-                          ? "Verified by NARNA"
-                          : name.startsWith("UAP")
-                            ? "Open protocol"
-                            : name.includes("VAP") || name.includes("Evidence")
-                              ? "Trust engine"
-                              : name.includes("SDK")
-                                ? "Reference client (not the USP)"
-                                : name.includes("Cloud")
-                                  ? "Optional registry & governance"
-                                  : "NARNA product"}
-                </p>
+            {COMPATIBILITY.map((name) => (
+              <div key={name} className="card feature-card" style={{ padding: "1rem 1.25rem" }}>
+                <h3 style={{ margin: 0, fontSize: "1rem" }}>✓ {name}</h3>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="section two-col">
-          <div>
-            <p className="section-label">Open Specification</p>
-            <h2>Constitution first. Anyone can implement.</h2>
-            <p className="section-desc">
-              Normative YAML specs and JSON Schemas. MIT licensed. No vendor lock-in.
-            </p>
-            <Link to="/specification" className="btn btn-primary">
-              Read the Spec
-            </Link>
-          </div>
-          <div className="card">
-            <table className="spec-table">
-              <tbody>
-                <tr>
-                  <td><strong>Brand</strong></td>
-                  <td>{BRAND.name}</td>
-                </tr>
-                <tr>
-                  <td><strong>Layer</strong></td>
-                  <td>Constitution</td>
-                </tr>
-                <tr>
-                  <td><strong>Protocol</strong></td>
-                  <td>{PROTOCOL.name}</td>
-                </tr>
-                <tr>
-                  <td><strong>Trust</strong></td>
-                  <td>{TRUST.name}</td>
-                </tr>
-                <tr>
-                  <td><strong>License</strong></td>
-                  <td>MIT</td>
-                </tr>
-              </tbody>
-            </table>
+        <section className="section">
+          <p className="section-label">Product family</p>
+          <h2>Runtime · Spec · Cloud</h2>
+          <div className="feature-grid" style={{ marginTop: "1.5rem" }}>
+            {PRODUCT_FAMILY.map((name) => (
+              <div key={name} className="card feature-card">
+                <h3>{name}</h3>
+              </div>
+            ))}
           </div>
         </section>
 
         <section className="section">
-          <p className="section-label">Moat</p>
-          <h2>Open standard. Portable trust.</h2>
-          <div className="moat-flow">
-            <span className="moat-step">Constitution</span>
-            <span className="pipeline-arrow">→</span>
-            <span className="moat-step">Identity</span>
-            <span className="pipeline-arrow">→</span>
-            <span className="moat-step">Passport</span>
-            <span className="pipeline-arrow">→</span>
-            <span className="moat-step">Certification</span>
-          </div>
-          <p className="section-desc" style={{ textAlign: "center", margin: "0 auto" }}>
-            Switch OpenAI → Claude → Gemini — identity and trust stay. Frameworks execute; NARNA governs.
+          <p className="section-label">Enterprise</p>
+          <h2>{BRAND.enterprise}</h2>
+          <p className="section-desc">
+            Define governance once. Enforce it across OpenAI, Claude, Gemini, local LLMs, LangGraph,
+            CrewAI, MCP servers, and future runtimes — without rewriting policies for each platform.
           </p>
+          <Link to="/enterprise" className="btn btn-primary">
+            Enterprise
+          </Link>
         </section>
 
         <section className="section">
@@ -308,7 +318,7 @@ export default function Landing() {
             <div className="card">
               <h3>Developer</h3>
               <div className="price">Free</div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Constitution + OSS SDK + self-host</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{SPEC.name} + OSS SDK + self-host</p>
             </div>
             <div className="card featured">
               <h3>Cloud</h3>
@@ -330,14 +340,15 @@ export default function Landing() {
 
         <section className="section">
           <p className="section-label">Vision</p>
-          <h2>The Governance Runtime for Autonomous AI</h2>
-          <p className="section-desc">
-            Like OCI for containers — NARNA aims to be the portable governance runtime
-            every autonomous system can bind across vendors.
-          </p>
+          <h2>{BRAND.primary}</h2>
+          <p className="section-desc">{BRAND.vision}</p>
           <div className="community-grid" style={{ marginTop: "1rem" }}>
-            <a href={BRAND.github} target="_blank" rel="noreferrer">GitHub</a>
-            <a href={BRAND.discord} target="_blank" rel="noreferrer">Discord</a>
+            <a href={BRAND.github} target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+            <a href={BRAND.discord} target="_blank" rel="noreferrer">
+              Discord
+            </a>
             <Link to="/docs/what-is-narna">What is NARNA?</Link>
             <Link to="/packages">Packages</Link>
           </div>
