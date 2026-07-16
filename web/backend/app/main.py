@@ -878,6 +878,85 @@ def certification_submit(
     )
 
 
+@app.post("/v1/playground/validate")
+def playground_validate(body: dict[str, Any]) -> dict[str, Any]:
+    """Validate narna.yaml manifest and preview constitution + score dimensions."""
+    import yaml
+
+    raw = body.get("manifest")
+    if not raw or not isinstance(raw, str):
+        raise HTTPException(status_code=400, detail="manifest string required")
+    try:
+        from uap.manifest import compile_manifest_to_constitution
+        from uap.schemas import validator_for
+
+        doc = yaml.safe_load(raw)
+        if not isinstance(doc, dict):
+            raise ValueError("manifest must be a YAML mapping")
+        if doc.get("kind") != "Manifest":
+            doc = {
+                **doc,
+                "apiVersion": doc.get("apiVersion", "narna.ai/v1alpha1"),
+                "kind": "Manifest",
+            }
+        validator_for("manifest.schema.json").validate(doc)
+        constitution = compile_manifest_to_constitution(doc)
+        caps = len(doc.get("capabilities") or [])
+        gov = 1.0 if doc.get("governance") or doc.get("constitution") else 0.4
+        breakdown = {
+            "identity": 0.5,
+            "capability": min(1.0, 0.4 + 0.1 * caps),
+            "evidence": 0.3,
+            "governance": gov,
+            "compliance": 0.2,
+            "operational": 0.3,
+        }
+        score_0_1 = sum(breakdown.values()) / len(breakdown)
+        return {
+            "ok": True,
+            "constitutionPreview": {
+                "constitutionId": constitution.get("metadata", {}).get("id"),
+                "entityId": constitution.get("metadata", {}).get("entityId"),
+                "supports": constitution.get("spec", {}).get("capability", {}).get("supports", []),
+                "rules": len(constitution.get("spec", {}).get("policy", {}).get("rules") or []),
+            },
+            "narnaScore": int(round(score_0_1 * 100)),
+            "breakdown": breakdown,
+            "algorithm": "narna-score-v0-preview",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.get("/v1/score/{agent_id}")
+def narna_score_for_agent(agent_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Derive NARNA Score from registry passport + certification metadata."""
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == agent_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="agent not found")
+    passport = json.loads(row.passport_json or "{}")
+    cert = json.loads(row.certification_json or "{}") if row.certification_json else {}
+    trust = passport.get("trust", {})
+    breakdown = {
+        "identity": 1.0 if passport.get("identity") else 0.0,
+        "capability": min(1.0, 0.5 + 0.05 * len(passport.get("capability", {}).get("declared") or [])),
+        "evidence": float(trust.get("score") or 0.5),
+        "governance": 1.0 if passport.get("governance") else 0.3,
+        "compliance": {"L3": 1.0, "L2": 0.85, "L1": 0.65}.get(str(cert.get("level") or ""), 0.2),
+        "operational": min(1.0, (passport.get("history", {}).get("successCount") or 0) / max(1, passport.get("history", {}).get("runCount") or 1)),
+    }
+    score_0_1 = sum(breakdown.values()) / len(breakdown)
+    return {
+        "agentId": agent_id,
+        "narnaScore": int(round(score_0_1 * 100)),
+        "breakdown": breakdown,
+        "algorithm": "narna-score-v0-registry",
+        "passportUrl": f"/v1/passport/{agent_id}",
+    }
+
+
 @app.get("/v1/benchmark/governance")
 def governance_benchmark() -> dict[str, Any]:
     """Public governance leaderboard (not LLM MMLU)."""

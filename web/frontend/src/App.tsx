@@ -10,9 +10,11 @@ import Enterprise from "./pages/Enterprise";
 import Landing from "./pages/Landing";
 import Packages from "./pages/Packages";
 import PassportPage from "./pages/PassportPage";
+import Playground from "./pages/Playground";
 import Plugins from "./pages/Plugins";
 import Pricing from "./pages/Pricing";
 import Registry from "./pages/Registry";
+import Rfcs from "./pages/Rfcs";
 import RunDetail from "./pages/RunDetail";
 import Sdk from "./pages/Sdk";
 import Specification from "./pages/Specification";
@@ -30,6 +32,8 @@ export default function App() {
           <Route path="/sdk" element={<Sdk />} />
           <Route path="/compatibility" element={<Compatibility />} />
           <Route path="/benchmark" element={<Benchmark />} />
+          <Route path="/playground" element={<Playground />} />
+          <Route path="/rfcs" element={<Rfcs />} />
           <Route path="/registry" element={<Registry />} />
           <Route path="/plugins" element={<Plugins />} />
           <Route path="/packages" element={<Packages />} />

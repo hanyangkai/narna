@@ -1,12 +1,7 @@
-"""NARNA SDK — The Governance Runtime for Autonomous AI.
+"""NARNA SDK — Governance Infrastructure for Agentic AI.
 
-Strategy: docs/STRATEGY.md · docs/BORROW-THE-WAVE.md
-Never Replace. Always Extend.
-
-    from narna import wrap, track, ConstitutionRuntime
-    agent = wrap(my_openai_agent, vap=True)
-    rt = ConstitutionRuntime()
-    rt.load(provider="eu-ai-act", version="1.0.0")
+    from narna import wrap, track, agent, policy, audit, ConstitutionRuntime
+    agent = wrap(my_langgraph_app, vap=True)
 """
 
 from __future__ import annotations
@@ -22,9 +17,11 @@ from uap.manifest import (
     load_manifest,
     load_or_compile_constitution,
 )
+from uap.narna_score import compute_narna_score
 from uap.policy import PolicyEngine
 
 from narna.adapters import ADAPTER_CATALOG
+from narna.decorators import agent, audit, policy
 from narna.wrap import track, wrap
 
 __version__ = "0.1.0"
@@ -32,6 +29,10 @@ __all__ = [
     "Agent",
     "wrap",
     "track",
+    "agent",
+    "policy",
+    "audit",
+    "compute_narna_score",
     "ADAPTER_CATALOG",
     "ConstitutionRuntime",
     "GovernanceRuntime",

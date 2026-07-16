@@ -97,7 +97,41 @@ Known policy aliases (v0):
 
 ---
 
-## 5. Conformance
+## 5. Governance binding (normative)
+
+Manifest **MAY** declare how Constitution Runtime loads a Governance Package:
+
+```yaml
+governance:
+  package: banking-v2          # provider or provider@version
+  # provider: eu-ai-act
+  # version: "1.0.0"
+  # path: ./packages/banking.yaml
+  # ref: registry://narna/packages/eu-ai-act@1.0.0
+```
+
+Legacy alias `constitution:` with `provider` / `path` / `ref` **MAY** be used.
+
+On `narna init` / `wrap` / `Agent()`, loaders **SHOULD** bind governance when declared.
+
+---
+
+## 6. Runtime, passport, trust
+
+```yaml
+runtime:
+  narna: true
+passport:
+  enabled: true
+  publish: false
+trust:
+  enabled: true
+  minimum_score: 0.7
+```
+
+---
+
+## 7. Conformance
 
 1. Validate Manifest schema when `kind: Manifest`.  
 2. Compile to Constitution and schema-validate the result.  

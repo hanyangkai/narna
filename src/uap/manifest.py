@@ -127,7 +127,11 @@ def compile_manifest_to_constitution(manifest: dict[str, Any]) -> dict[str, Any]
     trust = manifest.get("trust") or {}
     min_score = float(trust.get("minimum_score", 0.7))
 
-    compat_list = manifest.get("compatibility") or []
+    compat_raw = manifest.get("compatibility") or []
+    if isinstance(compat_raw, dict):
+        compat_list = list(compat_raw.get("supports") or [])
+    else:
+        compat_list = list(compat_raw)
     compatibility: dict[str, bool] = {}
     for item in compat_list:
         compatibility[str(item).lower().replace("-", "")] = True
@@ -192,13 +196,29 @@ def compile_manifest_to_constitution(manifest: dict[str, Any]) -> dict[str, Any]
 
 
 def bind_governance_from_manifest(manifest: dict[str, Any], workspace: Path) -> dict[str, Any] | None:
-    """Load Governance Package from manifest.constitution binding (provider/path/ref)."""
+    """Load Governance Package from manifest.governance or manifest.constitution binding."""
     from .governance_runtime import ConstitutionRuntime
+
+    rt = ConstitutionRuntime(workspace)
+
+    gov = manifest.get("governance")
+    if isinstance(gov, dict):
+        if gov.get("path"):
+            return rt.load(path=gov["path"])
+        if gov.get("ref"):
+            return rt.load(ref=str(gov["ref"]))
+        pkg = gov.get("package") or gov.get("provider")
+        if pkg:
+            pkg_s = str(pkg)
+            if "@" in pkg_s:
+                provider, version = pkg_s.split("@", 1)
+            else:
+                provider, version = pkg_s, gov.get("version")
+            return rt.load(provider=provider, version=version)
 
     binding = manifest.get("constitution")
     if not isinstance(binding, dict):
         return None
-    rt = ConstitutionRuntime(workspace)
     if binding.get("path"):
         return rt.load(path=binding["path"])
     if binding.get("ref"):
@@ -252,7 +272,10 @@ def ensure_workspace_manifest(workspace: Path, *, agent_name: str = "Agent") -> 
         "capabilities": ["general", "reasoning"],
         "permissions": [{"name": "network", "mode": "allow"}],
         "policies": ["log_every_action", "human_approval"],
-        "trust": {"minimum_score": 0.7},
+        "governance": {"package": "eu-ai-act@1.0.0"},
+        "runtime": {"narna": True},
+        "passport": {"enabled": True, "publish": False},
+        "trust": {"enabled": True, "minimum_score": 0.7},
         "compatibility": ["openai", "mcp", "langgraph", "opentelemetry"],
     }
     path.write_text(yaml.safe_dump(scaffold, sort_keys=False, allow_unicode=True), encoding="utf-8")

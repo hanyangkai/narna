@@ -53,15 +53,63 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "constitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string" },
+        "version": { "type": "string" },
+        "path": { "type": "string" },
+        "ref": { "type": "string" }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "package": { "type": "string", "description": "provider or provider@version" },
+        "provider": { "type": "string" },
+        "version": { "type": "string" },
+        "path": { "type": "string" },
+        "ref": { "type": "string" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "narna": { "type": "boolean" }
+      }
+    },
+    "passport": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "publish": { "type": "boolean" }
+      }
+    },
     "trust": {
       "type": "object",
       "properties": {
+        "enabled": { "type": "boolean" },
         "minimum_score": { "type": "number", "minimum": 0, "maximum": 1 }
       }
     },
     "compatibility": {
-      "type": "array",
-      "items": { "type": "string" }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "supports": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      ]
     }
   }
 }

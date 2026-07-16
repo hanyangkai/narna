@@ -22,24 +22,114 @@ def _print_json(obj: object) -> None:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
-    agent = Agent(workspace=Path.cwd())
+    from .manifest import ensure_workspace_manifest, load_or_compile_constitution
+
+    ws = Path.cwd()
+    agent = Agent(workspace=ws, name=getattr(args, "name", None) or "Agent")
     agent.runtime.init()
+    manifest_path = ensure_workspace_manifest(ws, agent_name=agent.spec.name)
+    try:
+        load_or_compile_constitution(manifest_path, workspace=ws)
+        print(f"Compiled {manifest_path} → constitution.yaml")
+    except Exception as e:
+        print(f"Warning: manifest compile: {e}")
+
     spec_dst = Path("agent.yaml")
     if not spec_dst.exists():
-        example = Path("specs/examples/trading-agent.yaml")
-        if example.exists():
-            spec_dst.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
-            print(f"Created {spec_dst} from example.")
-        else:
-            print("Created minimal agent.yaml.")
-    if spec_dst.exists():
-        spec = load_agent_spec(spec_dst)
-        identity = IdentityStore(Path.cwd()).issue(spec)
-        AgentRegistry(Path.cwd()).register(spec_dst, workspace=Path.cwd())
-        Marketplace(Path.cwd()).index()
-        print(f"Issued identity for {spec.agent_id}")
-        _print_json({"agentId": identity["agentId"], "specHash": identity["specHash"]})
-    print("Initialized .uap workspace.")
+        import yaml
+
+        spec_dst.write_text(
+            yaml.safe_dump(agent.spec.raw, sort_keys=False, allow_unicode=True),
+            encoding="utf-8",
+        )
+        print(f"Created {spec_dst} from manifest identity.")
+
+    spec = load_agent_spec(spec_dst)
+    identity = IdentityStore(ws).issue(spec)
+    AgentRegistry(ws).register(spec_dst, workspace=ws)
+    Marketplace(ws).index()
+    print(f"Issued identity for {spec.agent_id}")
+    _print_json(
+        {
+            "agentId": identity["agentId"],
+            "specHash": identity["specHash"],
+            "manifest": str(manifest_path),
+        }
+    )
+    print("Initialized .uap workspace (narna.yaml first).")
+    return 0
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    """Umbrella validation: manifest, constitution, identity, optional AgentSpec."""
+    from .manifest import discover_manifest, load_manifest, load_or_compile_constitution
+
+    ws = Path.cwd()
+    problems: list[str] = []
+    checked: list[str] = []
+
+    manifest_path = Path(args.manifest) if args.manifest else discover_manifest(ws)
+    if manifest_path and manifest_path.exists():
+        try:
+            doc = load_manifest(manifest_path)
+            checked.append(f"manifest:{manifest_path.name}")
+            if args.compile:
+                load_or_compile_constitution(manifest_path, workspace=ws)
+                checked.append("constitution:compiled")
+        except Exception as e:
+            problems.append(f"manifest invalid: {e}")
+    elif not args.skip_manifest:
+        problems.append("narna.yaml not found (run: narna init)")
+
+    const_path = ws / "constitution.yaml"
+    if const_path.exists() and not args.compile:
+        try:
+            load_or_compile_constitution(const_path, workspace=ws, write_constitution_out=False)
+            checked.append("constitution.yaml")
+        except Exception as e:
+            problems.append(f"constitution invalid: {e}")
+
+    spec_path = Path(args.spec)
+    if spec_path.exists():
+        try:
+            load_agent_spec(spec_path)
+            checked.append(f"agentspec:{spec_path.name}")
+        except Exception as e:
+            problems.append(f"AgentSpec invalid: {e}")
+
+    if not IdentityStore(ws).load():
+        problems.append("identity not issued (run: narna init)")
+
+    gov_path = ws / ".uap" / "runtime" / "active-governance.json"
+    if gov_path.exists():
+        checked.append("governance:active")
+    elif manifest_path and manifest_path.exists():
+        try:
+            doc = load_manifest(manifest_path, validate=False)
+            if doc.get("governance") or doc.get("constitution"):
+                problems.append("governance binding declared but not loaded (run: narna governance load)")
+        except Exception:
+            pass
+
+    if args.full:
+        problems.extend(run_conformance_checks(ws, spec_path if spec_path.exists() else Path("agent.yaml")))
+        checked.append("conformance:full")
+
+    if problems:
+        print("narna validate: FAIL")
+        for p in problems:
+            print(f"- {p}")
+        return 1
+    print("narna validate: OK")
+    for c in checked:
+        print(f"  ✓ {c}")
+    return 0
+
+
+def cmd_score(args: argparse.Namespace) -> int:
+    from .narna_score import compute_narna_score
+
+    _print_json(compute_narna_score(Path.cwd()))
     return 0
 
 
@@ -73,6 +163,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_benchmark(args: argparse.Namespace) -> int:
+    if getattr(args, "narna_score", False):
+        from .narna_score import compute_narna_score
+
+        _print_json(compute_narna_score(Path.cwd()))
+        return 0
     if getattr(args, "governance", False):
         from .governance_benchmark import leaderboard, write_leaderboard
 
@@ -561,8 +656,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    init = sub.add_parser("init", help="Initialize workspace, identity, registry")
+    init = sub.add_parser("init", help="Initialize workspace with narna.yaml + identity")
+    init.add_argument("--name", default=None, help="Agent display name")
     init.set_defaults(func=cmd_init)
+
+    validate = sub.add_parser("validate", help="Validate manifest, constitution, identity")
+    validate.add_argument("--manifest", default=None, help="Path to narna.yaml")
+    validate.add_argument("--spec", default="agent.yaml")
+    validate.add_argument("--compile", action="store_true", help="Compile manifest to constitution")
+    validate.add_argument("--skip-manifest", action="store_true")
+    validate.add_argument("--full", action="store_true", help="Include conformance checks")
+    validate.set_defaults(func=cmd_validate)
+
+    score = sub.add_parser("score", help="Compute NARNA Score (0-100) for workspace")
+    score.set_defaults(func=cmd_score)
 
     doctor = sub.add_parser("doctor", help="Validate workspace + AgentSpec + identity")
     doctor.add_argument("--spec", default="agent.yaml")
@@ -573,6 +680,7 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--spec", default="agent.yaml")
     bench.add_argument("--avg", action="store_true", help="Average trust score for agent")
     bench.add_argument("--governance", action="store_true", help="Governance leaderboard")
+    bench.add_argument("--narna-score", action="store_true", dest="narna_score", help="NARNA Score (0-100)")
     bench.add_argument("--limit", type=int, default=20)
     bench.set_defaults(func=cmd_benchmark)
 
