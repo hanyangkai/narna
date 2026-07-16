@@ -16,6 +16,8 @@ export default function Footer() {
           <Link to="/docs/what-is-narna">What is NARNA?</Link>
           <Link to="/docs/constitution">Constitution</Link>
           <Link to="/specification">Specification</Link>
+          <Link to="/compatibility">Compatibility</Link>
+          <Link to="/benchmark">Benchmark</Link>
           <Link to="/sdk">SDK</Link>
           <Link to="/registry">Registry</Link>
         </div>

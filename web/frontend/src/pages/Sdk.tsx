@@ -14,10 +14,10 @@ const LANGS = [
   },
   {
     name: "TypeScript",
-    status: "planned",
-    install: "npm install @narna/sdk",
-    desc: "Same Constitution contracts for browser and Node.",
-    links: [],
+    status: "available",
+    install: "cd sdks/typescript && npm install && npm run build",
+    desc: "Reference stub: compileManifest, badge helpers. Specs remain source of truth.",
+    links: [{ to: "/docs/borrow-the-wave", label: "Strategy" }],
   },
   {
     name: "Go",

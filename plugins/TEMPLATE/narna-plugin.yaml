@@ -1,0 +1,17 @@
+apiVersion: narna.ai/v1alpha1
+kind: Plugin
+metadata:
+  id: narna-example
+  name: Example Plugin
+  version: 0.1.0
+  license: MIT
+spec:
+  extends:
+    - agent
+    - tool
+  permissions:
+    - network
+  compatibility:
+    - openai
+    - mcp
+  entrypoint: src/plugin.py

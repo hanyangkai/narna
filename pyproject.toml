@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "narna"
 version = "0.1.0"
-description = "NARNA — The Open Runtime for Trusted AI Agents (UAP protocol + VAP trust)"
+description = "NARNA — The Constitution Layer for Autonomous AI (Identity, Governance, Trust)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

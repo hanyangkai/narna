@@ -1,7 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import Footer from "./components/Footer";
 import Nav from "./components/Nav";
+import Benchmark from "./pages/Benchmark";
 import Billing from "./pages/Billing";
+import Compatibility from "./pages/Compatibility";
 import Console from "./pages/Console";
 import Docs from "./pages/Docs";
 import Enterprise from "./pages/Enterprise";
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/docs/:slug" element={<Docs />} />
           <Route path="/specification" element={<Specification />} />
           <Route path="/sdk" element={<Sdk />} />
+          <Route path="/compatibility" element={<Compatibility />} />
+          <Route path="/benchmark" element={<Benchmark />} />
           <Route path="/registry" element={<Registry />} />
           <Route path="/passport/:agentId" element={<PassportPage />} />
           <Route path="/enterprise" element={<Enterprise />} />

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210" height="28" role="img" aria-label="NARNA Certified+">
+  <title>NARNA Certified+</title>
+  <rect width="210" height="28" rx="4" fill="#0B1F3A"/>
+  <rect x="0" width="78" height="28" rx="4" fill="#2E86AB"/>
+  <text x="39" y="18" text-anchor="middle" fill="#fff" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="600">Certified+</text>
+  <text x="140" y="18" text-anchor="middle" fill="#E8EEF5" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="11">NARNA L2</text>
+</svg>

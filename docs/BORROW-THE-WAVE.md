@@ -106,17 +106,18 @@ Developer short-form compiles to Constitution.
 
 | Priority | Item | Status |
 |----------|------|--------|
-| P0 | `narna.yaml` Manifest Spec + loader | **this pass** |
-| P0 | One-line `wrap` + `@track` | **this pass** |
-| P0 | Adapter package scaffold + detect | **this pass** |
-| P0 | RFC process + RFC-0001 | **this pass** |
-| P1 | Real adapters: openai / mcp / langgraph / otel | next |
-| P1 | Compatibility Program pages + badge SVG | next |
-| P2 | Plugin repo template + marketplace listing | later |
-| P2 | Governance benchmark leaderboard | later |
-| P3 | Fleet Governance Spec (C4) | later |
-| P3 | Foundation / open governance charter | later |
-| P3 | TypeScript / Go reference SDKs | later |
+| P0 | `narna.yaml` Manifest Spec + loader | **done** |
+| P0 | One-line `wrap` + `@track` | **done** |
+| P0 | Adapter package scaffold + detect | **done** |
+| P0 | RFC process + RFC-0001 | **done** |
+| P1 | Real adapters: openai / mcp / langgraph / otel / crewai | **done** |
+| P1 | Compatibility Program pages + badge SVG | **done** |
+| P2 | Plugin repo template + marketplace listing | **done** (template + narna-slack) |
+| P2 | Governance benchmark leaderboard | **done** |
+| P3 | Fleet Governance Spec (C4) | **done** |
+| P3 | Foundation / open governance charter | **done** (draft) |
+| P3 | TypeScript / Go reference SDKs | **TS stub done**; Go later |
+| Next | Deepen adapters with optional extras; plugin publish UX | continuous |
 
 ---
 

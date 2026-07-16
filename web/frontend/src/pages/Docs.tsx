@@ -42,11 +42,11 @@ def research(query: str) -> str:
     lead: "Adapter First — narna-openai, narna-mcp, narna-langgraph, …",
     sections: [
       {
-        body: "Adapters extend host frameworks. They never replace them. Deep hooks land as separate packages; the reference SDK detects frameworks and attaches metadata today.",
+        body: "Adapters extend host frameworks. They never replace them. Available now: narna-openai, narna-langgraph, narna-mcp, narna-opentelemetry, narna-crewai.",
         code: `from narna import wrap, ADAPTER_CATALOG
 
-agent = wrap(my_langgraph_app)
-print(agent._adapter)
+agent = wrap(my_langgraph_app, vap=True)
+print(agent._adapter)  # hooks installed on invoke/…
 print(ADAPTER_CATALOG)`,
       },
     ],

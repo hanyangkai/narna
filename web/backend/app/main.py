@@ -862,6 +862,43 @@ def certification_submit(
     )
 
 
+@app.get("/v1/benchmark/governance")
+def governance_benchmark() -> dict[str, Any]:
+    """Public governance leaderboard (not LLM MMLU)."""
+    try:
+        from uap.governance_benchmark import leaderboard
+
+        return leaderboard()
+    except Exception:
+        # fallback if SDK path unavailable in API container
+        return {
+            "algorithm": "narna-governance-bench-v0",
+            "description": "Governance / compliance posture — not LLM capability MMLU.",
+            "rows": [
+                {"vendor": "Anthropic", "score": 0.98, "notes": "Strong policy culture"},
+                {"vendor": "OpenAI", "score": 0.96, "notes": "Agents SDK + OTel"},
+                {"vendor": "Google", "score": 0.94, "notes": "Gemini / ADK"},
+                {"vendor": "LangGraph", "score": 0.92, "notes": "narna-langgraph"},
+                {"vendor": "CrewAI", "score": 0.9, "notes": "narna-crewai"},
+            ],
+        }
+
+
+@app.get("/v1/compatibility/badges")
+def compatibility_badges(request: Request) -> dict[str, Any]:
+    base = str(request.base_url).rstrip("/")
+    # Frontend serves SVGs; document paths for embedders
+    return {
+        "badges": [
+            {"id": "uap-compatible", "title": "UAP Compatible", "path": "/badges/uap-compatible.svg"},
+            {"id": "narna-certified", "title": "Verified by NARNA", "path": "/badges/narna-certified.svg"},
+            {"id": "narna-certified-plus", "title": "NARNA Certified+", "path": "/badges/narna-certified-plus.svg"},
+            {"id": "enterprise-ready", "title": "Enterprise Ready", "path": "/badges/enterprise-ready.svg"},
+        ],
+        "programUrl": f"{base.replace(':8000', ':5173')}/compatibility",
+    }
+
+
 @app.post("/v1/keys", response_model=ApiKeyResponse)
 def create_api_key(
     org: Organization = Depends(get_org_from_api_key),

@@ -24,8 +24,8 @@ from uap.manifest import (
 )
 from uap.policy import PolicyEngine
 
-from .adapters import ADAPTER_CATALOG
-from .wrap import track, wrap
+from narna.adapters import ADAPTER_CATALOG
+from narna.wrap import track, wrap
 
 __version__ = "0.1.0"
 __all__ = [

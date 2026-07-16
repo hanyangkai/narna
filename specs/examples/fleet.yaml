@@ -1,0 +1,23 @@
+apiVersion: narna.ai/v1alpha1
+kind: Fleet
+metadata:
+  id: fleet_example
+  orgId: org_example
+  name: Example Production Fleet
+spec:
+  members:
+    - entityId: agent_01EXAMPLERESEARCH000000
+      role: operator
+    - entityId: tool_browser_01
+      role: restricted
+  roles:
+    operator:
+      can: [run, publish, certify]
+    auditor:
+      can: [read, export_audit]
+    restricted:
+      can: [run]
+      deny: [wallet.transfer, filesystem.delete]
+  defaults:
+    minCertification: L2
+    requireHumanReview: true

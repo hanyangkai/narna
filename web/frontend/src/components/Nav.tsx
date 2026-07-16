@@ -5,6 +5,8 @@ import { BRAND } from "../brand";
 const links = [
   { to: "/docs/what-is-narna", label: "Docs" },
   { to: "/specification", label: "Spec" },
+  { to: "/compatibility", label: "Compatibility" },
+  { to: "/benchmark", label: "Benchmark" },
   { to: "/sdk", label: "SDK" },
   { to: "/registry", label: "Registry" },
   { to: "/enterprise", label: "Enterprise" },

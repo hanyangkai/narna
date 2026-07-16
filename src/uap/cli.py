@@ -73,6 +73,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_benchmark(args: argparse.Namespace) -> int:
+    if getattr(args, "governance", False):
+        from .governance_benchmark import leaderboard, write_leaderboard
+
+        board = leaderboard(workspace=Path.cwd())
+        write_leaderboard(Path.cwd())
+        _print_json(board)
+        return 0
     store = BenchmarkStore(Path.cwd())
     if args.avg:
         agent = Agent.from_spec(args.spec)
@@ -81,6 +88,32 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
         return 0
     rows = store.list(limit=args.limit)
     _print_json({"records": rows})
+    return 0
+
+
+def cmd_fleet(args: argparse.Namespace) -> int:
+    from .fleet import load_fleet, meets_min_certification, member_role, role_can
+
+    path = Path(args.path)
+    if not path.exists():
+        print(f"fleet not found: {path}")
+        return 1
+    fleet = load_fleet(path)
+    out: dict = {
+        "ok": True,
+        "fleetId": fleet.get("metadata", {}).get("id"),
+        "orgId": fleet.get("metadata", {}).get("orgId"),
+        "members": len(fleet.get("spec", {}).get("members") or []),
+    }
+    if args.entity:
+        role = member_role(fleet, args.entity)
+        out["entityId"] = args.entity
+        out["role"] = role
+        if role and args.action:
+            out["allowed"] = role_can(fleet, role, args.action)
+    if args.level:
+        out["meetsMinCertification"] = meets_min_certification(fleet, args.level)
+    _print_json(out)
     return 0
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -359,11 +392,19 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--full", action="store_true", help="Full spec conformance checks")
     doctor.set_defaults(func=cmd_doctor)
 
-    bench = sub.add_parser("benchmark", help="Trust score benchmarks across runs")
+    bench = sub.add_parser("benchmark", help="Trust / governance benchmarks")
     bench.add_argument("--spec", default="agent.yaml")
-    bench.add_argument("--avg", action="store_true", help="Average score for agent")
+    bench.add_argument("--avg", action="store_true", help="Average trust score for agent")
+    bench.add_argument("--governance", action="store_true", help="Governance leaderboard")
     bench.add_argument("--limit", type=int, default=20)
     bench.set_defaults(func=cmd_benchmark)
+
+    fleet = sub.add_parser("fleet", help="Fleet governance (C4)")
+    fleet.add_argument("--path", default="fleet.yaml")
+    fleet.add_argument("--entity", default=None)
+    fleet.add_argument("--action", default=None)
+    fleet.add_argument("--level", default=None, help="Check minCertification vs level")
+    fleet.set_defaults(func=cmd_fleet)
 
     run = sub.add_parser("run", help="Run agent")
     run.add_argument("--spec", default="agent.yaml")

@@ -111,6 +111,14 @@ narna manifest --compile
 
 OpenTelemetry · MCP · OpenAI · Anthropic · Google · LangGraph · CrewAI · OpenShell · Docker · Kubernetes
 
+- Program: [`/compatibility`](./web/frontend) · Spec: [`specs/compatibility/SPEC.md`](./specs/compatibility/SPEC.md)
+- Adapters: `narna-openai` · `narna-langgraph` · `narna-mcp` · `narna-opentelemetry` · `narna-crewai`
+- Plugins: [`plugins/`](./plugins/)
+- Fleet: `narna fleet --path fleet.yaml`
+- Benchmark: `narna benchmark --governance`
+- Foundation: [`docs/FOUNDATION.md`](./docs/FOUNDATION.md)
+- TypeScript stub: [`sdks/typescript`](./sdks/typescript)
+
 ## Docs
 
 - Strategy: [`docs/STRATEGY.md`](./docs/STRATEGY.md)
