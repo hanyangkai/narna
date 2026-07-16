@@ -122,19 +122,36 @@ class Agent:
             # Spec-first: ensure constitution.yaml exists (Constitution Layer)
             try:
                 from .constitution import default_constitution_for_agent, write_constitution
+                from .hashing import sha256_obj
 
                 const_path = self.workspace / "constitution.yaml"
                 if not const_path.exists():
-                    write_constitution(
-                        const_path,
-                        default_constitution_for_agent(
-                            agent_id=self.spec.agent_id,
-                            name=agent_name,
-                            owner=str(self.spec.raw.get("metadata", {}).get("creator", "local")),
-                            supports=list(self.spec.raw.get("spec", {}).get("capability", ["general"])),
-                        ),
+                    doc = default_constitution_for_agent(
+                        agent_id=self.spec.agent_id,
+                        name=agent_name,
+                        owner=str(self.spec.raw.get("metadata", {}).get("creator", "local")),
+                        supports=list(self.spec.raw.get("spec", {}).get("capability", ["general"])),
                     )
+                    write_constitution(const_path, doc)
+                else:
+                    from .constitution import load_constitution
+
+                    doc = load_constitution(const_path)
                 self._constitution_path = const_path
+                # Link Universal Identity → Constitution
+                try:
+                    store.issue_entity(
+                        kind="Agent",
+                        entity_id=self.spec.agent_id,
+                        owner=str(self.spec.raw.get("metadata", {}).get("creator", "local")),
+                        version=self.spec.version,
+                        content_hash=sha256_obj(doc),
+                        constitution_id=str(doc.get("metadata", {}).get("id")),
+                        origin=doc.get("metadata", {}).get("origin"),
+                        license=doc.get("metadata", {}).get("license"),
+                    )
+                except Exception:
+                    pass
             except Exception:
                 self._constitution_path = None
 
@@ -271,6 +288,12 @@ class Agent:
             trust = json.loads(bundle_path.read_text(encoding="utf-8")).get("trustScore")
         from .passport import build_passport, observed_capabilities
 
+        constitution = None
+        try:
+            constitution = self.constitution()
+        except Exception:
+            constitution = None
+
         return build_passport(
             spec=self.spec,
             identity=IdentityStore(self.workspace).load(),
@@ -285,6 +308,7 @@ class Agent:
                 "lastRunAt": events[-1].get("ts") if events else None,
                 "lastRunId": run_id,
             },
+            constitution=constitution,
         )
 
     def publish(

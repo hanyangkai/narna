@@ -103,6 +103,19 @@
         },
         "trustScoreRef": { "type": "string" }
       }
+    },
+    "constitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["constitutionId", "constitutionHash"],
+      "properties": {
+        "constitutionId": { "type": "string", "minLength": 1 },
+        "constitutionHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "version": { "type": "string" }
+      }
     }
   }
 }

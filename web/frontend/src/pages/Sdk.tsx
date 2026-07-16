@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import { BRAND, PROTOCOL } from "../brand";
 
 const LANGS = [
   {
     name: "Python",
     status: "available",
-    install: "pip install uap",
-    desc: "Reference SDK. Agent, Policy, Evidence, VAP pipeline, CLI.",
+    install: "pip install narna",
+    desc: "Reference client: Constitution, Identity, Passport, VAP, Certification, CLI.",
     links: [
       { to: "/docs/install", label: "Install" },
       { to: "/docs/quickstart", label: "Quickstart" },
@@ -14,29 +15,22 @@ const LANGS = [
   {
     name: "TypeScript",
     status: "planned",
-    install: "npm install @uap/sdk",
-    desc: "Browser and Node.js agents. Planned for v0.2.",
+    install: "npm install @narna/sdk",
+    desc: "Same Constitution contracts for browser and Node.",
     links: [],
   },
   {
     name: "Go",
     status: "planned",
-    install: "go get github.com/uap-standard/uap-go",
-    desc: "High-performance runtime for server-side agents.",
+    install: "go get github.com/hanyangkai/narna-go",
+    desc: "Server-side Constitution + Evidence bindings.",
     links: [],
   },
   {
     name: "Rust",
     status: "planned",
-    install: "cargo add uap-sdk",
-    desc: "Systems-level agent runtime with zero-copy evidence.",
-    links: [],
-  },
-  {
-    name: "Java",
-    status: "planned",
-    install: "implementation 'dev.uap:uap-sdk'",
-    desc: "Enterprise JVM integration.",
+    install: "cargo add narna",
+    desc: "High-assurance evidence hashing and verify.",
     links: [],
   },
 ];
@@ -45,23 +39,27 @@ export default function Sdk() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">SDK</p>
-        <h1>Install. Wrap. Prove.</h1>
+        <p className="pill-label">Reference SDK</p>
+        <h1>Try the Constitution Layer locally</h1>
         <p>
-          NARNA SDK implements the UAP protocol. Cloud is optional. Start with Python — other languages follow the same specification.
+          The SDK is a <strong>virus entry</strong> — not the strategic USP. Specs are the source of truth.
+          Use it to load <code>constitution.yaml</code>, issue identity, prove actions, and certify.
         </p>
       </header>
 
       <section className="section" style={{ paddingTop: 0, borderTop: "none" }}>
-        <div className="install-block" style={{ maxWidth: 400 }}>
+        <div className="install-block" style={{ maxWidth: 440 }}>
           <label>Python (available now)</label>
           <div className="install-cmd">
-            <code>pip install uap</code>
+            <code>{PROTOCOL.install}</code>
             <Link to="/docs/install" className="btn btn-primary" style={{ flexShrink: 0 }}>
               Install
             </Link>
           </div>
         </div>
+        <p style={{ color: "var(--muted)", marginTop: "1rem", maxWidth: 560 }}>
+          {BRAND.contrast}
+        </p>
       </section>
 
       <section className="section">
@@ -73,10 +71,16 @@ export default function Sdk() {
               <div className={`status status-${lang.status}`} style={{ marginBottom: "0.75rem" }}>
                 {lang.status === "available" ? "Available" : "Planned"}
               </div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: "0 0 0.75rem" }}>{lang.desc}</p>
-              <pre className="code-block mono" style={{ margin: "0 0 0.75rem", fontSize: "0.8rem" }}>{lang.install}</pre>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: "0 0 0.75rem" }}>
+                {lang.desc}
+              </p>
+              <pre className="code-block mono" style={{ margin: "0 0 0.75rem", fontSize: "0.8rem" }}>
+                {lang.install}
+              </pre>
               {lang.links.map((l) => (
-                <Link key={l.to} to={l.to} style={{ marginRight: "1rem" }}>{l.label} →</Link>
+                <Link key={l.to} to={l.to} style={{ marginRight: "1rem" }}>
+                  {l.label} →
+                </Link>
               ))}
             </div>
           ))}
@@ -85,26 +89,30 @@ export default function Sdk() {
 
       <section className="section">
         <h2>CLI</h2>
-        <pre className="code-block mono">{`uap init          # create workspace
-uap run           # execute agent
-uap prove         # generate proof bundle
-uap verify        # verify run integrity
-uap audit         # audit trail
-uap passport      # agent passport
-uap doctor        # environment check
-uap push          # export to cloud (optional)`}</pre>
+        <pre className="code-block mono">{`narna constitution   # validate charter
+narna init           # workspace + identity
+narna run --vap      # prove actions
+narna passport       # public trust view
+narna certify        # Verified by NARNA
+narna doctor --full  # conformance`}</pre>
       </section>
 
       <section className="section">
-        <h2>Integration targets</h2>
-        <p className="section-desc">NARNA wraps your orchestrator — it does not replace it.</p>
+        <h2>Compatibility first</h2>
+        <p className="section-desc">
+          NARNA sits above frameworks — wrap, don&apos;t replace.
+        </p>
         <ul className="enterprise-list">
+          <li>OpenTelemetry</li>
+          <li>MCP</li>
+          <li>OpenAI Agents SDK</li>
           <li>LangGraph</li>
           <li>CrewAI</li>
-          <li>OpenAI Agents SDK</li>
-          <li>MCP tools</li>
-          <li>Custom runtimes</li>
+          <li>OpenShell</li>
         </ul>
+        <Link to="/docs/compatibility" className="btn btn-secondary" style={{ marginTop: "1rem" }}>
+          Compatibility guide →
+        </Link>
       </section>
     </div>
   );

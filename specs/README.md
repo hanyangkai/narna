@@ -44,6 +44,7 @@ Model → Prompt → Tool
 | Spec | Path | Normative contents |
 |------|------|--------------------|
 | **Constitution** | [`constitution/SPEC.md`](constitution/SPEC.md) | `constitution.yaml` — Universal Identity, Capability, Permission, Policy, Evidence, Trust |
+| **Universal Identity** | [`identity/SPEC.md`](identity/SPEC.md) | Portable birth record for every AI entity kind |
 | **UAP-Core** | [`uap-core/SPEC.md`](uap-core/SPEC.md) | AgentSpec, Identity, Passport, Capability, Permission, Policy, Event model |
 | **UAP-Execution** | [`uap-execution/SPEC.md`](uap-execution/SPEC.md) | Run lifecycle (reference / adapter surface) |
 | **UAP-Evidence** | [`uap-evidence/SPEC.md`](uap-evidence/SPEC.md) | Evidence object, hashing, provenance |
@@ -59,6 +60,7 @@ Machine-readable contracts live in [`schemas/`](schemas/):
 | Schema | Object |
 |--------|--------|
 | `constitution.schema.json` | NARNA Constitution charter |
+| `universal-identity.schema.json` | Universal AI Identity |
 | `agent-spec.schema.json` | Declarative agent definition |
 | `identity.schema.json` | Cryptographic identity |
 | `passport.schema.json` | Materialized trust view |
@@ -99,13 +101,12 @@ A system is **VAP-conformant** if it additionally implements the VAP Spec.
 
 | Milestone | Focus |
 |-----------|--------|
-| **C0** | Constitution Spec + schema + example (**now**) |
-| **C1** | Universal Identity across entity kinds |
-| **C2** | Passport cites constitution hash |
-| **C3** | Certification levels vs Constitution |
-| **C4** | Governance / fleet |
-| **C5** | Compatibility adapters (MCP, OTel, LangGraph, …) |
-| **UAP/VAP** | Keep Evidence + Trust; demote “own the runtime” |
+| **C0** | Constitution Spec + schema + example | done |
+| **C1** | Universal Identity across entity kinds | **now** |
+| **C2** | Passport cites constitution hash | done (with C1) |
+| **C3** | Certification levels vs Constitution | next |
+| **C4** | Governance / fleet | later |
+| **C5** | Compatibility adapters (MCP, OTel, LangGraph, …) | continuous |
 
 ---
 

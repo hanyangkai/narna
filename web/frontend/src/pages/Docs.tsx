@@ -1,172 +1,232 @@
 import { Link, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
+import { BRAND, PROTOCOL } from "../brand";
 
 type DocPage = {
   title: string;
   lead: string;
-  sections: Array<{ heading?: string; body: string; code?: string }>;
+  sections: Array<{ heading?: string; body?: string; code?: string }>;
 };
 
 const DOCS: Record<string, DocPage> = {
-  install: {
-    title: "Install",
-    lead: "Install the NARNA Python SDK and verify your environment.",
+  "what-is-narna": {
+    title: "What is NARNA?",
+    lead: "The Constitution Layer for Autonomous AI — in plain language.",
     sections: [
       {
-        body: "NARNA requires Python 3.11+. Offline by default — no account, no cloud.",
+        body: `${BRAND.contrast}`,
+      },
+      {
+        heading: "Simple analogy",
+        body: "OpenTelemetry is like a dashcam — it records what happened. NARNA is like a driver’s license + traffic law — it says who the agent is, what it is allowed to do, and why others can trust it.",
+      },
+      {
+        heading: "What NARNA is not",
+        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP or OpenTelemetry. Those systems execute and observe. NARNA governs.",
+      },
+      {
+        heading: "Three names to remember",
+        body: "NARNA = brand (Constitution Layer). UAP = protocol (Understand → Act → Prove). VAP = trust engine (Verify → Audit → Prove). The charter file is constitution.yaml.",
+      },
+    ],
+  },
+  constitution: {
+    title: "Constitution",
+    lead: "constitution.yaml — the charter every autonomous entity should carry.",
+    sections: [
+      {
+        body: "Prompts instruct. Runtimes execute. Constitutions govern. A Constitution declares identity, capability, permissions, policy rules, evidence requirements, and trust thresholds — independent of OpenAI, Claude, or any framework.",
+        code: `apiVersion: narna.ai/v1alpha1
+kind: Constitution
+metadata:
+  entityKind: Agent
+  entityId: agent_…
+spec:
+  identity: { id, owner, version }
+  capability: { supports: [browser, sql] }
+  permission: { grants: […] }
+  policy:
+    rules:
+      - id: no_money_transfer
+        effect: deny
+        action: wallet.transfer
+  evidence: { mustProve: [side_effects] }
+  trust: { algorithm: vap-trust-v0, minScore: 0.7 }`,
+      },
+      {
+        heading: "Load in Python",
+        body: "Validate against the normative schema.",
+        code: `from narna import load_constitution, Agent
+
+c = load_constitution("constitution.yaml")
+agent = Agent("Researcher")
+print(agent.constitution()["metadata"]["id"])`,
+      },
+      {
+        heading: "CLI",
+        code: "narna constitution\nnarna constitution --path constitution.yaml",
+      },
+    ],
+  },
+  install: {
+    title: "Install",
+    lead: "Install the NARNA reference SDK (virus entry — not the USP).",
+    sections: [
+      {
+        body: "Python 3.11+. Offline by default — no account, no cloud. The SDK helps you try Constitution → Identity → Passport locally.",
         code: "pip install narna\n\n# Or from source\ngit clone https://github.com/hanyangkai/narna\ncd narna\npip install -e .",
       },
       {
         heading: "30-second hello",
-        body: "Zero config. Create an agent and run.",
-        code: "from narna import Agent\n\nagent = Agent()\nagent.run()",
+        body: "Creates Agent + constitution.yaml automatically.",
+        code: "from narna import Agent\n\nagent = Agent()\nagent.run()\nprint(agent.constitution()['kind'])",
       },
       {
         heading: "Verify installation",
-        body: "Run the doctor command to check your environment.",
-        code: "narna doctor\nnarna doctor --full",
+        code: "narna doctor\nnarna constitution",
       },
     ],
   },
   quickstart: {
     title: "Quickstart",
-    lead: "Create your first verifiable agent in under a minute.",
+    lead: "Constitution → VAP → Passport → Certify in a few minutes.",
     sections: [
       {
-        heading: "1. Install & run",
-        body: "No YAML required for the hello path.",
-        code: "pip install narna\n\nfrom narna import Agent\nagent = Agent(\"Researcher\")\nagent.run(\"hello\")",
+        heading: "1. Create an agent (writes constitution.yaml)",
+        code: 'from narna import Agent\nagent = Agent("Researcher")\nprint(agent.constitution()["metadata"]["entityId"])',
       },
       {
-        heading: "2. Enable VAP (optional)",
-        body: "Every action with evidence is verified immediately. Run end produces Audit + Trust + ProofBundle.",
-        code: 'agent = Agent("Researcher")\nagent.enable_vap()\nresult = agent.run("btc price")\nprint(result.trust_score)\nprint(result.audit_id)\nagent.vap_report()',
+        heading: "2. Enable trust (VAP)",
+        body: "Verify → Audit → Prove on actions and at run end.",
+        code: 'agent.enable_vap()\nresult = agent.run("btc price")\nprint(result.trust_score)',
       },
       {
-        heading: "3. Optional: AgentSpec YAML",
-        body: "For full policy and tools, use a declarative AgentSpec.",
-        code: `agent:
-  id: trading-agent
-  name: Trading Agent
-  version: "0.1.0"
-  capability: [trade, search]
-  permissions:
-    - wallet.transfer
-    - browser.open
-  tools: [coinbase.spot, binance.ticker]
-  policy: policies/trading-default.yaml`,
+        heading: "3. Passport cites Constitution",
+        code: 'passport = agent.passport(refresh=True)\nprint(passport["constitution"])',
       },
       {
-        heading: "4. CLI",
-        body: "Same workflow from the terminal.",
-        code: "narna init\nnarna run --input \"btc price\"\nnarna prove --run <runId>\nnarna verify --run <runId>",
+        heading: "4. Certify",
+        code: 'cert = agent.certify(remote=False)\nprint(cert["badge"])  # Verified by NARNA',
+      },
+      {
+        heading: "CLI",
+        code: "narna init\nnarna run --vap --input \"btc price\"\nnarna constitution\nnarna certify --vap --local",
       },
     ],
   },
-  runtime: {
-    title: "Runtime",
-    lead: "The UAP runtime manages execution lifecycle, permission gating, and event logging.",
+  identity: {
+    title: "Universal Identity",
+    lead: "Every AI entity gets a portable birth record — not just agents.",
     sections: [
       {
-        body: "The runtime enforces the UAP-Execution spec. Every tool call passes through the policy engine before execution. Denied actions are logged and never executed.",
+        body: "Agent, Tool, MCP Server, Workflow, Prompt, Dataset, Plugin, Memory, ModelBinding — same identity shape. Change the model vendor tomorrow; keep the same entityId if the charter is unchanged (Portable Trust).",
+        code: `from narna import IdentityStore
+from uap.hashing import sha256_obj
+
+store = IdentityStore(workspace=".")
+identity = store.issue_entity(
+    kind="Tool",
+    entity_id="tool_browser_01",
+    owner="did:narna:org:acme",
+    version="1.0.0",
+    content_hash=sha256_obj({"name": "browser"}),
+)
+print(identity["identityId"], identity["kind"])`,
       },
       {
-        heading: "Run states",
-        body: "Runs follow a deterministic state machine: CREATED → STARTING → RUNNING → COMPLETING → COMPLETED (or FAILED/ABORTED).",
-        code: "from uap import Agent\n\nagent = Agent.from_spec('agent.yaml')\nresult = agent.run(input='check btc price')\nagent.prove(result.run_id)",
+        heading: "Agent path (automatic)",
+        body: "Agent() issues Agent identity and links it to constitution.yaml.",
+        code: "agent = Agent('Researcher')\n# → .uap/identity/entities/<agentId>.json",
       },
     ],
   },
   policy: {
     title: "Policy",
-    lead: "Android-style permissions with parameter-aware constraints.",
+    lead: "Android-style permissions + Constitution rules.",
     sections: [
       {
-        body: "Policy packs define allow/deny rules. The engine evaluates every action against declared permissions and constraints before execution.",
-        code: `permissions:
-  - id: wallet.transfer
-    constraints:
-      max_amount_usd: 1000
-      allowed_recipients: ["0x..."]`,
-      },
-      {
-        heading: "Deny by default",
-        body: "If a permission is not explicitly granted in AgentSpec and allowed by policy, the action is denied and recorded in the audit trail.",
-      },
-    ],
-  },
-  identity: {
-    title: "Identity",
-    lead: "Every agent receives an immutable birth record signed by its creator.",
-    sections: [
-      {
-        body: "Identity is cryptographic (Ed25519). Each agent has a unique AgentID, creator, version, and signature — similar to a git commit.",
-        code: "from uap import IdentityStore\n\nstore = IdentityStore(workspace='.uap')\nidentity = store.issue(agent_spec)\nprint(identity.agent_id, identity.signature)",
+        body: "Policy lives in constitution.yaml (and optional AgentSpec). Deny by default. Effects: allow, deny, ask, require.",
+        code: `policy:
+  rules:
+    - id: no_money_transfer
+      effect: deny
+      action: wallet.transfer
+    - id: human_for_irreversible
+      effect: ask
+      when: irreversible == true`,
       },
     ],
   },
   evidence: {
     title: "Evidence",
-    lead: "Verifiable data attached to every action.",
+    lead: "Proof packages — not mere traces.",
     sections: [
       {
-        body: "Evidence objects include content hash, schema validation, provenance, and freshness checks. Missing evidence reduces trust score.",
+        body: "OpenTelemetry records spans. NARNA Evidence is hashed, provenance-aware material that VAP can verify. Missing evidence lowers trust.",
         code: `evidence:
   source: coinbase.api
   content_hash: sha256:...
-  timestamp: "2026-01-01T00:00:00Z"
-  schema: evidence.api-response.v1`,
+  timestamp: "2026-01-01T00:00:00Z"`,
       },
     ],
   },
   passport: {
     title: "Passport",
-    lead: "A materialized view of agent identity, capability, history, and trust.",
+    lead: "Public trust view — like a verified badge for an AI entity.",
     sections: [
       {
-        body: "The passport aggregates run history, observed capabilities, and latest trust scores. It is the public-facing trust artifact for an agent.",
-        code: "passport = agent.passport()\nprint(passport.trust_score, passport.history)",
+        body: "Passport aggregates identity, capability, history, trust, and (C1) a citation to the Constitution id + hash.",
+        code: 'passport = agent.passport(refresh=True)\nprint(passport["trust"]["score"])\nprint(passport["constitution"])',
+      },
+      {
+        heading: "On the web",
+        body: "Browse published agents at /registry and open /passport/:agentId.",
+      },
+    ],
+  },
+  compatibility: {
+    title: "Compatibility",
+    lead: "Sit above frameworks — never replace them.",
+    sections: [
+      {
+        body: "NARNA integrates with OpenTelemetry, MCP, OpenAI Agents, LangGraph, CrewAI, OpenShell, Docker, and Kubernetes. Use narna.wrap() as a thin adapter while deeper adapters ship.",
+        code: `from narna import wrap\nagent = wrap(my_langgraph_app, name="Researcher")\nagent.enable_vap()\nagent.run("summarize")`,
       },
     ],
   },
   examples: {
     title: "Examples",
-    lead: "Reference integrations and sample agents.",
+    lead: "Specs and sample agents in the repository.",
     sections: [
       {
+        heading: "Constitution example",
+        body: "See specs/examples/constitution.yaml",
+        code: "narna constitution --path specs/examples/constitution.yaml",
+      },
+      {
         heading: "Trading agent",
-        body: "A policy-gated trading agent with multi-source price evidence.",
-        code: "uap run --spec specs/examples/trading-agent.yaml --input 'btc price'",
+        code: "narna run --spec specs/examples/trading-agent.yaml --input 'btc price'",
       },
       {
-        heading: "LangGraph / CrewAI",
-        body: "Wrap any orchestrator with UAP SDK. The runtime tracks tool calls and generates evidence regardless of the underlying framework.",
-      },
-      {
-        heading: "Self-host cloud",
-        body: "Run the full stack locally with Docker.",
+        heading: "Self-host cloud (optional)",
         code: "docker compose up --build",
       },
     ],
   },
   "api-reference": {
     title: "API Reference",
-    lead: "Cloud export protocol and REST API for hosted telemetry.",
+    lead: "Optional cloud: registry, passport, certification, ingest.",
     sections: [
       {
+        heading: "Registry & Passport",
+        body: "POST /v1/registry/publish · GET /v1/passport/{agentId} · POST /v1/certification/submit",
+      },
+      {
         heading: "Ingest",
-        body: "POST /v1/ingest — push run events and proof bundles to UAP Cloud.",
-        code: `curl -X POST https://api.uap.dev/v1/ingest \\
+        body: "POST /v1/ingest — push run events and proof bundles (optional telemetry).",
+        code: `curl -X POST http://localhost:8000/v1/ingest \\
   -H "Authorization: Bearer uap_live_..." \\
   -d '{"runId":"...","events":[...],"proofBundle":{...}}'`,
-      },
-      {
-        heading: "Runs",
-        body: "GET /v1/runs — list runs. GET /v1/runs/{id} — run detail with events.",
-      },
-      {
-        heading: "Billing",
-        body: "GET /v1/billing/status — plan and usage. POST /v1/billing/crypto/checkout-session — multi-chain stablecoin payment.",
       },
     ],
   },
@@ -174,20 +234,22 @@ const DOCS: Record<string, DocPage> = {
 
 const SIDEBAR = [
   {
-    group: "Getting Started",
+    group: "Start here",
     items: [
+      { slug: "what-is-narna", label: "What is NARNA?" },
+      { slug: "constitution", label: "Constitution" },
       { slug: "install", label: "Install" },
       { slug: "quickstart", label: "Quickstart" },
     ],
   },
   {
-    group: "SDK",
+    group: "Constitution Layer",
     items: [
-      { slug: "runtime", label: "Runtime" },
+      { slug: "identity", label: "Universal Identity" },
       { slug: "policy", label: "Policy" },
-      { slug: "identity", label: "Identity" },
       { slug: "evidence", label: "Evidence" },
       { slug: "passport", label: "Passport" },
+      { slug: "compatibility", label: "Compatibility" },
     ],
   },
   {
@@ -223,25 +285,20 @@ function DocsSidebar({ active, query }: { active: string; query: string }) {
           </div>
         );
       })}
-      <div style={{ marginTop: "1.5rem" }}>
-        <Link to="/specification">→ Specification</Link>
-      </div>
     </aside>
   );
 }
 
 export default function Docs() {
   const { slug } = useParams();
+  const active = slug || "what-is-narna";
   const [query, setQuery] = useState("");
-  const page = DOCS[slug ?? "quickstart"] ?? DOCS.quickstart;
-  const active = slug ?? "quickstart";
+  const page = DOCS[active] || DOCS["what-is-narna"];
 
-  const contentHits = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    const hay = [page.title, page.lead, ...page.sections.flatMap((s) => [s.heading ?? "", s.body, s.code ?? ""])].join(" ").toLowerCase();
-    return hay.includes(q);
-  }, [page, query]);
+  const filteredHint = useMemo(() => {
+    if (!query.trim()) return null;
+    return `Filtering sidebar for “${query.trim()}”`;
+  }, [query]);
 
   return (
     <div className="layout-wide docs-layout">
@@ -249,29 +306,33 @@ export default function Docs() {
       <article className="docs-content">
         <div className="docs-search">
           <input
-            type="search"
-            placeholder="Search docs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search documentation"
+            placeholder="Search docs…"
+            aria-label="Search docs"
           />
+          {filteredHint && (
+            <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>{filteredHint}</p>
+          )}
         </div>
-        {!contentHits && query && (
-          <p style={{ color: "var(--muted)" }}>No matches on this page for &quot;{query}&quot;.</p>
-        )}
-        {(contentHits || !query) && (
-          <>
-            <h1>{page.title}</h1>
-            <p className="lead">{page.lead}</p>
-            {page.sections.map((s, i) => (
-              <div key={i}>
-                {s.heading && <h2>{s.heading}</h2>}
-                <p>{s.body}</p>
-                {s.code && <pre className="code-block mono">{s.code}</pre>}
-              </div>
-            ))}
-          </>
-        )}
+        <header className="page-header" style={{ border: "none", paddingTop: 0 }}>
+          <p className="pill-label">{BRAND.name} Docs · {PROTOCOL.name}</p>
+          <h1>{page.title}</h1>
+          <p>{page.lead}</p>
+        </header>
+        {page.sections.map((s, i) => (
+          <section key={i} className="docs-section">
+            {s.heading && <h2>{s.heading}</h2>}
+            {s.body && <p>{s.body}</p>}
+            {s.code && <pre className="code-block mono">{s.code}</pre>}
+          </section>
+        ))}
+        <p style={{ marginTop: "2rem", color: "var(--muted)", fontSize: "0.9rem" }}>
+          Strategy lock: <Link to="/specification">Specification</Link> ·{" "}
+          <a href={`${BRAND.github}/blob/main/docs/STRATEGY.md`} target="_blank" rel="noreferrer">
+            STRATEGY.md
+          </a>
+        </p>
       </article>
     </div>
   );

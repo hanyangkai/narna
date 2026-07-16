@@ -18,8 +18,8 @@ export default function Enterprise() {
         <p className="pill-label">Enterprise</p>
         <h1>Self-host first. Cloud when you need it.</h1>
         <p>
-          Banks, insurance, and government require on-premise deployment, audit trails, and compliance.
-          NARNA is designed for that from day one — on the open UAP protocol.
+          Banks, insurance, and government need portable identity, policy, and proof — not another
+          black-box agent runtime. NARNA is the Constitution Layer your security team can audit.
         </p>
       </header>
 
@@ -28,13 +28,14 @@ export default function Enterprise() {
           <div>
             <h2>Why enterprises choose NARNA</h2>
             <p>
-              Not a black-box platform. An open specification your security team can audit,
-              your developers can implement, and your compliance team can certify.
+              Not a closed platform. An open Constitution Layer: who each AI entity is, what it may do,
+              and why auditors can trust it — across OpenAI, Claude, Gemini, and any orchestrator.
             </p>
             <ul style={{ color: "var(--muted)", paddingLeft: "1.25rem" }}>
-              <li>Full audit trail — every action, every decision</li>
-              <li>Policy engine — deny-by-default permissions</li>
-              <li>Evidence chain — cryptographic proof of execution</li>
+              <li>Universal Identity — agents, tools, MCP servers, workflows</li>
+              <li>Constitution / policy — deny-by-default permissions</li>
+              <li>Evidence + VAP — cryptographic proof, not just logs</li>
+              <li>Certification — Verified by NARNA · fleet governance</li>
               <li>Self-host — <code>docker compose up</code> on your infrastructure</li>
             </ul>
           </div>

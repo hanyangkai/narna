@@ -132,10 +132,10 @@ Existing SDK (`Agent()`, VAP, Registry, Certification) remains a **reference imp
 ## Spec → product order (locked)
 
 ```text
-1. Constitution Spec + schemas     ← now
-2. Universal Identity Spec         ← next
-3. Passport / Certification Spec   ← align existing
-4. Capability + Policy Manifest    ← align AgentSpec
+1. Constitution Spec + schemas     ← done
+2. Universal Identity Spec         ← done (C1)
+3. Passport / Certification Spec   ← passport cites constitution (C1)
+4. Capability + Policy Manifest    ← in Constitution
 5. Evidence + Trust (VAP)          ← keep
 6. Governance (fleet) Spec         ← later
 7. Compatibility adapters          ← continuous

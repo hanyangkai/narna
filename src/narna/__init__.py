@@ -37,7 +37,7 @@ from __future__ import annotations
 from uap.agent import Agent
 from uap.constitution import load_constitution, write_constitution
 from uap.evidence import EvidenceStore
-from uap.identity import IdentityStore
+from uap.identity import ENTITY_KINDS, IdentityStore
 from uap.policy import PolicyEngine
 
 from .wrap import wrap
@@ -48,8 +48,9 @@ __all__ = [
     "wrap",
     "load_constitution",
     "write_constitution",
-    "PolicyEngine",
     "IdentityStore",
+    "ENTITY_KINDS",
+    "PolicyEngine",
     "EvidenceStore",
     "__version__",
 ]

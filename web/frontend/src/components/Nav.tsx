@@ -3,9 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import { BRAND } from "../brand";
 
 const links = [
-  { to: "/docs", label: "Docs" },
+  { to: "/docs/what-is-narna", label: "Docs" },
+  { to: "/specification", label: "Spec" },
   { to: "/sdk", label: "SDK" },
-  { to: "/specification", label: "Specification" },
   { to: "/registry", label: "Registry" },
   { to: "/enterprise", label: "Enterprise" },
   { to: "/pricing", label: "Pricing" },
@@ -39,7 +39,13 @@ export default function Nav() {
               <Link
                 key={l.to}
                 to={l.to}
-                className={pathname === l.to || pathname.startsWith(l.to + "/") ? "active" : ""}
+                className={
+                  pathname === l.to ||
+                  pathname.startsWith(l.to + "/") ||
+                  (l.to.startsWith("/docs") && pathname.startsWith("/docs"))
+                    ? "active"
+                    : ""
+                }
                 onClick={() => setOpen(false)}
               >
                 {l.label}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/universal-identity.schema.json",
+  "title": "NARNA Universal AI Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "identityId",
+    "entityId",
+    "kind",
+    "owner",
+    "version",
+    "createdAt",
+    "contentHash",
+    "signature"
+  ],
+  "properties": {
+    "identityId": { "type": "string", "minLength": 1 },
+    "entityId": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Agent",
+        "Tool",
+        "McpServer",
+        "Workflow",
+        "Prompt",
+        "Dataset",
+        "Plugin",
+        "Memory",
+        "ModelBinding"
+      ]
+    },
+    "owner": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "origin": { "type": "string" },
+    "license": { "type": "string" },
+    "constitutionId": { "type": "string" },
+    "supersedes": { "type": "string" },
+    "labels": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Dual-write when kind=Agent (legacy UAP field)."
+    },
+    "creator": {
+      "type": "string",
+      "description": "Alias of owner for legacy Agent identity readers."
+    },
+    "specHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Alias of contentHash for legacy Agent identity readers."
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "keyId", "value"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["ed25519", "ecdsa-p256-sha256"]
+        },
+        "keyId": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

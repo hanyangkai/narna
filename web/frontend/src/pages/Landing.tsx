@@ -82,7 +82,7 @@ export default function Landing() {
                   color: "#fff",
                 }}
               >
-                Read UAP Spec
+                Read Spec
               </Link>
             </div>
           </div>
@@ -217,11 +217,23 @@ export default function Landing() {
               <div key={name} className="card feature-card">
                 <h3>{name}</h3>
                 <p>
-                  {name.startsWith("UAP")
-                    ? "Open specification"
-                    : name.startsWith("VAP")
-                      ? "Trust engine"
-                      : "NARNA product"}
+                  {name.includes("Constitution")
+                    ? "Who / may / must — the charter"
+                    : name.includes("Identity")
+                      ? "Universal AI Identity"
+                      : name.includes("Passport")
+                        ? "Public trust view"
+                        : name.includes("Certification")
+                          ? "Verified by NARNA"
+                          : name.startsWith("UAP")
+                            ? "Open protocol"
+                            : name.includes("VAP") || name.includes("Evidence")
+                              ? "Trust engine"
+                              : name.includes("SDK")
+                                ? "Reference client (not the USP)"
+                                : name.includes("Cloud")
+                                  ? "Optional registry & governance"
+                                  : "NARNA product"}
                 </p>
               </div>
             ))}
@@ -231,12 +243,12 @@ export default function Landing() {
         <section className="section two-col">
           <div>
             <p className="section-label">Open Specification</p>
-            <h2>UAP — anyone can implement</h2>
+            <h2>Constitution first. Anyone can implement.</h2>
             <p className="section-desc">
               Normative YAML specs and JSON Schemas. MIT licensed. No vendor lock-in.
             </p>
             <Link to="/specification" className="btn btn-primary">
-              Read UAP Spec v0.1
+              Read the Spec
             </Link>
           </div>
           <div className="card">
@@ -245,6 +257,10 @@ export default function Landing() {
                 <tr>
                   <td><strong>Brand</strong></td>
                   <td>{BRAND.name}</td>
+                </tr>
+                <tr>
+                  <td><strong>Layer</strong></td>
+                  <td>Constitution</td>
                 </tr>
                 <tr>
                   <td><strong>Protocol</strong></td>
@@ -265,41 +281,41 @@ export default function Landing() {
 
         <section className="section">
           <p className="section-label">Moat</p>
-          <h2>Open standard. Optional cloud.</h2>
+          <h2>Open standard. Portable trust.</h2>
           <div className="moat-flow">
-            <span className="moat-step">UAP Spec</span>
+            <span className="moat-step">Constitution</span>
             <span className="pipeline-arrow">→</span>
-            <span className="moat-step">NARNA SDK</span>
+            <span className="moat-step">Identity</span>
             <span className="pipeline-arrow">→</span>
-            <span className="moat-step">NARNA Runtime</span>
+            <span className="moat-step">Passport</span>
             <span className="pipeline-arrow">→</span>
-            <span className="moat-step">NARNA Cloud</span>
+            <span className="moat-step">Certification</span>
           </div>
           <p className="section-desc" style={{ textAlign: "center", margin: "0 auto" }}>
-            Not a closed platform. Self-host with <code>docker compose up</code> or use hosted telemetry when you need it.
+            Switch OpenAI → Claude → Gemini — identity and trust stay. Frameworks execute; NARNA governs.
           </p>
         </section>
 
         <section className="section">
           <p className="section-label">Pricing</p>
-          <h2>SDK is free. Cloud is optional.</h2>
+          <h2>Spec &amp; SDK are free. Cloud is optional.</h2>
           <div className="pricing-grid">
             <div className="card">
               <h3>Developer</h3>
               <div className="price">Free</div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>OSS SDK + self-host</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Constitution + OSS SDK + self-host</p>
             </div>
             <div className="card featured">
               <h3>Cloud</h3>
               <div className="price">
                 $19<span style={{ fontSize: "1rem" }}>/mo</span>
               </div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Hosted audit &amp; history</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Registry, passport, certification</p>
             </div>
             <div className="card">
               <h3>Enterprise</h3>
               <div className="price" style={{ fontSize: "1.5rem" }}>Contact</div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>On-premise + compliance</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Fleet governance + compliance</p>
             </div>
           </div>
           <Link to="/pricing" className="btn btn-secondary">
@@ -309,16 +325,16 @@ export default function Landing() {
 
         <section className="section">
           <p className="section-label">Vision</p>
-          <h2>Default runtime for trusted agents</h2>
+          <h2>The Constitution Layer for Autonomous AI</h2>
           <p className="section-desc">
-            Just as Git became the standard for version control and Kubernetes for containers,
-            {BRAND.name} aims to standardize how agents understand, act, verify, and collaborate.
+            Like SSL for websites and OCI for containers — NARNA aims to be the portable trust layer
+            every autonomous system can carry across vendors.
           </p>
           <div className="community-grid" style={{ marginTop: "1rem" }}>
             <a href={BRAND.github} target="_blank" rel="noreferrer">GitHub</a>
             <a href={BRAND.discord} target="_blank" rel="noreferrer">Discord</a>
-            <Link to="/docs/examples">Examples</Link>
-            <Link to="/docs">Documentation</Link>
+            <Link to="/docs/what-is-narna">What is NARNA?</Link>
+            <Link to="/docs/constitution">Constitution</Link>
           </div>
         </section>
       </div>

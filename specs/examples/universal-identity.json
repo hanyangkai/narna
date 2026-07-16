@@ -1,0 +1,20 @@
+{
+  "identityId": "idnt_01EXAMPLEIDENTITY000000",
+  "entityId": "agent_01EXAMPLERESEARCH000000",
+  "kind": "Agent",
+  "owner": "did:narna:org:example",
+  "version": "0.1.0",
+  "createdAt": "2026-07-16T00:00:00Z",
+  "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "origin": "https://github.com/hanyangkai/narna",
+  "license": "MIT",
+  "constitutionId": "const_01EXAMPLECONSTITUTION000",
+  "agentId": "agent_01EXAMPLERESEARCH000000",
+  "creator": "did:narna:org:example",
+  "specHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "signature": {
+    "alg": "ed25519",
+    "keyId": "creator:did:narna:org:example",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  }
+}

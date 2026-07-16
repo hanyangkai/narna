@@ -21,6 +21,13 @@ type PassportView = {
   passport: Record<string, unknown> | null;
 };
 
+function constitutionFromPassport(passport: Record<string, unknown> | null) {
+  if (!passport) return null;
+  const c = passport.constitution;
+  if (!c || typeof c !== "object") return null;
+  return c as { constitutionId?: string; constitutionHash?: string; version?: string };
+}
+
 export default function PassportPage() {
   const { agentId } = useParams();
   const [data, setData] = useState<PassportView | null>(null);
@@ -49,7 +56,7 @@ export default function PassportPage() {
       <header className="page-header">
         <p className="pill-label">Passport</p>
         <h1>{data?.name || agentId}</h1>
-        <p>Public agent identity, trust, and reputation.</p>
+        <p>Public identity, constitution citation, and trust — portable across vendors.</p>
       </header>
 
       {error && <div className="error">{error}</div>}
@@ -72,6 +79,19 @@ export default function PassportPage() {
             <p>
               <strong>Capabilities:</strong> {data.capabilities.join(", ") || "—"}
             </p>
+            {(() => {
+              const c = constitutionFromPassport(data.passport);
+              if (!c) return null;
+              return (
+                <p>
+                  <strong>Constitution:</strong>{" "}
+                  <span className="mono">{c.constitutionId || "—"}</span>
+                  {c.version && (
+                    <span style={{ color: "var(--muted)" }}> · v{c.version}</span>
+                  )}
+                </p>
+              );
+            })()}
             <p>
               <strong>Trust score:</strong>{" "}
               {data.trustScore != null ? data.trustScore.toFixed(3) : "—"}

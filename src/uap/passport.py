@@ -53,6 +53,7 @@ def build_passport(
     derived_from: str | None = None,
     observed: list[str] | None = None,
     ttl_hours: int = 24,
+    constitution: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     issued = now.isoformat().replace("+00:00", "Z")
@@ -106,8 +107,28 @@ def build_passport(
     }
     if derived_from:
         passport["derivedFrom"] = derived_from
+
+    # C1: cite Constitution when available
+    const_ref = _constitution_ref(constitution)
+    if const_ref:
+        passport["constitution"] = const_ref
+
     validator_for("passport.schema.json").validate(passport)
     return passport
+
+
+def _constitution_ref(constitution: dict[str, Any] | None) -> dict[str, str] | None:
+    if not constitution:
+        return None
+    meta = constitution.get("metadata") or {}
+    cid = meta.get("id")
+    if not cid:
+        return None
+    return {
+        "constitutionId": str(cid),
+        "constitutionHash": sha256_obj(constitution),
+        "version": str(meta.get("version", "0.1.0")),
+    }
 
 
 def refresh_passport(
@@ -153,6 +174,33 @@ def refresh_passport(
             events=all_events[-20:],
         )
 
+    constitution = None
+    const_path = workspace / "constitution.yaml"
+    if const_path.exists():
+        try:
+            from .constitution import load_constitution
+
+            constitution = load_constitution(const_path)
+            # Link universal identity → constitution when possible
+            store = IdentityStore(workspace)
+            uni = store.load_entity(spec.agent_id)
+            cid = constitution.get("metadata", {}).get("id")
+            if uni and cid and not uni.get("constitutionId"):
+                store.issue_entity(
+                    kind="Agent",
+                    entity_id=spec.agent_id,
+                    owner=str(uni.get("owner") or uni.get("creator") or "local"),
+                    version=str(uni.get("version") or spec.version),
+                    content_hash=str(uni.get("contentHash") or uni.get("specHash") or spec_hash(spec)),
+                    created_at=str(uni.get("createdAt") or _now_rfc3339()),
+                    origin=uni.get("origin"),
+                    license=uni.get("license"),
+                    constitution_id=str(cid),
+                )
+                identity = store.load() or identity
+        except Exception:
+            constitution = None
+
     return build_passport(
         spec=spec,
         identity=identity,
@@ -160,4 +208,5 @@ def refresh_passport(
         history=aggregate_history(run_summaries),
         derived_from=tip,
         observed=observed_capabilities(all_events),
+        constitution=constitution,
     )

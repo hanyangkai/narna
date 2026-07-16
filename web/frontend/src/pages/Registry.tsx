@@ -62,7 +62,7 @@ export default function Registry() {
         <p className="pill-label">Registry</p>
         <h1>Agent Registry</h1>
         <p>
-          GitHub for Agents — discover, star, and verify published agents.
+          Discover agents with portable identity, constitution, and trust.
           Publish with <code>narna publish</code>, certify with <code>narna certify</code>.
         </p>
       </header>
