@@ -906,7 +906,8 @@ def compatibility_badges(request: Request) -> dict[str, Any]:
     # Frontend serves SVGs; document paths for embedders
     return {
         "badges": [
-            {"id": "uap-compatible", "title": "UAP Compatible", "path": "/badges/uap-compatible.svg"},
+            {"id": "ugs-compatible", "title": "UGS Compatible", "path": "/badges/ugs-compatible.svg"},
+            {"id": "uap-compatible", "title": "UGS Compatible", "path": "/badges/uap-compatible.svg"},
             {
                 "id": "constitution-compatible",
                 "title": "Constitution Compatible",

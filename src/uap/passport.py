@@ -54,6 +54,7 @@ def build_passport(
     observed: list[str] | None = None,
     ttl_hours: int = 24,
     constitution: dict[str, Any] | None = None,
+    governance_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     issued = now.isoformat().replace("+00:00", "Z")
@@ -113,8 +114,37 @@ def build_passport(
     if const_ref:
         passport["constitution"] = const_ref
 
+    gov_ref = _governance_ref(governance_binding)
+    if gov_ref:
+        passport["governance"] = gov_ref
+
     validator_for("passport.schema.json").validate(passport)
     return passport
+
+
+def _governance_ref(binding: dict[str, Any] | None) -> dict[str, str] | None:
+    if not binding:
+        return None
+    pkg_hash = binding.get("packageHash")
+    if not pkg_hash:
+        return None
+    out: dict[str, str] = {
+        "packageId": str(binding.get("packageId") or ""),
+        "provider": str(binding.get("provider") or "local"),
+        "version": str(binding.get("version") or "0.0.0"),
+        "packageHash": str(pkg_hash),
+    }
+    return out
+
+
+def load_active_governance_binding(workspace: Path) -> dict[str, Any] | None:
+    path = workspace / ".uap" / "runtime" / "active-governance.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
 
 
 def _constitution_ref(constitution: dict[str, Any] | None) -> dict[str, str] | None:
@@ -209,4 +239,5 @@ def refresh_passport(
         derived_from=tip,
         observed=observed_capabilities(all_events),
         constitution=constitution,
+        governance_binding=load_active_governance_binding(workspace),
     )

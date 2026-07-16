@@ -191,23 +191,47 @@ def compile_manifest_to_constitution(manifest: dict[str, Any]) -> dict[str, Any]
     }
 
 
+def bind_governance_from_manifest(manifest: dict[str, Any], workspace: Path) -> dict[str, Any] | None:
+    """Load Governance Package from manifest.constitution binding (provider/path/ref)."""
+    from .governance_runtime import ConstitutionRuntime
+
+    binding = manifest.get("constitution")
+    if not isinstance(binding, dict):
+        return None
+    rt = ConstitutionRuntime(workspace)
+    if binding.get("path"):
+        return rt.load(path=binding["path"])
+    if binding.get("ref"):
+        return rt.load(ref=str(binding["ref"]))
+    provider = binding.get("provider")
+    if provider:
+        return rt.load(provider=str(provider), version=binding.get("version"))
+    return None
+
+
 def load_or_compile_constitution(
     path: str | Path | None = None,
     *,
     workspace: Path | None = None,
     write_constitution_out: bool = True,
+    bind_governance: bool = True,
 ) -> dict[str, Any]:
     """Discover narna.yaml, compile to Constitution, optionally write constitution.yaml."""
     p = Path(path) if path else discover_manifest(workspace)
     if p is None:
         raise FileNotFoundError("narna.yaml / constitution.yaml not found")
+    root = Path(workspace) if workspace else p.parent
     doc = load_manifest(p)
     if doc.get("kind") == "Constitution":
         return doc
+    if bind_governance and doc.get("kind") == "Manifest":
+        try:
+            bind_governance_from_manifest(doc, root)
+        except Exception:
+            pass
     constitution = compile_manifest_to_constitution(doc)
     validator_for("constitution.schema.json").validate(constitution)
     if write_constitution_out:
-        root = Path(workspace) if workspace else p.parent
         write_constitution(root / "constitution.yaml", constitution)
     return constitution
 

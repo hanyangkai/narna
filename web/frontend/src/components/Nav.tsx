@@ -6,11 +6,6 @@ const links = [
   { to: "/docs/what-is-narna", label: "Docs" },
   { to: "/specification", label: "Spec" },
   { to: "/compatibility", label: "Compatibility" },
-  { to: "/benchmark", label: "Benchmark" },
-  { to: "/sdk", label: "SDK" },
-  { to: "/registry", label: "Registry" },
-  { to: "/plugins", label: "Plugins" },
-  { to: "/packages", label: "Packages" },
   { to: "/enterprise", label: "Enterprise" },
   { to: "/pricing", label: "Pricing" },
 ];
@@ -38,27 +33,34 @@ export default function Nav() {
         </button>
 
         {!isConsole && (
-          <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className={
-                  pathname === l.to ||
-                  pathname.startsWith(l.to + "/") ||
-                  (l.to.startsWith("/docs") && pathname.startsWith("/docs"))
-                    ? "active"
-                    : ""
-                }
-                onClick={() => setOpen(false)}
-              >
-                {l.label}
+          <>
+            <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
+              {links.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className={
+                    pathname === l.to ||
+                    pathname.startsWith(l.to + "/") ||
+                    (l.to.startsWith("/docs") && pathname.startsWith("/docs"))
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+            <div className="nav-actions">
+              <Link to="/docs/install" className="btn btn-primary" onClick={() => setOpen(false)}>
+                Get Started
               </Link>
-            ))}
-            <a href={BRAND.github} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
-              GitHub
-            </a>
-          </div>
+              <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
+                GitHub
+              </a>
+            </div>
+          </>
         )}
         {isConsole && (
           <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
@@ -67,14 +69,6 @@ export default function Nav() {
             <Link to="/billing" onClick={() => setOpen(false)}>Billing</Link>
           </div>
         )}
-        <div className="nav-actions">
-          <Link to="/docs/install" className="btn btn-primary" onClick={() => setOpen(false)}>
-            Get Started
-          </Link>
-          <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary nav-github-btn">
-            GitHub
-          </a>
-        </div>
       </div>
     </header>
   );

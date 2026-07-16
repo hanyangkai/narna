@@ -69,9 +69,10 @@ code,
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 0;
-  gap: 1rem;
+  justify-content: flex-start;
+  padding: 0.65rem 0;
+  gap: 1.25rem;
+  flex-wrap: nowrap;
 }
 
 .nav-brand {
@@ -91,7 +92,7 @@ code,
 }
 
 .nav-logo {
-  height: 36px;
+  height: 48px;
   width: auto;
   display: block;
 }
@@ -99,14 +100,16 @@ code,
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
+  gap: 1.1rem;
+  flex-wrap: nowrap;
+  margin-left: auto;
 }
 
 .nav-links a {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .nav-links a:hover,
@@ -118,7 +121,8 @@ code,
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 /* Buttons */
@@ -228,9 +232,9 @@ code,
 
 .hero-brand-mark {
   display: block;
-  height: 72px;
+  height: clamp(120px, 18vw, 180px);
   width: auto;
-  max-width: min(100%, 420px);
+  max-width: min(100%, 720px);
   margin-bottom: 1.25rem;
 }
 
@@ -902,10 +906,11 @@ pre.code-block {
 
   .nav-links-open {
     display: flex;
+    margin-left: 0;
   }
 
-  .nav-actions .nav-github-btn {
-    display: none;
+  .nav-actions {
+    margin-left: auto;
   }
 
   .site-header .nav {

@@ -291,7 +291,7 @@ class Agent:
         trust = None
         if bundle_path.exists():
             trust = json.loads(bundle_path.read_text(encoding="utf-8")).get("trustScore")
-        from .passport import build_passport, observed_capabilities
+        from .passport import build_passport, load_active_governance_binding, observed_capabilities
 
         constitution = None
         try:
@@ -314,6 +314,25 @@ class Agent:
                 "lastRunId": run_id,
             },
             constitution=constitution,
+            governance_binding=load_active_governance_binding(self.workspace),
+        )
+
+    def load_governance(
+        self,
+        *,
+        path: str | Path | None = None,
+        provider: str | None = None,
+        version: str | None = None,
+        ref: str | None = None,
+    ) -> dict[str, Any]:
+        """Load active Governance Package (provider@version, path, or ref)."""
+        from .governance_runtime import ConstitutionRuntime
+
+        return ConstitutionRuntime(self.workspace).load(
+            path=path,
+            provider=provider,
+            version=version,
+            ref=ref,
         )
 
     def publish(
@@ -336,6 +355,21 @@ class Agent:
 
         IdentityStore(self.workspace).issue(self.spec)
         passport = self.passport(refresh=True)
+
+        fleet_path = self.workspace / "fleet.yaml"
+        if fleet_path.exists():
+            from .fleet import load_fleet, meets_min_certification
+
+            fleet = load_fleet(fleet_path)
+            prior = AgentRegistry(self.workspace).get(self.spec.agent_id) or {}
+            cert_level = (prior.get("certification") or {}).get("level")
+            if not meets_min_certification(fleet, cert_level):
+                required = (
+                    fleet.get("spec", {}).get("defaults", {}).get("minCertification") or "L1"
+                )
+                raise ValueError(
+                    f"Fleet minCertification {required} not met (agent level={cert_level or 'none'})"
+                )
 
         if self._spec_path and Path(self._spec_path).exists():
             spec_path = Path(self._spec_path)

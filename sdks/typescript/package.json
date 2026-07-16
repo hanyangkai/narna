@@ -1,7 +1,7 @@
 {
   "name": "@narna/sdk",
   "version": "0.1.0",
-  "description": "NARNA TypeScript reference SDK — Constitution Layer (stub)",
+  "description": "NARNA TypeScript reference SDK — Universal AI Governance Runtime (UGS stub)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

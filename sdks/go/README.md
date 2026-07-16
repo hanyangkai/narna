@@ -1,6 +1,6 @@
 # narna (Go)
 
-Go reference stub for the NARNA Constitution Layer.
+Go reference stub for the NARNA Universal AI Governance Runtime (UGS).
 
 ```bash
 cd sdks/go

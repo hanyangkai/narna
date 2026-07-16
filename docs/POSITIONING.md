@@ -1,4 +1,4 @@
-# NARNA Positioning — Infrastructure Layer
+# NARNA Positioning — Agentic AI
 
 **Status:** Canonical marketing / category copy  
 **Strategy:** [`STRATEGY.md`](./STRATEGY.md) · **Brand:** [`BRAND.md`](./BRAND.md)
@@ -7,96 +7,177 @@
 
 # NARNA
 
-## The Governance Runtime for Autonomous Intelligence.
+## The Governance Infrastructure for Agentic AI.
 
 > **Govern Once. Run Anywhere.**
+
+**Alternative product line:** *The Universal Governance Layer for Agentic AI.*
+
+---
+
+## Why Agentic AI — and why now
+
+```text
+2023  →  LLM
+2024  →  RAG
+2025  →  AI Agents
+2026+ →  Agentic AI
+```
+
+Agentic AI is not a single agent. It is **multi-agent**, **long-running**, with **memory**, **planning**, **human approval**, **tool calling**, and **autonomous workflows**.
+
+That is exactly where **governance** becomes mandatory.
+
+---
+
+## The Agentic AI problem
+
+A company runs:
+
+```text
+Sales Agent → Finance Agent → Legal Agent → Browser Agent → Email Agent → Database Agent
+```
+
+They ask:
+
+- Which agent is allowed to do what?
+- Which agent is trustworthy?
+- Which agent deleted data?
+- Which agent sent email?
+- Which agent used GPT-5?
+
+OpenAI does not solve this. LangGraph does not. CrewAI does not.
+
+**NARNA does.**
 
 ---
 
 ## Vision
 
-Build the universal governance layer that enables every autonomous system to operate safely, transparently, and across any AI stack.
+Build the universal governance layer that enables every agentic system to operate safely, transparently, and across any AI stack.
 
 ---
 
 ## Mission
 
-Standardize how autonomous AI is identified, governed, verified, and trusted.
+Standardize how Agentic AI is identified, governed, verified, and trusted.
 
-Not by replacing existing AI frameworks, but by making them interoperable through a universal governance runtime.
+Not by replacing LangGraph, CrewAI, OpenAI SDK, or OpenTelemetry — by making them interoperable through portable governance.
 
 ---
 
 ## What is NARNA?
 
-NARNA is the **Universal AI Governance Runtime**.
+NARNA is the **Governance Infrastructure for Agentic AI**.
 
-It provides a portable governance layer that works across every AI model, agent framework, runtime, and cloud.
-
-Instead of replacing OpenAI, Anthropic, MCP, or OpenTelemetry, NARNA integrates with them — bringing **Identity, Governance, Evidence, Trust, and Certification** to autonomous systems.
-
----
-
-## One sentence
+Portable **Identity, Governance, Evidence, Trust, and Certification** across every model, agent framework, and runtime.
 
 > **NARNA governs AI. Others execute it.**
 
 ---
 
-## Positioning
-
-| Company | Owns |
-|---------|------|
-| OpenAI | Intelligence |
-| Anthropic | Safety Models |
-| NVIDIA | Compute |
-| Docker | Containers |
-| Kubernetes | Orchestration |
-| OpenTelemetry | Observability |
-| MCP | Tool Protocol |
-| **NARNA** | **AI Governance** |
-
----
-
-## The AI Stack
+## Where NARNA sits
 
 ```text
-                    Applications
+                    Agentic AI
+        LangGraph · CrewAI · AutoGen · OpenAI SDK
 ────────────────────────────────────────────
-            AI Products & AI Companies
+                  NARNA
+     Identity · Governance · Trust · Evidence · Certification
 ────────────────────────────────────────────
-        OpenAI · Claude · Gemini · Llama
-────────────────────────────────────────────
- OpenAI SDK · LangGraph · CrewAI · AutoGen
-────────────────────────────────────────────
-     OpenTelemetry · MCP · OpenShell
-────────────────────────────────────────────
-                NARNA Runtime
-        Identity · Governance · Policy
-        Permission · Evidence · Trust · Certification
-────────────────────────────────────────────
-     Docker · Kubernetes · Linux · Cloud
+        OpenTelemetry · MCP · Docker · Kubernetes
 ```
 
 ---
 
-## Core Philosophy
+## Hero (website)
 
-AI should not only be intelligent. It should be Identifiable, Governable, Auditable, Portable, and Trustworthy.
+**Headline:** Build Agentic AI that Enterprises Can Trust
+
+**Lead:** One governance layer. Every model. Every framework. Every runtime.
+
+**Sub:** NARNA provides portable identity, governance, evidence, and trust for autonomous AI systems. Compatible with OpenAI, Anthropic, LangGraph, CrewAI, MCP, and OpenTelemetry.
 
 ---
 
-## Core Principles
+## Core USPs
 
-- **Universal** — every AI stack; no vendor lock-in  
+### Agent Passport
+
+Like GitHub Verified, Apple Developer, or Docker Official Image — but for agents.
+
+```yaml
+id: research-agent
+owner: openai
+capabilities: [browser, wallet, memory]
+trust: 0.97
+verified: true
+```
+
+Portable trust signal across vendors and runtimes.
+
+### Governance Package Marketplace
+
+Pre-built compliance and org policy packs:
+
+```text
+Healthcare · Finance · EU AI Act · Banking · Startup
+```
+
+Enterprise declares:
+
+```yaml
+governance:
+  package: banking-v2
+```
+
+NARNA loads and enforces automatically.
+
+---
+
+## Distribution — adapter first
+
+Do not compete with LangGraph or OpenAI Agents SDK. **Distribute through them.**
+
+Official adapters:
+
+```text
+narna-langgraph · narna-crewai · narna-autogen
+narna-openai · narna-anthropic · narna-semantic-kernel
+```
+
+Install the adapter → get Identity, Governance, and Trust on your existing stack.
+
+---
+
+## Positioning table
+
+| Company | Owns |
+|---------|------|
+| OpenAI | Intelligence |
+| Anthropic | Safety models |
+| NVIDIA | Compute |
+| LangGraph | Agent orchestration |
+| CrewAI | Multi-agent crews |
+| Docker | Containers |
+| Kubernetes | Orchestration |
+| OpenTelemetry | Observability |
+| MCP | Tool protocol |
+| **NARNA** | **Agentic AI Governance** |
+
+---
+
+## Core principles
+
+- **Universal** — every Agentic AI stack; no vendor lock-in  
 - **Portable** — write governance once; run everywhere  
 - **Compatible** — integrate; never replace  
-- **Verifiable** — every autonomous decision can be verified  
-- **Open** — open specification, open SDK, community-driven  
+- **Verifiable** — every agentic decision can be verified  
+- **Open** — open specification (UGS), open SDK, community-driven  
 
 ---
 
-## Open Specification: UGS
+## Open specification: UGS
 
 **UGS** = Universal Governance Specification
 
@@ -104,26 +185,24 @@ Defines Identity, Capability, Permission, Policy, Governance Package, Evidence, 
 
 NARNA Runtime is the reference implementation of UGS.
 
-*(Formerly marketed as UAP — Understand → Act → Prove — a workflow name. UGS is the governance standard.)*
-
 ---
 
-## What NARNA Does
-
-Identity · Policy · Evidence · Governance · Trust · Certification
-
-## What NARNA Does NOT Do
-
-Train models · Build LLMs · Replace agent frameworks · Replace OpenTelemetry · Replace MCP · Replace Docker
-
----
-
-## Brand Statements
+## Brand statements
 
 | Role | Text |
 |------|------|
 | Primary | Govern Once. Run Anywhere. |
-| Alternative | Universal Governance for Autonomous Intelligence. |
-| Enterprise | Trust Every Autonomous Decision. |
+| Product | The Governance Infrastructure for Agentic AI. |
+| Alt | The Universal Governance Layer for Agentic AI. |
+| Hero | Build Agentic AI that Enterprises Can Trust. |
+| Enterprise | Trust Every Agentic Decision. |
 | Technical | Identity. Governance. Evidence. Trust. |
-| Community | Open Governance for the AI Era. |
+| Community | Open Governance for the Agentic AI Era. |
+
+---
+
+## Strategic lock
+
+**Agentic AI is not NARNA's competitor — it is the wave NARNA rides.**
+
+Every new Agentic AI framework is a distribution channel, not a threat.

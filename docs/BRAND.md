@@ -2,7 +2,7 @@
 
 **NARNA** = Neural Autonomous **Rules** Native Architecture
 
-> *The Governance Runtime for Autonomous Intelligence.*
+> *The Governance Infrastructure for Agentic AI.*
 
 **Primary:** Govern Once. Run Anywhere.
 
@@ -15,8 +15,10 @@ Do not let the acronym drive architecture. Architecture gives meaning to the acr
 
 ## Category
 
-**Infrastructure layer** — peer class: Docker, Kubernetes, Git, OpenTelemetry.  
-**Not** an AI app, chatbot, or model company.
+**Governance infrastructure for Agentic AI** — peer class: Docker, Kubernetes, Git, OpenTelemetry.  
+**Not** an AI app, chatbot, model company, or agent framework.
+
+**First users:** teams building Agentic AI — multi-agent, long-running, tool-calling workflows.
 
 ---
 
@@ -30,10 +32,12 @@ Canonical: [`STRATEGY.md`](./STRATEGY.md) · Full copy: [`POSITIONING.md`](./POS
 
 | Layer | Name | Role |
 |-------|------|------|
-| **Brand / runtime** | NARNA | Universal AI Governance Runtime (reference impl) |
+| **Brand / runtime** | NARNA | Governance Infrastructure for Agentic AI (reference impl) |
 | **Open standard** | **UGS** | Universal Governance Specification |
 | **Trust engine** | VAP | Verify → Audit → Prove |
 | **Package** | Governance Package | Constitution · Compliance · OrgPolicy · … |
+| **USP** | Agent Passport | Portable trust signal per agent |
+| **USP** | Governance Package Marketplace | Healthcare · Finance · EU AI Act · … |
 | **Charter kind** | Constitution | `constitution.yaml` |
 
 **Legacy:** *UAP (Understand → Act → Prove)* was a workflow name. Public specification is **UGS**. Python module path `uap` remains as implementation alias until a major package rename.
@@ -46,18 +50,19 @@ Canonical: [`STRATEGY.md`](./STRATEGY.md) · Full copy: [`POSITIONING.md`](./POS
 |---------|------|
 | OpenAI | Intelligence |
 | Anthropic | Safety models |
-| NVIDIA | Compute |
+| LangGraph | Agent orchestration |
+| CrewAI | Multi-agent crews |
 | Docker | Containers |
 | Kubernetes | Orchestration |
 | OpenTelemetry | Observability |
 | MCP | Tool protocol |
-| **NARNA** | **AI Governance** |
+| **NARNA** | **Agentic AI Governance** |
 
 ---
 
 ## Elevator
 
-> NARNA governs AI. Others execute it. Portable Governance Packages load, enforce, and prove across every model and agent framework — without replacing them.
+> NARNA is the Governance Infrastructure for Agentic AI. Portable Identity, Governance Packages, Agent Passports, and Trust across LangGraph, CrewAI, OpenAI SDK, and every model — without replacing them.
 
 ---
 
@@ -66,11 +71,12 @@ Canonical: [`STRATEGY.md`](./STRATEGY.md) · Full copy: [`POSITIONING.md`](./POS
 | Use | Text |
 |-----|------|
 | Primary | Govern Once. Run Anywhere. |
-| Product | The Governance Runtime for Autonomous Intelligence. |
-| Alt | Universal Governance for Autonomous Intelligence. |
-| Enterprise | Trust Every Autonomous Decision. |
+| Product | The Governance Infrastructure for Agentic AI. |
+| Alt | The Universal Governance Layer for Agentic AI. |
+| Hero | Build Agentic AI that Enterprises Can Trust. |
+| Enterprise | Trust Every Agentic Decision. |
 | Technical | Identity. Governance. Evidence. Trust. |
-| Community | Open Governance for the AI Era. |
+| Community | Open Governance for the Agentic AI Era. |
 | Contrast | OpenTelemetry records what AI did. NARNA proves what AI was allowed to do. |
 
 ---
@@ -79,25 +85,30 @@ Canonical: [`STRATEGY.md`](./STRATEGY.md) · Full copy: [`POSITIONING.md`](./POS
 
 ```text
 NARNA Runtime
-NARNA SDK
-NARNA CLI
-NARNA Registry
-NARNA Identity
-NARNA Trust
-NARNA Passport
-NARNA Policy
-NARNA Evidence
-NARNA Certification
-NARNA Cloud
-NARNA Enterprise
+NARNA SDK · CLI
+Agent Passport
+Governance Package Marketplace
+NARNA Registry · Identity · Trust · Certification
+NARNA Cloud · Enterprise
 UGS (open specification)
 ```
 
 ---
 
+## Official adapters (distribution)
+
+```text
+narna-langgraph · narna-crewai · narna-autogen
+narna-openai · narna-anthropic · narna-semantic-kernel
+```
+
+Install adapter → Identity + Governance + Trust on existing Agentic AI stack.
+
+---
+
 ## Compatibility first
 
-✓ OpenAI · Anthropic · Google · NVIDIA · MCP · OpenTelemetry · LangGraph · CrewAI · AutoGen · Docker · Kubernetes · OpenShell
+✓ OpenAI · Anthropic · LangGraph · CrewAI · AutoGen · MCP · OpenTelemetry · Docker · Kubernetes · OpenShell
 
 ---
 
@@ -116,4 +127,4 @@ agent = Agent()
 agent.run()
 ```
 
-No vendor lock-in. No runtime replacement. Works with your existing stack.
+No vendor lock-in. No runtime replacement. Works with your Agentic AI stack.

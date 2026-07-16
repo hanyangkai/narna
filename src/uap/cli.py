@@ -690,7 +690,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     constitution = sub.add_parser(
         "constitution",
-        help="Validate / show constitution.yaml (Constitution Layer)",
+        help="Validate / show constitution.yaml (Governance Runtime / UGS)",
     )
     constitution.add_argument("--path", default="constitution.yaml")
     constitution.add_argument("--spec", default="agent.yaml")

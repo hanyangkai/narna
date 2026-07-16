@@ -116,6 +116,19 @@
         },
         "version": { "type": "string" }
       }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "packageId": { "type": "string" },
+        "provider": { "type": "string" },
+        "version": { "type": "string" },
+        "packageHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
     }
   }
 }

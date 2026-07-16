@@ -135,7 +135,7 @@ export default function Specification() {
           {SECTIONS.map((s) => (
             <div key={s} className="card feature-card">
               <h3>{s}</h3>
-              <p>Part of the Constitution Layer stack.</p>
+              <p>Part of the Universal Governance Specification (UGS) stack.</p>
             </div>
           ))}
         </div>

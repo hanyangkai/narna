@@ -50,7 +50,7 @@ Sit **above**. Do not invent another bottom layer.
 | 1 | Never Replace | Positioning + Compatibility badges |
 | 2 | **Adapter First** | `narna-openai`, `narna-mcp`, `narna-langgraph`, … |
 | 3 | **One-line integration** | `wrap(agent)` · `@narna.track` |
-| 4 | Compatibility Program | Verified by NARNA · UAP Compatible · Enterprise Ready |
+| 4 | Compatibility Program | Verified by NARNA · UGS Compatible · Enterprise Ready |
 | 5 | Plugin Economy | Community plugins (`narna-slack`, …) |
 | 6 | **RFC process** | Community-governed specs (KEP/PEP style) |
 | 7 | Reference implementation | Thin Python SDK — others may implement .NET/Go/Rust |
@@ -92,15 +92,15 @@ Developer short-form compiles to Constitution.
 
 ## What is done vs remaining
 
-### Done (Constitution Layer core)
+### Done (Governance Runtime core)
 
-- Strategy + Constitution Spec  
+- Strategy + UGS / Constitution Spec  
 - Universal Identity (C1)  
-- Passport cites Constitution  
+- Passport cites Constitution + Governance Package  
 - Certification L1/L2/L3 (C3)  
 - Registry / Passport / Cloud stamp  
-- Reference SDK: `Agent`, VAP, `publish`, `certify`  
-- Web aligned to Constitution Layer / Governance Runtime  
+- Reference SDK: `Agent`, VAP, `publish`, `certify`, `load_governance`  
+- Web aligned to Governance Infrastructure for Agentic AI / UGS  
 
 ### Remaining (Borrow the Wave — priority order)
 

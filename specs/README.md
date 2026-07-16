@@ -1,10 +1,11 @@
 # NARNA / UGS Specification Set
 
-**NARNA** — *The Governance Runtime for Autonomous Intelligence.*  
+**NARNA** — *The Governance Infrastructure for Agentic AI.*  
 **UGS** — *Universal Governance Specification* (open standard)  
 **VAP** — *Verify · Audit · Prove* (trust engine)
 
 **Primary:** Govern Once. Run Anywhere.  
+**Hero:** Build Agentic AI that Enterprises Can Trust.  
 **Strategy lock:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)  
 **Positioning:** [`../docs/POSITIONING.md`](../docs/POSITIONING.md)  
 **Brand:** [`../docs/BRAND.md`](../docs/BRAND.md)
@@ -20,7 +21,7 @@ NARNA is an **infrastructure layer** (peer category: Docker, Kubernetes, OpenTel
 
 | Layer | Name | Role |
 |-------|------|------|
-| Brand / runtime | NARNA | Reference Universal AI Governance Runtime |
+| Brand / runtime | NARNA | Governance Infrastructure for Agentic AI (reference impl) |
 | Open standard | **UGS** | Universal Governance Specification |
 | Runtime loop | Constitution Runtime | Load · Validate · Enforce · Audit · Verify · Certify |
 | Package | Governance Package | Constitution · Compliance · OrgPolicy · Risk · HumanApproval |

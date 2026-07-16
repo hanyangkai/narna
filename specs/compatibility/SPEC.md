@@ -12,7 +12,8 @@ The **NARNA Compatibility Program** issues public badges so projects can signal 
 
 | Badge | Code | Meaning |
 |-------|------|---------|
-| **UAP Compatible** | `uap-compatible` | Ships valid Manifest/Constitution + Identity |
+| **UGS Compatible** | `ugs-compatible` | Ships valid Manifest/Constitution + Identity |
+| **UGS Compatible** (alias) | `uap-compatible` | Legacy badge id — same meaning as UGS Compatible |
 | **Constitution Compatible** | `constitution-compatible` | Loadable Governance Package / Constitution + declared `supports:` (RFC-0009) |
 | **Verified by NARNA** | `narna-certified` | Certification ≥ L1 |
 | **NARNA Certified+** | `narna-certified-plus` | Certification ≥ L2 |

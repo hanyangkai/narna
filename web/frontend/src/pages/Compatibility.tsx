@@ -3,10 +3,10 @@ import { BRAND } from "../brand";
 
 const BADGES = [
   {
-    id: "uap-compatible",
+    id: "ugs-compatible",
     title: "UGS Compatible",
     desc: "Ships valid Manifest/Constitution + Identity (UGS).",
-    src: "/badges/uap-compatible.svg",
+    src: "/badges/ugs-compatible.svg",
   },
   {
     id: "constitution-compatible",

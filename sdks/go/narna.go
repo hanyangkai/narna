@@ -1,4 +1,4 @@
-// Package narna is a Go reference stub for the NARNA Constitution Layer.
+// Package narna is a Go reference stub for the NARNA Universal AI Governance Runtime (UGS).
 // Specs in /specs are the source of truth. Never Replace. Always Extend.
 package narna
 

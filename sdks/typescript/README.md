@@ -1,6 +1,6 @@
 # @narna/sdk (TypeScript)
 
-Reference TypeScript stub for the NARNA Constitution Layer.
+Reference TypeScript stub for the NARNA Universal AI Governance Runtime (UGS).
 
 > Specs in `/specs` are the source of truth. This package is a thin client — not a runtime replacement.
 

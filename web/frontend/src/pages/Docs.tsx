@@ -33,7 +33,7 @@ def research(query: str) -> str:
       },
       {
         heading: "Read more",
-        body: "docs/BORROW-THE-WAVE.md · rfcs/ · Compatibility Program badges: NARNA Certified · UAP Compatible · Enterprise Ready.",
+        body: "docs/BORROW-THE-WAVE.md · rfcs/ · Compatibility Program badges: NARNA Certified · UGS Compatible · Enterprise Ready.",
       },
     ],
   },
@@ -53,26 +53,45 @@ print(ADAPTER_CATALOG)`,
   },
   "what-is-narna": {
     title: "What is NARNA?",
-    lead: "The Governance Runtime for Autonomous Intelligence — an infrastructure layer.",
+    lead: "The Governance Infrastructure for Agentic AI — portable identity, governance, evidence, and trust.",
     sections: [
       {
-        body: `${BRAND.oneLiner} ${BRAND.primary}`,
+        body: `${BRAND.heroTitle} ${BRAND.heroLead}`,
+      },
+      {
+        heading: "Agentic AI",
+        body: "Agentic AI is multi-agent, long-running, with memory, planning, human approval, tool calling, and autonomous workflows. NARNA is built for the teams shipping this stack first — not to replace LangGraph, CrewAI, or OpenAI SDK, but to govern them.",
       },
       {
         heading: "Category",
-        body: "NARNA is positioned like Docker, Kubernetes, Git, or OpenTelemetry — infrastructure, not an AI application. It owns AI Governance; others own intelligence, compute, containers, orchestration, and observability.",
+        body: "NARNA is governance infrastructure — peer to Docker, Kubernetes, Git, and OpenTelemetry. It owns Agentic AI Governance; others own intelligence, orchestration, compute, containers, and observability.",
+      },
+      {
+        heading: "Agent Passport",
+        body: "Like GitHub Verified or Docker Official Image — every agent can ship a portable passport with identity, capabilities, trust score, and verification status.",
+        code: `id: research-agent
+owner: openai
+capabilities: [browser, wallet, memory]
+trust: 0.97
+verified: true`,
+      },
+      {
+        heading: "Governance Package Marketplace",
+        body: "Pre-built Healthcare, Finance, EU AI Act, Banking, and Startup packages. Declare governance.package in narna.yaml — NARNA loads and enforces automatically.",
+        code: `governance:
+  package: banking-v2`,
       },
       {
         heading: "Simple analogy",
-        body: "OpenTelemetry is a dashcam. NARNA is the license + traffic law system — loadable rules (Governance Packages) enforced across any vehicle brand (model vendor).",
+        body: "OpenTelemetry is a dashcam. NARNA is the license + traffic law system — loadable rules (Governance Packages) enforced across any agent fleet and model vendor.",
       },
       {
         heading: "What NARNA is not",
-        body: "Not a model. Not LangGraph/CrewAI. Not a replacement for MCP, OpenTelemetry, or Docker. Those systems execute and observe. NARNA governs.",
+        body: "Not a model. Not LangGraph/CrewAI/AutoGen. Not a replacement for MCP, OpenTelemetry, or Docker. Those systems execute and observe. NARNA governs Agentic AI.",
       },
       {
         heading: "UGS — Universal Governance Specification",
-        body: "The open standard for AI governance (Identity, Capability, Permission, Policy, Governance Package, Evidence, Trust, Certification). NARNA Runtime is the reference implementation. Formerly called UAP (a workflow name); public brand is UGS.",
+        body: "The open standard for Agentic AI governance. NARNA Runtime is the reference implementation.",
         code: `from narna import ConstitutionRuntime
 rt = ConstitutionRuntime()
 rt.load(provider="eu-ai-act", version="1.0.0")
@@ -80,7 +99,7 @@ print(rt.execute(action="biometric.surveillance"))`,
       },
       {
         heading: "Names",
-        body: "NARNA = brand + runtime. UGS = open specification. VAP = Verify · Audit · Prove (trust engine). Governance Package = portable unit of rules.",
+        body: "NARNA = brand + runtime. UGS = open specification. VAP = Verify · Audit · Prove. Agent Passport = portable trust. Governance Package = portable rules.",
       },
     ],
   },
@@ -343,7 +362,7 @@ const SIDEBAR = [
     ],
   },
   {
-    group: "Governance Runtime",
+    group: "Agentic AI Governance",
     items: [
       { slug: "identity", label: "Universal Identity" },
       { slug: "policy", label: "Policy" },

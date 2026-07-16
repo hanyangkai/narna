@@ -87,6 +87,55 @@ class PortableGovernanceTest(unittest.TestCase):
             self.assertEqual(a1._adapter["package"], "narna-openai")
             self.assertEqual(a2._adapter["package"], "narna-anthropic")
 
+    def test_passport_cites_governance_package(self) -> None:
+        from narna import Agent
+        from uap.governance_runtime import ConstitutionRuntime
+
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            ConstitutionRuntime(ws).load(provider="eu-ai-act", version="1.0.0")
+            agent = Agent(workspace=ws, name="GovBot")
+            passport = agent.passport(refresh=True)
+            self.assertIn("governance", passport)
+            self.assertTrue(passport["governance"]["packageHash"].startswith("sha256:"))
+            self.assertEqual(passport["governance"]["provider"], "eu-ai-act")
+
+    def test_agent_load_governance(self) -> None:
+        from narna import Agent
+
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            agent = Agent(workspace=ws, name="Loader")
+            loaded = agent.load_governance(provider="medical", version="1.0.0")
+            self.assertEqual(loaded["binding"]["provider"], "medical")
+
+    def test_fleet_min_certification_blocks_publish(self) -> None:
+        import yaml
+        from narna import Agent
+
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            (ws / "fleet.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "apiVersion": "narna.ai/v1alpha1",
+                        "kind": "Fleet",
+                        "metadata": {"id": "fleet_test", "orgId": "org"},
+                        "spec": {
+                            "defaults": {"minCertification": "L2"},
+                            "members": [{"entityId": "agent", "role": "worker"}],
+                            "roles": {"worker": {"can": ["*"]}},
+                        },
+                    },
+                    sort_keys=False,
+                ),
+                encoding="utf-8",
+            )
+            agent = Agent(workspace=ws, name="FleetBot")
+            with self.assertRaises(ValueError) as ctx:
+                agent.publish(remote=False)
+            self.assertIn("minCertification", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

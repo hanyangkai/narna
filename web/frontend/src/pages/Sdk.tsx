@@ -40,7 +40,7 @@ export default function Sdk() {
     <div className="layout-wide">
       <header className="page-header">
         <p className="pill-label">Reference SDK</p>
-        <h1>Try the Governance Runtime locally</h1>
+        <h1>Governance Infrastructure for Agentic AI — try locally</h1>
         <p>
           The SDK is the <strong>virus entry</strong> for {SPEC.name} — not a competing agent framework.
           Specs are the source of truth. Load Governance Packages, prove actions, and certify.

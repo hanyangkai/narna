@@ -14,19 +14,21 @@ Implementation follows the specs, not the other way around.
 
 > **NARNA governs AI. Others execute it.**
 
+**Category:** Governance Infrastructure for **Agentic AI** — the first wave of users are teams building multi-agent, long-running, tool-calling autonomous workflows.
+
 ---
 
 ## Vision
 
-Build the universal governance layer that enables every autonomous system to operate safely, transparently, and across any AI stack.
+Build the universal governance layer that enables every agentic system to operate safely, transparently, and across any AI stack.
 
 ---
 
 ## Mission
 
-Standardize how autonomous AI is identified, governed, verified, and trusted.
+Standardize how Agentic AI is identified, governed, verified, and trusted.
 
-Not by replacing existing AI frameworks — by making them interoperable through a universal governance runtime.
+Not by replacing LangGraph, CrewAI, OpenAI SDK, or OpenTelemetry — by making them interoperable through portable governance.
 
 ---
 
@@ -35,10 +37,12 @@ Not by replacing existing AI frameworks — by making them interoperable through
 | Use | Text |
 |-----|------|
 | **Primary slogan** | Govern Once. Run Anywhere. |
-| **Product line** | The Governance Runtime for Autonomous Intelligence. |
-| **Enterprise** | Trust Every Autonomous Decision. |
+| **Product line** | The Governance Infrastructure for Agentic AI. |
+| **Alt product line** | The Universal Governance Layer for Agentic AI. |
+| **Hero** | Build Agentic AI that Enterprises Can Trust. |
+| **Enterprise** | Trust Every Agentic Decision. |
 | **Technical** | Identity. Governance. Evidence. Trust. |
-| **Community** | Open Governance for the AI Era. |
+| **Community** | Open Governance for the Agentic AI Era. |
 | **Contrast** | OpenTelemetry records what AI did. NARNA proves what AI was allowed to do. |
 
 ---
@@ -52,11 +56,13 @@ Not by replacing existing AI frameworks — by making them interoperable through
 | OpenAI | Intelligence |
 | Anthropic | Safety models |
 | NVIDIA | Compute |
+| LangGraph | Agent orchestration |
+| CrewAI | Multi-agent crews |
 | Docker | Containers |
 | Kubernetes | Orchestration |
 | OpenTelemetry | Observability |
 | MCP | Tool protocol |
-| **NARNA** | **AI Governance** |
+| **NARNA** | **Agentic AI Governance** |
 
 ---
 
@@ -68,31 +74,26 @@ UGS    = Universal Governance Specification (open standard)
 VAP    = Verify → Audit → Prove (trust engine within UGS)
 ```
 
-NARNA is the **Universal AI Governance Runtime**.
+NARNA is the **Governance Infrastructure for Agentic AI**.
 
-It provides a portable governance layer across every AI model, agent framework, runtime, and cloud.
+It provides a portable governance layer across every AI model, agent framework, runtime, and cloud — starting with multi-agent workflows that need identity, policy, and trust.
 
-**Not** a model. **Not** an AI application. **Not** an agent executor.  
-**Is** infrastructure: Identity, Governance, Policy, Permission, Evidence, Trust, Certification.
+**Not** a model. **Not** LangGraph/CrewAI. **Not** an agent executor.  
+**Is** infrastructure: Identity, Governance, Policy, Permission, Evidence, Trust, Certification, **Agent Passport**, **Governance Package Marketplace**.
 
 ---
 
 ## The AI stack (locked)
 
 ```text
-                    Applications
-────────────────────────────────────────────
-            AI Products & AI Companies
-────────────────────────────────────────────
-        OpenAI · Claude · Gemini · Llama
-────────────────────────────────────────────
- OpenAI SDK · LangGraph · CrewAI · AutoGen
-────────────────────────────────────────────
-     OpenTelemetry · MCP · OpenShell
+                    Agentic AI
+        LangGraph · CrewAI · AutoGen · OpenAI SDK
 ────────────────────────────────────────────
               ★ NARNA Runtime ★
-     Identity · Governance · Policy
-     Permission · Evidence · Trust · Certification
+     Identity · Governance · Agent Passport
+     Evidence · Trust · Certification · Packages
+────────────────────────────────────────────
+     OpenTelemetry · MCP · OpenShell
 ────────────────────────────────────────────
      Docker · Kubernetes · Linux · Cloud
 ```

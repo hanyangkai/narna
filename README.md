@@ -3,17 +3,17 @@
 **Neural Autonomous Rules Native Architecture**
 
 > **Govern Once. Run Anywhere.**  
-> *The Governance Runtime for Autonomous Intelligence.*
+> *The Governance Infrastructure for Agentic AI.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-NARNA is an **infrastructure layer** for AI governance — peer category to Docker, Kubernetes, Git, and OpenTelemetry.
+NARNA is **governance infrastructure for Agentic AI** — peer category to Docker, Kubernetes, Git, and OpenTelemetry.
 
-It does **not** replace OpenTelemetry, MCP, LangGraph, CrewAI, or model vendors. It sits with the infrastructure stack and **governs** them.
+It does **not** replace LangGraph, CrewAI, OpenTelemetry, MCP, or model vendors. It sits with the infrastructure stack and **governs** multi-agent autonomous workflows.
 
 | Name | Role |
 |------|------|
-| **NARNA** | Brand + Universal AI Governance Runtime (reference impl) |
+| **NARNA** | Brand + Governance Infrastructure for Agentic AI (reference impl) |
 | **UGS** | Universal Governance Specification (open standard) |
 | **VAP** | Trust engine (*Verify · Audit · Prove*) |
 | **Governance Package** | Portable rules (`constitution.yaml` and peers) |

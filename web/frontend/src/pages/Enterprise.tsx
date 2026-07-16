@@ -19,7 +19,7 @@ export default function Enterprise() {
         <h1>Self-host first. Cloud when you need it.</h1>
         <p>
           Banks, insurance, and government need portable identity, policy, and proof — not another
-          black-box agent runtime. NARNA is the Constitution Layer your security team can audit.
+          black-box agent runtime. NARNA is the Governance Infrastructure for Agentic AI your security team can audit.
         </p>
       </header>
 
@@ -28,7 +28,7 @@ export default function Enterprise() {
           <div>
             <h2>Why enterprises choose NARNA</h2>
             <p>
-              Not a closed platform. An open Constitution Layer: who each AI entity is, what it may do,
+              Not a closed platform. Open governance infrastructure: who each AI entity is, what it may do,
               and why auditors can trust it — across OpenAI, Claude, Gemini, and any orchestrator.
             </p>
             <ul style={{ color: "var(--muted)", paddingLeft: "1.25rem" }}>
