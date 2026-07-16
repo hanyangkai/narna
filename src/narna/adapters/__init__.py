@@ -13,6 +13,7 @@ from .mcp import McpAdapter
 from .openai_agents import OpenAIAdapter
 from .openshell import OpenShellAdapter
 from .otel import OpenTelemetryAdapter, export_run_as_otel_attributes
+from .otel_export import export_run_to_otlp
 
 _ADAPTERS: list[BaseAdapter] = [
     LangGraphAdapter(),
@@ -129,6 +130,7 @@ __all__ = [
     "detect_framework",
     "resolve_adapter",
     "export_run_as_otel_attributes",
+    "export_run_to_otlp",
     "OpenAIAdapter",
     "AnthropicAdapter",
     "GoogleAdapter",

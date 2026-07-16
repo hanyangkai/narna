@@ -134,5 +134,40 @@ governance:
             self.assertEqual(result["binding"]["provider"], "eu-ai-act")
 
 
+class PassportSignTest(unittest.TestCase):
+    def test_sign_and_verify_passport(self) -> None:
+        from uap.passport_sign import verify_passport_signature
+        from uap.agent import Agent
+        from uap.manifest import ensure_workspace_manifest, load_or_compile_constitution
+        from uap.identity import IdentityStore
+        from uap.registry import AgentRegistry
+
+        with tempfile.TemporaryDirectory() as td:
+            ws = Path(td)
+            ensure_workspace_manifest(ws, agent_name="SignBot")
+            load_or_compile_constitution(ws / "narna.yaml", workspace=ws)
+            agent = Agent(workspace=ws, name="SignBot")
+            IdentityStore(ws).issue(agent.spec)
+            spec_path = ws / "agent.yaml"
+            import yaml
+
+            spec_path.write_text(yaml.safe_dump(agent.spec.raw, sort_keys=False), encoding="utf-8")
+            AgentRegistry(ws).register(spec_path, workspace=ws)
+            passport = agent.passport(refresh=True)
+            self.assertIn("signature", passport)
+            ok, problems = verify_passport_signature(passport, workspace=ws)
+            self.assertTrue(ok, problems)
+
+
+class OtelExportTest(unittest.TestCase):
+    def test_otel_export_dry_run(self) -> None:
+        from narna.adapters.otel_export import export_run_to_otlp
+
+        out = export_run_to_otlp({"agentId": "a1", "runId": "r1"}, dry_run=True)
+        self.assertIn("attributes", out)
+        self.assertEqual(out["attributes"]["narna.agent_id"], "a1")
+        self.assertTrue(out.get("dryRun"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -291,7 +291,12 @@ class Agent:
         trust = None
         if bundle_path.exists():
             trust = json.loads(bundle_path.read_text(encoding="utf-8")).get("trustScore")
-        from .passport import build_passport, load_active_governance_binding, observed_capabilities
+        from .passport import (
+            build_passport,
+            load_active_governance_binding,
+            observed_capabilities,
+            sign_and_optionally_score,
+        )
 
         constitution = None
         try:
@@ -299,22 +304,25 @@ class Agent:
         except Exception:
             constitution = None
 
-        return build_passport(
-            spec=self.spec,
-            identity=IdentityStore(self.workspace).load(),
-            trust_score=trust,
-            derived_from=events[-1].get("eventHash") if events else None,
-            observed=observed_capabilities(events),
-            history={
-                "runCount": 1,
-                "successCount": 1 if any(e.get("eventType") == "Completed" for e in events) else 0,
-                "failureCount": 1 if any(e.get("eventType") == "Failed" for e in events) else 0,
-                "violationCount": 0,
-                "lastRunAt": events[-1].get("ts") if events else None,
-                "lastRunId": run_id,
-            },
-            constitution=constitution,
-            governance_binding=load_active_governance_binding(self.workspace),
+        return sign_and_optionally_score(
+            build_passport(
+                spec=self.spec,
+                identity=IdentityStore(self.workspace).load(),
+                trust_score=trust,
+                derived_from=events[-1].get("eventHash") if events else None,
+                observed=observed_capabilities(events),
+                history={
+                    "runCount": 1,
+                    "successCount": 1 if any(e.get("eventType") == "Completed" for e in events) else 0,
+                    "failureCount": 1 if any(e.get("eventType") == "Failed" for e in events) else 0,
+                    "violationCount": 0,
+                    "lastRunAt": events[-1].get("ts") if events else None,
+                    "lastRunId": run_id,
+                },
+                constitution=constitution,
+                governance_binding=load_active_governance_binding(self.workspace),
+            ),
+            self.workspace,
         )
 
     def load_governance(

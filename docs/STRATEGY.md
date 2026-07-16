@@ -12,9 +12,13 @@ Implementation follows the specs, not the other way around.
 
 ## North star
 
+> **Every Agentic AI system gets Identity, Governance, and Trust.**
+
 > **NARNA governs AI. Others execute it.**
 
-**Category:** Governance Infrastructure for **Agentic AI** — the first wave of users are teams building multi-agent, long-running, tool-calling autonomous workflows.
+Passport, NARNA Score, Registry, and Governance Packages are **consequences** of these three pillars — not separate product concepts.
+
+**Category:** Governance Infrastructure for **Agentic AI** — first users are teams building multi-agent, long-running, tool-calling workflows.
 
 ---
 

@@ -129,6 +129,26 @@
           "pattern": "^sha256:[a-f0-9]{64}$"
         }
       }
+    },
+    "narnaScore": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "narnaScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "algorithm": { "type": "string" },
+        "breakdown": { "type": "object" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "keyId", "value"],
+      "properties": {
+        "alg": { "type": "string", "enum": ["ed25519"] },
+        "keyId": { "type": "string" },
+        "value": { "type": "string" },
+        "publicKey": { "type": "string" }
+      }
     }
   }
 }

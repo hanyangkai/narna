@@ -10,6 +10,8 @@ export const BRAND = {
   heroLead: "One governance layer. Every model. Every framework. Every runtime.",
   heroSub:
     "NARNA provides portable identity, governance, evidence, and trust for autonomous AI systems. Compatible with OpenAI, Anthropic, LangGraph, CrewAI, MCP, and OpenTelemetry.",
+  northStar:
+    "Every Agentic AI system gets Identity, Governance, and Trust — NARNA governs AI. Others execute it.",
   primary: "Govern Once. Run Anywhere.",
   oneLiner: "NARNA governs AI. Others execute it.",
   mission:

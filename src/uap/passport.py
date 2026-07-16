@@ -122,6 +122,26 @@ def build_passport(
     return passport
 
 
+def sign_and_optionally_score(
+    passport: dict[str, Any],
+    workspace: Path,
+    *,
+    attach_score: bool = True,
+) -> dict[str, Any]:
+    """Sign passport and attach NARNA Score snapshot."""
+    from .passport_sign import sign_passport
+
+    if attach_score:
+        try:
+            from .narna_score import compute_narna_score
+
+            score = compute_narna_score(workspace)
+            passport = {**passport, "narnaScore": score}
+        except Exception:
+            pass
+    return sign_passport(passport, workspace)
+
+
 def _governance_ref(binding: dict[str, Any] | None) -> dict[str, str] | None:
     if not binding:
         return None
@@ -231,13 +251,16 @@ def refresh_passport(
         except Exception:
             constitution = None
 
-    return build_passport(
-        spec=spec,
-        identity=identity,
-        trust_score=latest_trust,
-        history=aggregate_history(run_summaries),
-        derived_from=tip,
-        observed=observed_capabilities(all_events),
-        constitution=constitution,
-        governance_binding=load_active_governance_binding(workspace),
+    return sign_and_optionally_score(
+        build_passport(
+            spec=spec,
+            identity=identity,
+            trust_score=latest_trust,
+            history=aggregate_history(run_summaries),
+            derived_from=tip,
+            observed=observed_capabilities(all_events),
+            constitution=constitution,
+            governance_binding=load_active_governance_binding(workspace),
+        ),
+        workspace,
     )

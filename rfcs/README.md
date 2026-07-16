@@ -66,11 +66,11 @@ Every RFC **MUST** include:
 | RFC | Title | Status |
 |-----|-------|--------|
 | [RFC-0001](./RFC-0001-agent-identity.md) | Universal AI Identity | Accepted (C1 landed) |
-| RFC-0002 | Permission Manifest | Planned |
+| [RFC-0002](./RFC-0002-permission-manifest.md) | Permission Manifest | Accepted |
 | [RFC-0003](./RFC-0003-agent-passport.md) | Agent Passport | Accepted |
 | [RFC-0004](./RFC-0004-narna-score.md) | NARNA Score | Accepted (v0) |
 | [RFC-0005](./RFC-0005-narna-yaml-manifest.md) | Manifest `narna.yaml` | Draft |
-| RFC-0006 | Adapter Catalog | Planned |
+| [RFC-0006](./RFC-0006-adapter-catalog.md) | Adapter Catalog | Accepted (v0) |
 | [RFC-0007](./RFC-0007-governance-package.md) | Governance Package | Draft (G1) |
 | [RFC-0008](./RFC-0008-constitution-runtime.md) | Constitution Runtime | Draft (G1) |
 | [RFC-0009](./RFC-0009-constitution-compatibility.md) | Constitution Compatibility | Draft (G2) |

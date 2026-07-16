@@ -8,6 +8,12 @@ const RFCS = [
     href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0001-agent-identity.md",
   },
   {
+    id: "RFC-0002",
+    title: "Permission Manifest",
+    status: "Accepted",
+    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0002-permission-manifest.md",
+  },
+  {
     id: "RFC-0003",
     title: "Agent Passport",
     status: "Accepted",
@@ -24,6 +30,12 @@ const RFCS = [
     title: "Manifest narna.yaml",
     status: "Draft",
     href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0005-narna-yaml-manifest.md",
+  },
+  {
+    id: "RFC-0006",
+    title: "Adapter Catalog",
+    status: "Accepted",
+    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0006-adapter-catalog.md",
   },
   {
     id: "RFC-0007",

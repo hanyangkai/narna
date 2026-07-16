@@ -330,10 +330,51 @@ def cmd_audit(args: argparse.Namespace) -> int:
 
 
 def cmd_passport(args: argparse.Namespace) -> int:
+    if getattr(args, "verify", False):
+        path = Path(args.file) if args.file else None
+        if path and path.exists():
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        else:
+            agent = Agent.from_spec(args.spec)
+            doc = agent.passport(run_id=args.run, refresh=args.refresh)
+        from .passport_sign import verify_passport_signature
+
+        ok, problems = verify_passport_signature(doc, workspace=Path.cwd())
+        if ok:
+            print("narna passport verify: OK")
+            _print_json({"verified": True, "passportId": doc.get("passportId")})
+            return 0
+        print("narna passport verify: FAIL")
+        for p in problems:
+            print(f"- {p}")
+        return 1
+
     agent = Agent.from_spec(args.spec)
     doc = agent.passport(run_id=args.run, refresh=args.refresh)
     _print_json(doc)
     return 0
+
+
+def cmd_otel_export(args: argparse.Namespace) -> int:
+    from narna.adapters.otel_export import export_run_to_otlp
+
+    ws = Path.cwd()
+    run_id = args.run
+    bundle_path = ws / ".uap" / "runs" / run_id / "proof-bundle.json"
+    summary: dict = {"agentId": args.agent, "runId": run_id}
+    if bundle_path.exists():
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+        summary.update(
+            {
+                "agentId": bundle.get("agentId") or args.agent,
+                "trustScore": (bundle.get("trustScore") or {}).get("score"),
+                "passportId": bundle.get("passportId"),
+                "constitutionId": (bundle.get("constitution") or {}).get("constitutionId"),
+            }
+        )
+    result = export_run_to_otlp(summary, endpoint=args.endpoint, service_name=args.service)
+    _print_json(result)
+    return 0 if result.get("ok") else 1
 
 
 def cmd_tools_list(_: argparse.Namespace) -> int:
@@ -751,11 +792,22 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--run", required=True)
     audit.set_defaults(func=cmd_audit)
 
-    passport = sub.add_parser("passport", help="Show or refresh passport")
+    passport = sub.add_parser("passport", help="Show, refresh, or verify signed passport")
     passport.add_argument("--spec", default="agent.yaml")
     passport.add_argument("--run", default=None)
     passport.add_argument("--refresh", action="store_true")
+    passport.add_argument("--verify", action="store_true", help="Verify Ed25519 signature")
+    passport.add_argument("--file", default=None, help="Verify passport JSON file")
     passport.set_defaults(func=cmd_passport)
+
+    otel = sub.add_parser("otel", help="OpenTelemetry bridge")
+    otel_sub = otel.add_subparsers(dest="otel_cmd", required=True)
+    otel_ex = otel_sub.add_parser("export", help="Export run summary to OTLP")
+    otel_ex.add_argument("--run", required=True)
+    otel_ex.add_argument("--agent", default="local")
+    otel_ex.add_argument("--endpoint", default=None)
+    otel_ex.add_argument("--service", default="narna-agent")
+    otel_ex.set_defaults(func=cmd_otel_export)
 
     tools = sub.add_parser("tools", help="Tool commands")
     tools_sub = tools.add_subparsers(dest="tools_cmd", required=True)

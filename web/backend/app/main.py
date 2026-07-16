@@ -957,6 +957,25 @@ def narna_score_for_agent(agent_id: str, db: Session = Depends(get_db)) -> dict[
     }
 
 
+@app.post("/v1/passport/verify")
+def passport_verify(body: dict[str, Any]) -> dict[str, Any]:
+    """Verify signed Agent Passport offline (Ed25519)."""
+    passport = body.get("passport")
+    if not isinstance(passport, dict):
+        raise HTTPException(status_code=400, detail="passport object required")
+    try:
+        from uap.passport_sign import verify_passport_signature
+
+        ok, problems = verify_passport_signature(passport)
+        return {
+            "verified": ok,
+            "passportId": passport.get("passportId"),
+            "problems": problems,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 @app.get("/v1/benchmark/governance")
 def governance_benchmark() -> dict[str, Any]:
     """Public governance leaderboard (not LLM MMLU)."""

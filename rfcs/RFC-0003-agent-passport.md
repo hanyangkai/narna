@@ -65,4 +65,4 @@ Passports **MAY** be published to Registry and linked from Compatibility badges.
 
 ## Implementation
 
-Landed in `src/uap/passport.py`, `narna passport` CLI, `/passport/:agentId` web viewer, Registry publish path.
+Landed in `src/uap/passport.py`, `src/uap/passport_sign.py` (Ed25519 sign/verify), `narna passport --verify` CLI, `/v1/passport/verify` API, `/passport/:agentId` web viewer, Registry publish path.
