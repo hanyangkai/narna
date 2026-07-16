@@ -1,0 +1,30 @@
+apiVersion: narna.ai/v1alpha1
+kind: Manifest
+metadata:
+  name: Research Agent
+  owner: did:narna:org:example
+identity:
+  id: research-agent
+  version: 0.1.0
+capabilities:
+  - web.search
+  - github.read
+  - reasoning
+permissions:
+  - name: browser
+    mode: allow
+  - name: filesystem
+    mode: read
+  - name: wallet
+    mode: deny
+policies:
+  - human_approval
+  - no_money_transfer
+  - log_every_action
+trust:
+  minimum_score: 0.9
+compatibility:
+  - openai
+  - mcp
+  - langgraph
+  - opentelemetry

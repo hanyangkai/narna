@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/manifest.schema.json",
+  "title": "NARNA Manifest (narna.yaml)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["apiVersion", "kind", "identity"],
+  "properties": {
+    "apiVersion": { "type": "string", "const": "narna.ai/v1alpha1" },
+    "kind": { "type": "string", "const": "Manifest" },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "owner": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string" }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "mode": { "type": "string" },
+              "paths": { "type": "array", "items": { "type": "string" } },
+              "hosts": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        ]
+      }
+    },
+    "policies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "trust": {
+      "type": "object",
+      "properties": {
+        "minimum_score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "compatibility": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

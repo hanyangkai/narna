@@ -75,14 +75,14 @@ export default function Landing() {
               </Link>
               <Link
                 className="btn btn-secondary"
-                to="/specification"
+                to="/docs/borrow-the-wave"
                 style={{
                   background: "rgba(255,255,255,0.1)",
                   borderColor: "rgba(255,255,255,0.25)",
                   color: "#fff",
                 }}
               >
-                Read Spec
+                Borrow the Wave
               </Link>
             </div>
           </div>

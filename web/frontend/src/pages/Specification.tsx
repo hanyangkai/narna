@@ -15,6 +15,12 @@ const SPECS = [
     path: "identity/SPEC.md",
   },
   {
+    id: "manifest",
+    name: "Manifest",
+    desc: "narna.yaml — default metadata that compiles to Constitution",
+    path: "manifest/SPEC.md",
+  },
+  {
     id: "certification",
     name: "Certification",
     desc: "L1 NARNA Certified · L2 Certified+ · L3 Enterprise Ready",

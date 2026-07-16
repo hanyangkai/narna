@@ -45,6 +45,7 @@ Model → Prompt → Tool
 |------|------|--------------------|
 | **Constitution** | [`constitution/SPEC.md`](constitution/SPEC.md) | `constitution.yaml` — Universal Identity, Capability, Permission, Policy, Evidence, Trust |
 | **Universal Identity** | [`identity/SPEC.md`](identity/SPEC.md) | Portable birth record for every AI entity kind |
+| **Manifest** | [`manifest/SPEC.md`](manifest/SPEC.md) | `narna.yaml` short-form → Constitution |
 | **Certification** | [`certification/SPEC.md`](certification/SPEC.md) | L1 / L2 / Enterprise Ready levels |
 | **UAP-Core** | [`uap-core/SPEC.md`](uap-core/SPEC.md) | AgentSpec, Identity, Passport, Capability, Permission, Policy, Event model |
 | **UAP-Execution** | [`uap-execution/SPEC.md`](uap-execution/SPEC.md) | Run lifecycle (reference / adapter surface) |

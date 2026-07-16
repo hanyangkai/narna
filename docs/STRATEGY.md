@@ -166,4 +166,5 @@ Not “1M users.”
 ## Change control
 
 Amendments to this lock require an explicit strategy note + spec version bump.  
+Growth tactics: [`BORROW-THE-WAVE.md`](./BORROW-THE-WAVE.md).  
 Code follows [`../specs/`](../specs/).

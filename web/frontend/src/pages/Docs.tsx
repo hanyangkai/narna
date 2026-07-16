@@ -9,6 +9,48 @@ type DocPage = {
 };
 
 const DOCS: Record<string, DocPage> = {
+  "borrow-the-wave": {
+    title: "Borrow the Wave",
+    lead: "Never Replace. Always Extend. — turn Big Tech releases into NARNA growth.",
+    sections: [
+      {
+        body: "Do not compete with OpenAI, Anthropic, Google, or NVIDIA on runtimes or models. Sit above them. When they ship something new, ship an adapter and a certification path.",
+      },
+      {
+        heading: "One-line integration",
+        code: `from narna import wrap, track
+
+agent = wrap(my_openai_agent, vap=True)
+
+@track
+def research(query: str) -> str:
+    return call_llm(query)`,
+      },
+      {
+        heading: "Default metadata",
+        body: "Every agent should ship narna.yaml (like Dockerfile). It compiles to constitution.yaml.",
+        code: "narna manifest --compile",
+      },
+      {
+        heading: "Read more",
+        body: "docs/BORROW-THE-WAVE.md · rfcs/ · Compatibility Program badges: NARNA Certified · UAP Compatible · Enterprise Ready.",
+      },
+    ],
+  },
+  adapters: {
+    title: "Adapters",
+    lead: "Adapter First — narna-openai, narna-mcp, narna-langgraph, …",
+    sections: [
+      {
+        body: "Adapters extend host frameworks. They never replace them. Deep hooks land as separate packages; the reference SDK detects frameworks and attaches metadata today.",
+        code: `from narna import wrap, ADAPTER_CATALOG
+
+agent = wrap(my_langgraph_app)
+print(agent._adapter)
+print(ADAPTER_CATALOG)`,
+      },
+    ],
+  },
   "what-is-narna": {
     title: "What is NARNA?",
     lead: "The Constitution Layer for Autonomous AI — in plain language.",
@@ -26,7 +68,7 @@ const DOCS: Record<string, DocPage> = {
       },
       {
         heading: "Three names to remember",
-        body: "NARNA = brand (Constitution Layer). UAP = protocol (Understand → Act → Prove). VAP = trust engine (Verify → Audit → Prove). The charter file is constitution.yaml.",
+        body: "NARNA = brand (Constitution Layer). UAP = protocol (Understand · Act · Prove). VAP = trust engine (Verify · Audit · Prove). Developer metadata = narna.yaml (compiles to constitution.yaml).",
       },
     ],
   },
@@ -260,6 +302,7 @@ const SIDEBAR = [
     group: "Start here",
     items: [
       { slug: "what-is-narna", label: "What is NARNA?" },
+      { slug: "borrow-the-wave", label: "Borrow the Wave" },
       { slug: "constitution", label: "Constitution" },
       { slug: "install", label: "Install" },
       { slug: "quickstart", label: "Quickstart" },
@@ -273,6 +316,7 @@ const SIDEBAR = [
       { slug: "evidence", label: "Evidence" },
       { slug: "passport", label: "Passport" },
       { slug: "certification", label: "Certification" },
+      { slug: "adapters", label: "Adapters" },
       { slug: "compatibility", label: "Compatibility" },
     ],
   },

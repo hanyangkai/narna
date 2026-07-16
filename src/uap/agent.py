@@ -119,13 +119,19 @@ class Agent:
             except Exception:
                 pass
 
-            # Spec-first: ensure constitution.yaml exists (Constitution Layer)
+            # Spec-first: prefer narna.yaml (Borrow the Wave metadata), else constitution.yaml
             try:
                 from .constitution import default_constitution_for_agent, write_constitution
                 from .hashing import sha256_obj
+                from .manifest import discover_manifest, load_or_compile_constitution
 
                 const_path = self.workspace / "constitution.yaml"
-                if not const_path.exists():
+                doc = None
+                found = discover_manifest(self.workspace)
+                if found and found.name.startswith("narna"):
+                    doc = load_or_compile_constitution(found, workspace=self.workspace)
+                    const_path = self.workspace / "constitution.yaml"
+                elif not const_path.exists():
                     doc = default_constitution_for_agent(
                         agent_id=self.spec.agent_id,
                         name=agent_name,
@@ -138,7 +144,6 @@ class Agent:
 
                     doc = load_constitution(const_path)
                 self._constitution_path = const_path
-                # Link Universal Identity → Constitution
                 try:
                     store.issue_entity(
                         kind="Agent",

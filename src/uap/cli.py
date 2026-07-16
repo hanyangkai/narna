@@ -201,15 +201,42 @@ def cmd_certify(args: argparse.Namespace) -> int:
 
 def cmd_constitution(args: argparse.Namespace) -> int:
     from .constitution import load_constitution
+    from .manifest import discover_manifest, load_or_compile_constitution
 
     path = Path(args.path)
     if not path.exists():
+        found = discover_manifest(Path.cwd())
+        if found and found.name.startswith("narna"):
+            doc = load_or_compile_constitution(found, workspace=Path.cwd())
+            _print_json(
+                {
+                    "ok": True,
+                    "source": str(found),
+                    "kind": "Constitution",
+                    "constitutionId": doc.get("metadata", {}).get("id"),
+                    "entityId": doc.get("metadata", {}).get("entityId"),
+                }
+            )
+            return 0
         if Path(args.spec).exists():
             agent = Agent.from_spec(args.spec)
         else:
             agent = Agent()
         doc = agent.constitution(refresh=True)
         _print_json(doc)
+        return 0
+    if path.name.startswith("narna"):
+        doc = load_or_compile_constitution(path, workspace=Path.cwd())
+        _print_json(
+            {
+                "ok": True,
+                "source": str(path),
+                "compiled": True,
+                "constitutionId": doc.get("metadata", {}).get("id"),
+                "entityId": doc.get("metadata", {}).get("entityId"),
+                "supports": doc.get("spec", {}).get("capability", {}).get("supports"),
+            }
+        )
         return 0
     doc = load_constitution(path, validate=not args.no_validate)
     _print_json(
@@ -222,6 +249,30 @@ def cmd_constitution(args: argparse.Namespace) -> int:
             "supports": doc.get("spec", {}).get("capability", {}).get("supports"),
         }
     )
+    return 0
+
+
+def cmd_manifest(args: argparse.Namespace) -> int:
+    from .manifest import discover_manifest, load_manifest, load_or_compile_constitution
+
+    path = Path(args.path) if args.path else discover_manifest(Path.cwd())
+    if path is None:
+        print("narna.yaml not found — create one from specs/examples/narna.yaml")
+        return 1
+    doc = load_manifest(path, validate=not args.no_validate)
+    if args.compile:
+        constitution = load_or_compile_constitution(path, workspace=Path.cwd())
+        _print_json(
+            {
+                "ok": True,
+                "manifest": str(path),
+                "constitutionId": constitution.get("metadata", {}).get("id"),
+                "entityId": constitution.get("metadata", {}).get("entityId"),
+                "wrote": "constitution.yaml",
+            }
+        )
+        return 0
+    _print_json({"ok": True, "path": str(path), "kind": doc.get("kind"), "identity": doc.get("identity")})
     return 0
 
 
@@ -399,6 +450,15 @@ def build_parser() -> argparse.ArgumentParser:
     constitution.add_argument("--spec", default="agent.yaml")
     constitution.add_argument("--no-validate", action="store_true")
     constitution.set_defaults(func=cmd_constitution)
+
+    manifest = sub.add_parser(
+        "manifest",
+        help="Validate / compile narna.yaml (default metadata)",
+    )
+    manifest.add_argument("--path", default=None, help="default: discover narna.yaml")
+    manifest.add_argument("--compile", action="store_true", help="Compile to constitution.yaml")
+    manifest.add_argument("--no-validate", action="store_true")
+    manifest.set_defaults(func=cmd_manifest)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)

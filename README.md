@@ -79,26 +79,32 @@ narna certify --vap --level L3 --local
 ## Constitution (center)
 
 ```yaml
-# constitution.yaml — see specs/examples/constitution.yaml
+# narna.yaml — default metadata (compiles to constitution.yaml)
 apiVersion: narna.ai/v1alpha1
-kind: Constitution
-metadata:
-  entityKind: Agent
-  entityId: agent_…
-spec:
-  identity: { … }
-  capability: { supports: [browser, sql] }
-  permission: { grants: […] }
-  policy: { rules: […] }
-  evidence: { mustProve: [side_effects] }
-  trust: { algorithm: vap-trust-v0, minScore: 0.7 }
+kind: Manifest
+identity:
+  id: research-agent
+capabilities: [web.search, github.read]
+permissions:
+  - name: browser
+    mode: allow
+policies: [human_approval, no_money_transfer]
+trust:
+  minimum_score: 0.9
 ```
 
 ```python
-from narna import load_constitution
+from narna import wrap, track, load_or_compile_constitution
 
-c = load_constitution("constitution.yaml")
-print(c["metadata"]["entityId"])
+load_or_compile_constitution("narna.yaml")
+agent = wrap(my_existing_agent, vap=True)
+
+@track
+def research(q: str) -> str: ...
+```
+
+```bash
+narna manifest --compile
 ```
 
 ## Compatibility
@@ -108,8 +114,10 @@ OpenTelemetry · MCP · OpenAI · Anthropic · Google · LangGraph · CrewAI · 
 ## Docs
 
 - Strategy: [`docs/STRATEGY.md`](./docs/STRATEGY.md)
+- Borrow the Wave: [`docs/BORROW-THE-WAVE.md`](./docs/BORROW-THE-WAVE.md)
 - Brand: [`docs/BRAND.md`](./docs/BRAND.md)
 - Specs: [`specs/`](./specs/)
+- RFCs: [`rfcs/`](./rfcs/)
 - Self-host: [`docs/SELF-HOST.md`](./docs/SELF-HOST.md)
 
 ## License
