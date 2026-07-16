@@ -1,53 +1,90 @@
 # NARNA Brand
 
-**NARNA** = Neural Autonomous Runtime Architecture
+**NARNA** = Neural Autonomous **Rules** Native Architecture
 
-> *The Open Runtime for Trusted AI Agents.*
+> *The Constitution Layer for Autonomous AI.*
 
-## Three layers
-
-| Layer | Name | Role |
-|-------|------|------|
-| **Brand / Company** | NARNA | Runtime & trust infrastructure for AI Agents |
-| **Protocol** | UAP | Understand → Act → Prove |
-| **Trust engine** | VAP | Verify → Audit → Prove |
+Second **N** = **Native** (protocol-native contracts) — not Network.  
+**R** = **Rules** (constitution / governance) — not Runtime-as-product.
 
 Do not let the acronym drive architecture. Architecture gives meaning to the acronym.
 
-## Not Network
+---
 
-Prefer **Runtime Architecture** over “Network Architecture”.
-Agent Network / federation can come later without locking the brand to networking.
+## Strategy lock
+
+Canonical strategy: [`STRATEGY.md`](./STRATEGY.md)
+
+North star:
+
+> OpenTelemetry records what AI did. NARNA defines who AI is, what it is allowed to do, and why others can trust it.
+
+---
+
+## Three names
+
+| Layer | Name | Role |
+|-------|------|------|
+| **Brand / company** | NARNA | AI Constitution Layer (Identity · Governance · Trust) |
+| **Protocol** | UAP | Understand → Act → Prove |
+| **Trust engine** | VAP | Verify → Audit → Prove |
+| **Charter artifact** | Constitution | `constitution.yaml` |
+
+---
 
 ## Positioning
 
 - NARNA is **not** an AI model.
 - NARNA is **not** an AI application.
-- NARNA **is** the runtime and trust infrastructure for AI Agents.
+- NARNA is **not** competing to own the agent runtime (LangGraph, OpenAI Agents, CrewAI, …).
+- NARNA **is** the Constitution Layer that sits **above** those systems.
 
 ## Elevator pitch
 
-> NARNA is an open runtime and trust layer for AI Agents. It provides identity, permissions, policies, execution tracing, evidence, and verification, enabling developers and enterprises to build trustworthy autonomous systems on top of any LLM.
+> NARNA is the Constitution Layer for Autonomous AI — portable identity, policy, evidence, trust, passport, and certification that work across any model or agent framework.
 
-## Product family
+## Taglines
+
+| Use | Text |
+|-----|------|
+| Canonical | The Constitution Layer for Autonomous AI. |
+| Enterprise | Identity, Governance and Trust for Autonomous Systems. |
+| Contrast | OpenTelemetry records what AI did. NARNA defines who AI is, what it may do, and why you can trust it. |
+
+---
+
+## Product family (priority)
 
 ```text
-NARNA SDK
-NARNA Runtime
+NARNA Constitution     ← center
 NARNA Identity
 NARNA Passport
 NARNA Policy
+NARNA Evidence / VAP
+NARNA Certification
 NARNA Registry
-NARNA Cloud
-NARNA Enterprise
+NARNA Governance
+NARNA Cloud            ← optional upsell
+NARNA SDK              ← reference client / virus entry (not the USP)
 UAP Specification
-VAP Engine
 ```
+
+**Demoted as USP:** “NARNA Runtime” — may exist only as a thin reference executor.
+
+---
+
+## Compatibility first
+
+NARNA integrates with — does not replace:
+
+OpenTelemetry · MCP · OpenAI · Anthropic · Google · LangGraph · CrewAI · OpenShell · Docker · Kubernetes
+
+---
 
 ## SDK package
 
-Python package remains `uap` (protocol name):
-
 ```bash
-pip install uap
+pip install narna
 ```
+
+Protocol crates / modules may still use the `uap` name internally.

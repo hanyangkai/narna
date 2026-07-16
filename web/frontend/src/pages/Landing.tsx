@@ -3,45 +3,45 @@ import HeroFlow from "../components/HeroFlow";
 import { BRAND, PROTOCOL, PRODUCT_FAMILY, TRUST } from "../brand";
 
 const problems = [
-  "No identity",
-  "No permission model",
-  "No audit trail",
-  "No evidence",
-  "No trust",
+  "No portable identity",
+  "No constitution / policy",
+  "No permission manifest",
+  "No evidence package",
+  "No cross-vendor trust",
 ];
 
 const features = [
-  { title: "Identity", desc: "Every agent gets a passport." },
-  { title: "Permission", desc: "Android-style permissions." },
-  { title: "Evidence", desc: "Every action has proof." },
-  { title: "Policy", desc: "Enterprise governance." },
-  { title: "Observability", desc: "Debug every execution." },
-  { title: "Benchmark", desc: "Compare models automatically." },
+  { title: "Identity", desc: "Universal AI Identity — every entity." },
+  { title: "Constitution", desc: "constitution.yaml governs, not prompts." },
+  { title: "Permission", desc: "Android-style policy manifest." },
+  { title: "Evidence", desc: "Proof packages — not mere traces." },
+  { title: "Passport", desc: "Public trust view enterprises understand." },
+  { title: "Certification", desc: "Verified by NARNA — portable trust." },
 ];
 
 const howSteps = [
-  { title: "Install SDK", desc: PROTOCOL.install },
-  { title: "Wrap your Agent", desc: "Define AgentSpec in YAML" },
-  { title: "Every execution is tracked", desc: "Hash-chained event log" },
-  { title: "Evidence generated", desc: "Attached to every action" },
-  { title: "Trust score updated", desc: "Rule-based via VAP" },
+  { title: "Write a Constitution", desc: "constitution.yaml — who / may / must" },
+  { title: "Attach to any runtime", desc: "LangGraph · CrewAI · MCP · OpenAI …" },
+  { title: "Enforce policy", desc: "Deny by default before side effects" },
+  { title: "Collect evidence", desc: "Proof packages via VAP" },
+  { title: "Issue Passport / Certify", desc: "Portable trust across vendors" },
 ];
 
 const archLayers = [
-  "Applications",
-  "NARNA SDK",
-  "NARNA Runtime",
-  "VAP Engine",
-  "Identity · Evidence · Trust",
+  "NARNA Constitution Layer",
+  "Identity · Policy · Evidence · Trust",
+  "Passport · Certification · Governance",
+  "OpenTelemetry · MCP · Agent SDKs",
+  "LangGraph · CrewAI · OpenShell · …",
   "Any Model",
 ];
 
 const brandLetters = [
   { letter: "N", meaning: "Neural", desc: "Any LLM. Any reasoning engine." },
   { letter: "A", meaning: "Autonomous", desc: "Agents. Automation. Decisions." },
-  { letter: "R", meaning: "Runtime", desc: "Not a model. Not a chatbot. A runtime layer." },
-  { letter: "N", meaning: "Native", desc: "Open protocol. First-class agent contracts." },
-  { letter: "A", meaning: "Architecture", desc: "Spec · SDK · Enterprise platform." },
+  { letter: "R", meaning: "Rules", desc: "Constitution & governance — not another runtime." },
+  { letter: "N", meaning: "Native", desc: "Protocol-native contracts. Spec first." },
+  { letter: "A", meaning: "Architecture", desc: "Identity · Governance · Trust layer." },
 ];
 
 export default function Landing() {
@@ -58,7 +58,7 @@ export default function Landing() {
               ))}
             </div>
             <p className="hero-sub">
-              Give every agent an identity, permissions, evidence, and verifiable actions — on top of any model.
+              {BRAND.contrast} Compatibility first — sits above OpenTelemetry, MCP, and any agent SDK.
             </p>
             <div className="install-block">
               <label>Install NARNA SDK</label>
@@ -114,9 +114,9 @@ export default function Landing() {
         <section className="section two-col">
           <div>
             <p className="section-label">Problem</p>
-            <h2>Today&apos;s agents lack accountability</h2>
+            <h2>Today&apos;s agents have prompts — not a constitution</h2>
             <p className="section-desc">
-              Without a runtime contract, executions are opaque. Enterprises cannot audit. Developers cannot debug.
+              Frameworks own execution. Nobody owns portable identity, policy, and trust across vendors.
             </p>
           </div>
           <ul className="problem-list">
@@ -160,12 +160,12 @@ export default function Landing() {
         <section className="section two-col">
           <div>
             <p className="section-label">Architecture</p>
-            <h2>One runtime layer. Any model.</h2>
+            <h2>Constitution Layer. Any framework. Any model.</h2>
             <p className="section-desc">
-              {BRAND.name} sits between your application and the model. Policy gates every action. Evidence proves every result.
+              {BRAND.name} sits above OpenTelemetry, MCP, and agent SDKs — defining who AI is, what it may do, and why it can be trusted.
             </p>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-              {BRAND.name} is not an AI model. Not an AI application. It is the runtime and trust infrastructure for agents.
+              {BRAND.name} is not a model, not an app, and not competing to own the runtime. It is the Constitution Layer for autonomous AI.
             </p>
           </div>
           <div className="arch-stack">
@@ -181,7 +181,7 @@ export default function Landing() {
         <section className="section two-col">
           <div>
             <p className="section-label">How it works</p>
-            <h2>Five steps to verifiable execution</h2>
+            <h2>Five steps to portable trust</h2>
           </div>
           <div className="steps">
             {howSteps.map((s, i) => (

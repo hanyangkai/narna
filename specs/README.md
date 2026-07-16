@@ -1,10 +1,11 @@
-# UAP Specification Set
+# NARNA / UAP Specification Set
 
+**NARNA** — *The Constitution Layer for Autonomous AI.*  
 **UAP** — *Understand · Act · Prove*  
-The open protocol for autonomous agents.
+**VAP** — *Verify · Audit · Prove*
 
-**Brand / company:** [NARNA](../docs/BRAND.md) — Neural Autonomous Runtime Architecture  
-**Trust engine:** VAP — Verify · Audit · Prove
+**Strategy lock:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)  
+**Brand:** [`../docs/BRAND.md`](../docs/BRAND.md)
 
 **Status:** Draft v0.1  
 **Scope of this repo:** normative specs + JSON Schemas (executable contracts)
@@ -13,20 +14,21 @@ The open protocol for autonomous agents.
 
 ## What this is
 
-UAP is **not** an IDE, agent framework, or model wrapper.
+NARNA / UAP is **not** an IDE, agent framework, or model wrapper.
 
-UAP is:
+It is the **AI Constitution Layer**:
 
 | Layer | Name | Role |
 |-------|------|------|
-| Spec | UAP Specification | Interop contract for agents |
-| Trust | VAP Specification | Verify → Audit → Prove |
-| Impl (later) | `uap-sdk` / `uap-runtime` / `vap-engine` | Reference implementations |
+| Charter | Constitution | Who / may / must — `constitution.yaml` |
+| Protocol | UAP | Understand → Act → Prove |
+| Trust | VAP | Verify → Audit → Prove |
+| Impl | `narna` SDK (reference) | Virus entry + adapters — not the USP |
 
 Design axiom:
 
 ```text
-Identity → Policy → Action → Evidence → Trust
+Identity → Capability → Policy → Evidence → Trust → Certification
 ```
 
 Not:
@@ -41,10 +43,12 @@ Model → Prompt → Tool
 
 | Spec | Path | Normative contents |
 |------|------|--------------------|
+| **Constitution** | [`constitution/SPEC.md`](constitution/SPEC.md) | `constitution.yaml` — Universal Identity, Capability, Permission, Policy, Evidence, Trust |
 | **UAP-Core** | [`uap-core/SPEC.md`](uap-core/SPEC.md) | AgentSpec, Identity, Passport, Capability, Permission, Policy, Event model |
-| **UAP-Execution** | [`uap-execution/SPEC.md`](uap-execution/SPEC.md) | Run lifecycle, tool contract, permission gating, memory/tool adapters |
-| **UAP-Evidence** | [`uap-evidence/SPEC.md`](uap-evidence/SPEC.md) | Evidence object, hashing, provenance, retention |
+| **UAP-Execution** | [`uap-execution/SPEC.md`](uap-execution/SPEC.md) | Run lifecycle (reference / adapter surface) |
+| **UAP-Evidence** | [`uap-evidence/SPEC.md`](uap-evidence/SPEC.md) | Evidence object, hashing, provenance |
 | **VAP** | [`vap/SPEC.md`](vap/SPEC.md) | Verify / Audit / Prove, ProofBundle, Trust Score |
+| **Architecture** | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Stack orientation (Constitution above frameworks) |
 
 ---
 
@@ -54,6 +58,7 @@ Machine-readable contracts live in [`schemas/`](schemas/):
 
 | Schema | Object |
 |--------|--------|
+| `constitution.schema.json` | NARNA Constitution charter |
 | `agent-spec.schema.json` | Declarative agent definition |
 | `identity.schema.json` | Cryptographic identity |
 | `passport.schema.json` | Materialized trust view |
@@ -64,7 +69,7 @@ Machine-readable contracts live in [`schemas/`](schemas/):
 | `proof-bundle.schema.json` | Portable proof artifact |
 | `trust-score.schema.json` | Rule-based trust output |
 
-Examples: [`examples/`](examples/).
+Examples: [`examples/`](examples/) (includes `constitution.yaml`).
 
 ---
 
@@ -76,8 +81,9 @@ Specs use RFC 2119 keywords:
 - **SHOULD** / **SHOULD NOT** — strongly recommended
 - **MAY** — optional
 
-A runtime is **UAP-conformant** if it implements UAP-Core + UAP-Execution + UAP-Evidence.  
-A runtime is **VAP-conformant** if it additionally implements the VAP Spec.
+A system is **Constitution-conformant** if it implements the Constitution Spec.  
+A runtime/adapter is **UAP-conformant** if it implements UAP-Core + relevant Evidence bindings.  
+A system is **VAP-conformant** if it additionally implements the VAP Spec.
 
 ---
 
@@ -89,25 +95,26 @@ A runtime is **VAP-conformant** if it additionally implements the VAP Spec.
 
 ---
 
-## Roadmap (product, not branding)
+## Roadmap (spec-first)
 
 | Milestone | Focus |
 |-----------|--------|
-| **V0** | Specs + schemas (this) → thin SDK surface |
-| **V1** | Passport |
-| **V2** | Audit |
-| **V3** | Trust score |
-| **V4** | Marketplace |
-| **V5** | Registry |
-| **V6** | Multi-agent |
+| **C0** | Constitution Spec + schema + example (**now**) |
+| **C1** | Universal Identity across entity kinds |
+| **C2** | Passport cites constitution hash |
+| **C3** | Certification levels vs Constitution |
+| **C4** | Governance / fleet |
+| **C5** | Compatibility adapters (MCP, OTel, LangGraph, …) |
+| **UAP/VAP** | Keep Evidence + Trust; demote “own the runtime” |
 
 ---
 
 ## Design principles
 
-1. **Deny by default** — no permission, no execution.
-2. **Events are the source of truth** — Passport is a view.
-3. **No prompt/CoT required for proof** — only events + evidence.
+1. **Spec before code** — product follows `specs/`.
+2. **Deny by default** — no permission, no side effect.
+3. **Constitution over prompt** — prompts instruct; constitutions govern.
 4. **Evidence over eloquence** — claims without evidence lower trust.
-5. **Rule-first trust** — Trust Score v0 is deterministic; ML may optimize later.
-6. **LLM-agnostic** — any model behind the runtime boundary.
+5. **Rule-first trust** — Trust Score v0 is deterministic.
+6. **Compatibility first** — never replace OTel / MCP / agent SDKs.
+7. **Portable Trust** — vendor switch must not alone reset identity/trust.

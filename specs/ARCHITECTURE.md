@@ -1,56 +1,57 @@
 # Architecture (normative orientation)
 
-**Status:** Draft aligned with UAP Spec Set **0.1.0**  
-**Audience:** implementers of `uap-sdk`, `uap-runtime`, `vap-engine`
+**Status:** Draft — aligned with strategy lock **Constitution Layer**  
+**Audience:** Spec authors and implementers  
+**Strategy:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)
 
 ---
 
-## Stack
+## Stack (locked)
 
 ```text
-                         UAP
-────────────────────────────────────────
- Application Layer
-   Trading Agent · Research Agent · Coding Agent · …
-────────────────────────────────────────
- UAP SDK
-   Agent() · Tool() · Policy() · Identity() · Passport() · Evidence()
-────────────────────────────────────────
- UAP Runtime
-   Execution · Permission · Memory Adapter · Tool Adapter · Event Bus
-────────────────────────────────────────
- VAP Engine
-   Verify · Audit · Evidence check · Trust Score · Policy Check
-────────────────────────────────────────
- Storage
-   Identity · Execution (events) · Evidence · Benchmark
-────────────────────────────────────────
- Any LLM
-   GPT · Claude · Gemini · Llama · Ollama · …
+                 NARNA
+        AI Constitution Layer
+────────────────────────────────────
+ Identity · Capability · Permission
+ Policy · Evidence · Trust
+ Passport · Certification · Governance
+────────────────────────────────────
+ OpenTelemetry · MCP · OpenAI SDK
+ LangGraph · CrewAI · OpenShell · …
+────────────────────────────────────
+ GPT · Claude · Gemini · Llama · …
 ```
+
+NARNA does **not** replace the middle or bottom bands. It governs entities that run there.
 
 ---
 
-## Control flow (single action)
+## Control plane vs data plane
+
+| Plane | Owns | Examples |
+|-------|------|----------|
+| **Constitution (NARNA)** | Who / may / must / trust | `constitution.yaml`, Passport, Certification |
+| **Execution (others)** | How tokens/tools run | LangGraph, OpenAI Agents, CrewAI, MCP |
+| **Observability (others)** | What happened (spans/logs) | OpenTelemetry |
+| **Proof (NARNA VAP)** | Whether it can be believed | Evidence Package, ProofBundle, Trust Score |
+
+---
+
+## Artifact flow
 
 ```text
-Model proposes intent
+constitution.yaml
         ↓
-Validate tool input schema          (UAP-Execution)
+Identity + Capability + Permission + Policy
         ↓
-PolicyDecision                      (UAP-Core Policy)
+(side effect via any runtime / tool / MCP)
         ↓
-  deny → stop + event
-  ask  → AwaitingInput
-  allow ↓
-Tool.execute                        (Tool Adapter)
+Evidence Package  →  VAP (Verify → Audit → Prove)
         ↓
-EvidenceAttached                    (UAP-Evidence)
-        ↓
-VAP: Verify → Audit → (Trust)       (VAP)
-        ↓
-Continue / Complete
+Passport  →  Certification  →  Registry / Governance
 ```
+
+Portable Trust: changing model vendor **MUST NOT** alone invalidate identity or reset trust without charter change.
 
 ---
 
@@ -58,32 +59,35 @@ Continue / Complete
 
 | Artifact | Authoritative? | Notes |
 |----------|----------------|-------|
-| Event log (hash-chained) | **Yes** | Append-only |
+| Constitution | **Yes** (charter) | Versioned; signature optional |
+| Event / execution log | **Yes** (what ran) | May live in host runtime or OTel + NARNA evidence |
 | Evidence metadata + hashes | **Yes** | Blobs optional via URI |
-| Identity | **Yes** (immutable) | Rotation = new identity |
-| Passport | **No** | Materialized view |
-| TrustScore | **Derived** | Pure function; record weights |
-| Model prompts / CoT | **Not required** | Must not be needed for proof |
+| Identity | **Yes** (immutable until rotation) | Universal AI Identity |
+| Passport | **No** | Materialized public view |
+| TrustScore | **Derived** | Rule + evidence (VAP) |
+| Model prompts / CoT | **Not required for proof** | |
 
 ---
 
-## Package boundaries (future impl)
+## Package boundaries
 
 | Package | Owns |
 |---------|------|
-| `uap` / `uap-sdk` | Agent API, load AgentSpec, call runtime |
-| `uap-runtime` | Lifecycle, adapters, event bus, permission gate |
-| `vap-engine` | Verify, Audit, ProofBundle, TrustScore |
-| Specs (this tree) | Contracts only |
+| Specs (`specs/`) | Contracts only — **source of product truth** |
+| `narna` / `uap` SDK | Load Constitution, Identity, Passport, certify; thin wrap adapters |
+| Reference executor | Optional local loop for demos — **not** the USP |
+| `vap` / VAP modules | Verify, Audit, ProofBundle, TrustScore |
+| Cloud | Registry, Certification stamp, Governance fleet — optional |
 
-Company brand is **out of scope** for architecture; protocols remain **UAP** / **VAP**.
+Company brand is **NARNA**. Protocols remain **UAP** / **VAP**. Charter artifact is **Constitution**.
 
 ---
 
 ## Conformance layers
 
-1. **Core-conformant** — AgentSpec, Identity, Events, Permissions  
-2. **Execution-conformant** — lifecycle + tool gating + evidence attach for side effects  
-3. **VAP-conformant** — ProofBundle + TrustScore + offline `verify`
+1. **Constitution-conformant** — load/validate `constitution.yaml`; enforce permission/policy; evidence requirements  
+2. **UAP-Core-conformant** — AgentSpec / Identity / Events / Permissions  
+3. **VAP-conformant** — ProofBundle + TrustScore + offline verify  
+4. **Certified** — NARNA Certification levels against Constitution + Evidence  
 
-Aim the reference implementation at layer 2 first, then layer 3.
+Aim reference code at (1) then (3); treat host frameworks as (execution) adapters.

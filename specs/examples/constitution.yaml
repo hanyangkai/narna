@@ -1,0 +1,103 @@
+apiVersion: narna.ai/v1alpha1
+kind: Constitution
+metadata:
+  id: const_01EXAMPLECONSTITUTION000
+  name: Research Agent Constitution
+  version: 0.1.0
+  entityKind: Agent
+  entityId: agent_01EXAMPLERESEARCH000000
+  owner: did:narna:org:example
+  origin: https://github.com/hanyangkai/narna
+  license: MIT
+  createdAt: "2026-07-16T00:00:00Z"
+  signature: null
+  labels:
+    env: example
+spec:
+  identity:
+    id: agent_01EXAMPLERESEARCH000000
+    owner: did:narna:org:example
+    version: 0.1.0
+    origin: https://github.com/hanyangkai/narna
+    license: MIT
+    policyRef: narna.ai/policy/default@0.1.0
+    trustProfile: vap-trust-v0
+
+  capability:
+    supports:
+      - reasoning
+      - browser
+      - github
+      - sql
+    declares:
+      - name: browser
+        level: read
+
+  permission:
+    grants:
+      - name: network
+        mode: allow
+        hosts: ["api.github.com", "api.example.com"]
+      - name: filesystem
+        mode: read
+        paths: ["./data"]
+      - name: wallet
+        mode: deny
+
+  policy:
+    ref: narna.ai/policy/default@0.1.0
+    rules:
+      - id: no_money_transfer
+        effect: deny
+        action: wallet.transfer
+        description: Never transfer funds.
+      - id: no_delete_data
+        effect: deny
+        action: filesystem.delete
+      - id: human_for_irreversible
+        effect: ask
+        when: irreversible == true
+      - id: log_every_action
+        effect: require
+        evidence: action_log
+
+  humanReview:
+    requiredFor:
+      - irreversible
+      - external_payment
+      - production_write
+    timeoutSeconds: 3600
+    onTimeout: deny
+
+  evidence:
+    mustLog:
+      - every_tool_call
+      - every_policy_decision
+    mustProve:
+      - side_effects
+    retentionDays: 90
+    hashAlg: sha256
+
+  trust:
+    algorithm: vap-trust-v0
+    minScore: 0.7
+    inputs:
+      - evidence
+      - policy
+      - execution
+      - feedback
+
+  governance:
+    orgId: org_example
+    fleetId: fleet_research
+    roles:
+      - operator
+      - auditor
+
+  compatibility:
+    opentelemetry: true
+    mcp: true
+    openaiAgents: true
+    langgraph: true
+    crewai: true
+    openshell: true

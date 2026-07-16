@@ -1,8 +1,8 @@
-"""NARNA SDK — The Open Runtime for Trusted AI Agents.
+"""NARNA SDK — The Constitution Layer for Autonomous AI.
 
-Phase 1 (offline, zero config)::
+Strategy: docs/STRATEGY.md · Spec: specs/constitution/SPEC.md
 
-    pip install narna
+Phase 1 (reference client, offline)::
 
     from narna import Agent
     agent = Agent()
@@ -17,12 +17,16 @@ Phase 2 (trust on every action)::
 Phase 3 (Registry)::
 
     agent.publish()
-    # narna registry trending
 
 Phase 4 (Certification)::
 
     cert = agent.certify()
     print(cert["badge"])  # Verified by NARNA
+
+Constitution::
+
+    from narna import load_constitution
+    c = load_constitution("constitution.yaml")
 
 UAP is the protocol (Understand · Act · Prove).
 VAP is the trust engine (Verify · Audit · Prove).
@@ -31,6 +35,7 @@ VAP is the trust engine (Verify · Audit · Prove).
 from __future__ import annotations
 
 from uap.agent import Agent
+from uap.constitution import load_constitution, write_constitution
 from uap.evidence import EvidenceStore
 from uap.identity import IdentityStore
 from uap.policy import PolicyEngine
@@ -41,6 +46,8 @@ __version__ = "0.1.0"
 __all__ = [
     "Agent",
     "wrap",
+    "load_constitution",
+    "write_constitution",
     "PolicyEngine",
     "IdentityStore",
     "EvidenceStore",

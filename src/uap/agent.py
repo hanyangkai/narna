@@ -79,6 +79,7 @@ class Agent:
         self._spec_path = Path(spec_path) if spec_path else None
         self._vap_enabled = False
         self._wrapped: Any = None
+        self._constitution_path: Path | None = None
         self.last_vap: dict[str, Any] | None = None
         self.last_result: RunResult | None = None
 
@@ -117,6 +118,25 @@ class Agent:
                 store.issue(self.spec)
             except Exception:
                 pass
+
+            # Spec-first: ensure constitution.yaml exists (Constitution Layer)
+            try:
+                from .constitution import default_constitution_for_agent, write_constitution
+
+                const_path = self.workspace / "constitution.yaml"
+                if not const_path.exists():
+                    write_constitution(
+                        const_path,
+                        default_constitution_for_agent(
+                            agent_id=self.spec.agent_id,
+                            name=agent_name,
+                            owner=str(self.spec.raw.get("metadata", {}).get("creator", "local")),
+                            supports=list(self.spec.raw.get("spec", {}).get("capability", ["general"])),
+                        ),
+                    )
+                self._constitution_path = const_path
+            except Exception:
+                self._constitution_path = None
 
     def _write_minimal_yaml(self, path: Path) -> None:
         import yaml
@@ -346,6 +366,28 @@ class Agent:
 
     def register(self) -> dict[str, Any]:
         return self.publish(remote=False)
+
+    def constitution(self, *, path: str | Path | None = None, refresh: bool = False) -> dict[str, Any]:
+        """Load this agent's Constitution (spec-first charter)."""
+        from .constitution import (
+            default_constitution_for_agent,
+            load_constitution,
+            write_constitution,
+        )
+
+        const_path = Path(path) if path else (self._constitution_path or self.workspace / "constitution.yaml")
+        if refresh or not const_path.exists():
+            write_constitution(
+                const_path,
+                default_constitution_for_agent(
+                    agent_id=self.spec.agent_id,
+                    name=self.spec.name,
+                    owner=str(self.spec.raw.get("metadata", {}).get("creator", "local")),
+                    supports=list(self.spec.raw.get("spec", {}).get("capability", ["general"])),
+                ),
+            )
+            self._constitution_path = const_path
+        return load_constitution(const_path)
 
     def certify(
         self,

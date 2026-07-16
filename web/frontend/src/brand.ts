@@ -1,15 +1,17 @@
-/** NARNA brand — company. UAP = protocol. VAP = trust engine. */
+/** NARNA brand — Constitution Layer. UAP = protocol. VAP = trust engine. */
 
 export const BRAND = {
   name: "NARNA",
-  expand: "Neural Autonomous Runtime Architecture",
-  // Second N read as Native (protocol-native contracts) — not Network.
-  letters: ["Neural", "Autonomous", "Runtime", "Native", "Architecture"] as const,
-  tagline: "The Open Runtime for Trusted AI Agents.",
+  expand: "Neural Autonomous Rules Native Architecture",
+  // R = Rules (constitution). Second N = Native (protocol-native) — not Network.
+  letters: ["Neural", "Autonomous", "Rules", "Native", "Architecture"] as const,
+  tagline: "The Constitution Layer for Autonomous AI.",
   mission:
-    "Build the open infrastructure that enables every AI Agent to operate safely, transparently, and verifiably.",
+    "Define who autonomous AI is, what it may do, and why others can trust it — above any model or framework.",
   elevator:
-    "NARNA is an open runtime and trust layer for AI Agents. It provides identity, permissions, policies, execution tracing, evidence, and verification — on top of any LLM.",
+    "NARNA is the Constitution Layer for Autonomous AI — portable identity, policy, evidence, trust, passport, and certification across any model or agent framework.",
+  contrast:
+    "OpenTelemetry records what AI did. NARNA defines who AI is, what it is allowed to do, and why others can trust it.",
   github: "https://github.com/hanyangkai/narna",
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
@@ -30,14 +32,15 @@ export const TRUST = {
 } as const;
 
 export const PRODUCT_FAMILY = [
-  "NARNA SDK",
-  "NARNA Runtime",
+  "NARNA Constitution",
   "NARNA Identity",
   "NARNA Passport",
   "NARNA Policy",
+  "NARNA Evidence / VAP",
+  "NARNA Certification",
   "NARNA Registry",
+  "NARNA Governance",
   "NARNA Cloud",
-  "NARNA Enterprise",
+  "NARNA SDK",
   "UAP Specification",
-  "VAP Engine",
 ] as const;

@@ -198,6 +198,32 @@ def cmd_certify(args: argparse.Namespace) -> int:
     return 0 if cert.get("status") == "passed" else 1
 
 
+def cmd_constitution(args: argparse.Namespace) -> int:
+    from .constitution import load_constitution
+
+    path = Path(args.path)
+    if not path.exists():
+        if Path(args.spec).exists():
+            agent = Agent.from_spec(args.spec)
+        else:
+            agent = Agent()
+        doc = agent.constitution(refresh=True)
+        _print_json(doc)
+        return 0
+    doc = load_constitution(path, validate=not args.no_validate)
+    _print_json(
+        {
+            "ok": True,
+            "path": str(path),
+            "constitutionId": doc.get("metadata", {}).get("id"),
+            "entityId": doc.get("metadata", {}).get("entityId"),
+            "entityKind": doc.get("metadata", {}).get("entityKind"),
+            "supports": doc.get("spec", {}).get("capability", {}).get("supports"),
+        }
+    )
+    return 0
+
+
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
@@ -359,6 +385,15 @@ def build_parser() -> argparse.ArgumentParser:
     cert.add_argument("--registry-url", default=None)
     cert.add_argument("--registry-key", default=None)
     cert.set_defaults(func=cmd_certify)
+
+    constitution = sub.add_parser(
+        "constitution",
+        help="Validate / show constitution.yaml (Constitution Layer)",
+    )
+    constitution.add_argument("--path", default="constitution.yaml")
+    constitution.add_argument("--spec", default="agent.yaml")
+    constitution.add_argument("--no-validate", action="store_true")
+    constitution.set_defaults(func=cmd_constitution)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)

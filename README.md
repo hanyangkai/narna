@@ -1,16 +1,32 @@
 # NARNA
 
-**Neural Autonomous Runtime Architecture**
+**Neural Autonomous Rules Native Architecture**
 
-> *The Open Runtime for Trusted AI Agents.*
+> *The Constitution Layer for Autonomous AI.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-NARNA is the open runtime and trust infrastructure for AI Agents.  
-**UAP** is the protocol (*Understand · Act · Prove*).  
-**VAP** is the trust engine (*Verify · Audit · Prove*).
+NARNA is the **AI Constitution Layer** — identity, governance, and trust for autonomous systems.  
+It does **not** replace OpenTelemetry, MCP, LangGraph, CrewAI, or model vendors. It sits **above** them.
 
-## Phase 1 — 30 seconds
+**UAP** is the protocol (*Understand · Act · Prove*).  
+**VAP** is the trust engine (*Verify · Audit · Prove*).  
+**Constitution** is the charter artifact (`constitution.yaml`).
+
+> OpenTelemetry records what AI did. NARNA defines who AI is, what it is allowed to do, and why others can trust it.
+
+**Strategy lock:** [`docs/STRATEGY.md`](./docs/STRATEGY.md) · **Spec:** [`specs/constitution/SPEC.md`](./specs/constitution/SPEC.md)
+
+## Spec first
+
+```bash
+# Read before coding
+docs/STRATEGY.md
+specs/constitution/SPEC.md
+specs/examples/constitution.yaml
+```
+
+## Phase 1 — 30 seconds (reference SDK)
 
 ```bash
 pip install -e .
@@ -23,96 +39,64 @@ agent = Agent()
 agent.run()
 ```
 
-Offline. No account. No cloud. No dashboard.
+Offline. No account. No cloud. The SDK is a **virus entry / reference client** — not the strategic USP.
 
 ## Phase 2 — Verify every action
 
 ```python
 agent = Agent("Researcher")
-agent.enable_vap()          # Verify → Audit → Prove
+agent.enable_vap()
 result = agent.run("btc price")
-
-print(result.trust_score)   # e.g. 0.92
-print(result.audit_id)
-agent.vap_report()          # full VAP payload
-```
-
-Or one-liner:
-
-```python
-Agent("Researcher", vap=True).run("hello")
-```
-
-CLI:
-
-```bash
-narna run --vap --input "btc price"
+print(result.trust_score)
 ```
 
 ## Phase 3 — Publish to Registry
 
 ```python
-agent.enable_vap()
-agent.run("btc price")
-agent.publish()                 # local + remote (if NARNA_REGISTRY_URL set)
+agent.publish()
 ```
 
-```bash
-narna publish --vap --category trade
-narna registry trending --category trade
-narna registry list --q Trading
-```
-
-Passport URL: `/passport/{agentId}` · Registry: `/registry`
+## Phase 4 — Certification
 
 ```python
-from narna import wrap
-
-agent = wrap(my_existing_agent, name="Wrapped")
-agent.enable_vap()
-agent.run("task")
-```
-
-## Phase 4 — Certification (Verified by NARNA)
-
-```python
-agent.enable_vap()
-agent.run("btc price")
 cert = agent.certify()
-print(cert["badge"])            # Verified by NARNA
-print(cert["status"])           # passed
+print(cert["badge"])  # Verified by NARNA
 ```
 
-```bash
-narna certify --vap --local
+## Constitution (center)
+
+```yaml
+# constitution.yaml — see specs/examples/constitution.yaml
+apiVersion: narna.ai/v1alpha1
+kind: Constitution
+metadata:
+  entityKind: Agent
+  entityId: agent_…
+spec:
+  identity: { … }
+  capability: { supports: [browser, sql] }
+  permission: { grants: […] }
+  policy: { rules: […] }
+  evidence: { mustProve: [side_effects] }
+  trust: { algorithm: vap-trust-v0, minScore: 0.7 }
 ```
 
-Offline suite checks identity, Completed run, ProofBundle, trust threshold, passport.
-Passing agents get the **Verified by NARNA** badge on Registry / Passport.
+```python
+from narna import load_constitution
 
-## CLI
-
-```bash
-narna init
-narna doctor
-narna verify
-narna passport
-narna certify
-narna benchmark
+c = load_constitution("constitution.yaml")
+print(c["metadata"]["entityId"])
 ```
 
-(`uap` remains as an alias for the protocol CLI.)
+## Compatibility
 
-## Self-host (optional cloud)
-
-```bash
-docker compose up --build
-```
+OpenTelemetry · MCP · OpenAI · Anthropic · Google · LangGraph · CrewAI · OpenShell · Docker · Kubernetes
 
 ## Docs
 
-- Spec: [`specs/`](./specs/)
+- Strategy: [`docs/STRATEGY.md`](./docs/STRATEGY.md)
 - Brand: [`docs/BRAND.md`](./docs/BRAND.md)
+- Specs: [`specs/`](./specs/)
 - Self-host: [`docs/SELF-HOST.md`](./docs/SELF-HOST.md)
 
 ## License
