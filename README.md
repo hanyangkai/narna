@@ -25,16 +25,35 @@ agent.run()
 
 Offline. No account. No cloud. No dashboard.
 
+## Phase 2 — Verify every action
+
 ```python
 agent = Agent("Researcher")
-agent.enable_vap()   # Verify → Audit → Prove after each run
-agent.run("hello")
+agent.enable_vap()          # Verify → Audit → Prove
+result = agent.run("btc price")
+
+print(result.trust_score)   # e.g. 0.92
+print(result.audit_id)
+agent.vap_report()          # full VAP payload
+```
+
+Or one-liner:
+
+```python
+Agent("Researcher", vap=True).run("hello")
+```
+
+CLI:
+
+```bash
+narna run --vap --input "btc price"
 ```
 
 ```python
 from narna import wrap
 
 agent = wrap(my_existing_agent, name="Wrapped")
+agent.enable_vap()
 agent.run("task")
 ```
 

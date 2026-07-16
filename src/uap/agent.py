@@ -47,11 +47,17 @@ def _default_spec(*, name: str, agent_id: str, creator: str = "local") -> AgentS
 class Agent:
     """NARNA / UAP agent — works offline with zero config.
 
-    Phase 1 DX::
+    Phase 1::
 
         from narna import Agent
         agent = Agent()
         agent.run()
+
+    Phase 2::
+
+        agent.enable_vap()
+        result = agent.run("btc price")
+        print(result.trust_score)
     """
 
     def __init__(
@@ -61,15 +67,21 @@ class Agent:
         spec_path: str | Path | None = None,
         workspace: str | Path | None = None,
         auto_init: bool = True,
+        vap: bool = False,
     ) -> None:
         self.workspace = Path(workspace) if workspace else Path.cwd()
         self.runtime = LocalRuntime(self.workspace)
         self._spec_path = Path(spec_path) if spec_path else None
         self._vap_enabled = False
         self._wrapped: Any = None
+        self.last_vap: dict[str, Any] | None = None
+        self.last_result: RunResult | None = None
 
         if auto_init:
             self.runtime.init()
+
+        if vap:
+            self.enable_vap(True)
 
         if spec_path is not None:
             self.spec = load_agent_spec(spec_path)
@@ -114,8 +126,15 @@ class Agent:
         return cls(spec_path=spec_path, workspace=workspace)
 
     def enable_vap(self, enabled: bool = True) -> "Agent":
-        """Phase 2: turn on Verify → Audit → Prove after each run."""
+        """Phase 2: Verify → Audit → Prove on every action and at run end.
+
+        When enabled:
+        - Each tool action with evidence is verified immediately (hash, freshness, …)
+        - Run completion runs the full VAP pipeline
+        - ``result.trust_score`` / ``agent.last_vap`` are populated
+        """
         self._vap_enabled = enabled
+        self.runtime.enable_vap(enabled)
         return self
 
     def run(self, input: str | None = None, *, auto_approve_ask: bool = False) -> RunResult:
@@ -125,17 +144,45 @@ class Agent:
             auto_approve_ask=auto_approve_ask,
             spec_path=self._spec_path,
         )
-        if self._vap_enabled and result.state == "Completed":
-            self.prove(result.run_id)
+        self.last_result = result
+        if result.vap is not None:
+            self.last_vap = result.vap
         return result
 
     def resolve_ask(self, run_id: str, *, approved: bool) -> RunResult:
         if not self._spec_path:
             raise ValueError("resolve_ask requires Agent with a spec file")
         result = self.runtime.resolve_ask(run_id, approved=approved, spec_path=self._spec_path)
-        if self._vap_enabled and result.state == "Completed":
-            self.prove(result.run_id)
+        self.last_result = result
+        if result.vap is not None:
+            self.last_vap = result.vap
         return result
+
+    def vap_report(self, run_id: str | None = None) -> dict[str, Any]:
+        """Return the latest VAP report (or load proof-bundle for a run)."""
+        if run_id is None:
+            if self.last_vap is not None:
+                return {
+                    "trustScore": self.last_vap.get("trustScore"),
+                    "audit": self.last_vap.get("audit"),
+                    "verifications": self.last_vap.get("verifications"),
+                    "proofBundle": self.last_vap.get("proofBundle"),
+                }
+            if self.last_result is not None:
+                run_id = self.last_result.run_id
+            else:
+                raise ValueError("no VAP report — call enable_vap() then run()")
+        bundle_path = self.runtime.runs_dir / run_id / "proof-bundle.json"
+        if not bundle_path.exists():
+            bundle = self.prove(run_id)
+            return {"proofBundle": bundle, "trustScore": bundle.get("trustScore")}
+        bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+        return {
+            "proofBundle": bundle,
+            "trustScore": bundle.get("trustScore"),
+            "audit": bundle.get("audit"),
+            "verifications": bundle.get("verifications"),
+        }
 
     def load_events(self, run_id: str) -> list[dict[str, Any]]:
         return self.runtime.load_events(run_id)

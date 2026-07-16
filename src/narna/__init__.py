@@ -8,6 +8,12 @@ Phase 1 (offline, zero config)::
     agent = Agent()
     agent.run()
 
+Phase 2 (trust on every action)::
+
+    agent.enable_vap()
+    result = agent.run("btc price")
+    print(result.trust_score)
+
 UAP is the protocol (Understand · Act · Prove).
 VAP is the trust engine (Verify · Audit · Prove).
 """

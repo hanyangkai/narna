@@ -84,17 +84,27 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 def cmd_run(args: argparse.Namespace) -> int:
-    agent = Agent.from_spec(args.spec)
+    if getattr(args, "spec", None) and Path(args.spec).exists():
+        agent = Agent.from_spec(args.spec)
+    else:
+        agent = Agent()
+    if getattr(args, "vap", False):
+        agent.enable_vap()
     result = agent.run(input=args.input, auto_approve_ask=args.yes)
-    _print_json(
-        {
-            "runId": result.run_id,
-            "state": result.state,
-            "tipHash": result.tip_hash,
-            "eventsPath": str(result.events_path),
-            "pendingAsk": result.pending_ask,
-        }
-    )
+    out: dict = {
+        "runId": result.run_id,
+        "state": result.state,
+        "tipHash": result.tip_hash,
+        "eventsPath": str(result.events_path),
+        "pendingAsk": result.pending_ask,
+        "vap": result.vap_enabled,
+    }
+    if result.vap_enabled:
+        out["trustScore"] = result.trust_score
+        out["auditId"] = result.audit_id
+        out["proofPath"] = str(result.proof_path) if result.proof_path else None
+        out["verificationCount"] = len(result.verifications)
+    _print_json(out)
     return 0 if result.state != "Failed" else 1
 
 
@@ -220,6 +230,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--spec", default="agent.yaml")
     run.add_argument("--input", default=None)
     run.add_argument("-y", "--yes", action="store_true", help="Auto-approve policy ask")
+    run.add_argument(
+        "--vap",
+        action="store_true",
+        help="Enable VAP (Verify → Audit → Prove) for this run",
+    )
     run.set_defaults(func=cmd_run)
 
     prove = sub.add_parser("prove", help="Build/load ProofBundle for a run")

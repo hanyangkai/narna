@@ -39,8 +39,8 @@ const DOCS: Record<string, DocPage> = {
       },
       {
         heading: "2. Enable VAP (optional)",
-        body: "Every completed run gets Verify → Audit → Prove.",
-        code: "agent.enable_vap()\nagent.run(\"btc price\")",
+        body: "Every action with evidence is verified immediately. Run end produces Audit + Trust + ProofBundle.",
+        code: 'agent = Agent("Researcher")\nagent.enable_vap()\nresult = agent.run("btc price")\nprint(result.trust_score)\nprint(result.audit_id)\nagent.vap_report()',
       },
       {
         heading: "3. Optional: AgentSpec YAML",

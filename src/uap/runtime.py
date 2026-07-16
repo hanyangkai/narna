@@ -19,6 +19,7 @@ from .spec import AgentSpec, load_agent_spec
 from .state import RunState, transition
 from .tools import execute_tool, load_tool_definition
 from .vap.pipeline import run_vap_pipeline
+from .vap.verify_evidence import verify_freshness, verify_hash_match, verify_receipt_presence
 
 
 def _now_rfc3339() -> str:
@@ -32,6 +33,13 @@ class RunResult:
     events_path: Path
     state: str
     pending_ask: dict[str, Any] | None = None
+    # Phase 2 — populated when VAP is enabled
+    vap_enabled: bool = False
+    trust_score: float | None = None
+    audit_id: str | None = None
+    proof_path: Path | None = None
+    verifications: list[dict[str, Any]] = field(default_factory=list)
+    vap: dict[str, Any] | None = None
 
 
 @dataclass
@@ -43,6 +51,7 @@ class RunContext:
     policy_decisions: list[dict[str, Any]] = field(default_factory=list)
     evidence: list[dict[str, Any]] = field(default_factory=list)
     evidence_blobs: dict[str, bytes] = field(default_factory=dict)
+    action_verifications: list[dict[str, Any]] = field(default_factory=list)
 
 
 class LocalRuntime:
@@ -52,6 +61,11 @@ class LocalRuntime:
         self.runs_dir = self.root / "runs"
         self.policy = PolicyEngine(self.workspace)
         self.evidence_store = EvidenceStore(self.workspace)
+        # Phase 2: Verify → Audit → Prove (off by default for Phase 1 lightness)
+        self.vap_enabled = False
+
+    def enable_vap(self, enabled: bool = True) -> None:
+        self.vap_enabled = enabled
 
     def init(self) -> None:
         self.runs_dir.mkdir(parents=True, exist_ok=True)
@@ -218,48 +232,61 @@ class LocalRuntime:
 
     def _complete_run(self, *, spec: AgentSpec, ctx: RunContext, log: EventLog) -> RunResult:
         ctx.state = transition(RunState.RUNNING, RunState.COMPLETING)
-        events = log.export()
-        vap = run_vap_pipeline(
-            agent_id=spec.agent_id,
-            run_id=ctx.run_id,
-            events=events,
-            evidence=ctx.evidence,
-            evidence_blobs=ctx.evidence_blobs,
-            policy_decisions=ctx.policy_decisions,
-        )
-        for v in vap["verifications"]:
+
+        vap: dict[str, Any] | None = None
+        proof_path: Path | None = None
+        trust_score: float | None = None
+        audit_id: str | None = None
+        verifications: list[dict[str, Any]] = list(ctx.action_verifications)
+
+        if self.vap_enabled:
+            events = log.export()
+            vap = run_vap_pipeline(
+                agent_id=spec.agent_id,
+                run_id=ctx.run_id,
+                events=events,
+                evidence=ctx.evidence,
+                evidence_blobs=ctx.evidence_blobs,
+                policy_decisions=ctx.policy_decisions,
+            )
+            for v in vap["verifications"]:
+                log.append(
+                    event_id=new_id("evt"),
+                    event_type="Verified",
+                    agent_id=spec.agent_id,
+                    run_id=ctx.run_id,
+                    ts=_now_rfc3339(),
+                    payload={"verification": v},
+                )
             log.append(
                 event_id=new_id("evt"),
-                event_type="Verified",
+                event_type="AuditRecorded",
                 agent_id=spec.agent_id,
                 run_id=ctx.run_id,
                 ts=_now_rfc3339(),
-                payload={"verification": v},
+                payload={"auditId": vap["audit"]["auditId"]},
             )
-        log.append(
-            event_id=new_id("evt"),
-            event_type="AuditRecorded",
-            agent_id=spec.agent_id,
-            run_id=ctx.run_id,
-            ts=_now_rfc3339(),
-            payload={"auditId": vap["audit"]["auditId"]},
-        )
-        log.append(
-            event_id=new_id("evt"),
-            event_type="TrustScored",
-            agent_id=spec.agent_id,
-            run_id=ctx.run_id,
-            ts=_now_rfc3339(),
-            payload={"score": vap["trustScore"]["score"]},
-        )
-        (ctx.run_dir / "proof-bundle.json").write_text(
-            json.dumps(vap["proofBundle"], indent=2), encoding="utf-8"
-        )
-        BenchmarkStore(self.workspace).record(
-            agent_id=spec.agent_id,
-            run_id=ctx.run_id,
-            trust_score=vap["trustScore"],
-        )
+            log.append(
+                event_id=new_id("evt"),
+                event_type="TrustScored",
+                agent_id=spec.agent_id,
+                run_id=ctx.run_id,
+                ts=_now_rfc3339(),
+                payload={"score": vap["trustScore"]["score"]},
+            )
+            proof_path = ctx.run_dir / "proof-bundle.json"
+            proof_path.write_text(
+                json.dumps(vap["proofBundle"], indent=2), encoding="utf-8"
+            )
+            BenchmarkStore(self.workspace).record(
+                agent_id=spec.agent_id,
+                run_id=ctx.run_id,
+                trust_score=vap["trustScore"],
+            )
+            trust_score = float(vap["trustScore"]["score"])
+            audit_id = str(vap["audit"]["auditId"])
+            verifications = vap["verifications"]
+
         ctx.state = transition(RunState.COMPLETING, RunState.COMPLETED)
         log.append(
             event_id=new_id("evt"),
@@ -267,7 +294,11 @@ class LocalRuntime:
             agent_id=spec.agent_id,
             run_id=ctx.run_id,
             ts=_now_rfc3339(),
-            payload={"status": "ok"},
+            payload={
+                "status": "ok",
+                "vap": self.vap_enabled,
+                "trustScore": trust_score,
+            },
         )
         log.flush()
         return RunResult(
@@ -275,6 +306,12 @@ class LocalRuntime:
             tip_hash=log.tip_hash,
             events_path=log.path,
             state=ctx.state.value,
+            vap_enabled=self.vap_enabled,
+            trust_score=trust_score,
+            audit_id=audit_id,
+            proof_path=proof_path,
+            verifications=verifications,
+            vap=vap,
         )
 
     def _fail(self, spec: AgentSpec, ctx: RunContext, log: EventLog, reason: str) -> RunResult:
@@ -397,6 +434,28 @@ class LocalRuntime:
                     "parentEventId": exec_evt["eventId"],
                 },
             )
+            # Phase 2: verify each action's evidence immediately
+            if self.vap_enabled:
+                action_vs = [
+                    verify_hash_match(evidence, blob),
+                    verify_freshness(evidence),
+                ]
+                if evidence.get("type") == "receipt":
+                    action_vs.append(verify_receipt_presence(evidence))
+                for v in action_vs:
+                    ctx.action_verifications.append(v)
+                    log.append(
+                        event_id=new_id("evt"),
+                        event_type="Verified",
+                        agent_id=spec.agent_id,
+                        run_id=ctx.run_id,
+                        ts=_now_rfc3339(),
+                        payload={
+                            "verification": v,
+                            "scope": "action",
+                            "tool": tool_name,
+                        },
+                    )
         log.append(
             event_id=new_id("evt"),
             event_type="ActionExecuted",
