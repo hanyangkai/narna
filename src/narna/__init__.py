@@ -14,6 +14,11 @@ Phase 2 (trust on every action)::
     result = agent.run("btc price")
     print(result.trust_score)
 
+Phase 3 (Registry)::
+
+    agent.publish()
+    # narna registry trending
+
 UAP is the protocol (Understand · Act · Prove).
 VAP is the trust engine (Verify · Audit · Prove).
 """

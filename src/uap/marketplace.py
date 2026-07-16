@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from .registry import AgentRegistry
 
 
 class Marketplace:
-    """V4 foundation — capability-indexed agent discovery."""
+    """Capability index + trending views over the Agent Registry."""
 
     def __init__(self, workspace: Path) -> None:
         self.root = workspace / ".uap" / "marketplace"
@@ -17,22 +18,21 @@ class Marketplace:
     def index(self) -> dict[str, list[dict]]:
         index: dict[str, list[dict]] = {}
         for entry in self.registry.list():
-            spec_path = Path(entry["specPath"])
-            if not spec_path.exists():
-                alt = self.registry.root / f"{entry['agentId']}.yaml"
-                spec_path = alt
-            from .spec import load_agent_spec
-
-            spec = load_agent_spec(spec_path)
-            caps = spec.raw.get("spec", {}).get("capability", [])
+            caps = entry.get("capabilities") or []
             listing = {
                 "agentId": entry["agentId"],
                 "name": entry["name"],
                 "version": entry["version"],
                 "capabilities": caps,
+                "category": entry.get("category"),
+                "trustScore": entry.get("trustScore"),
+                "stars": entry.get("stars", 0),
+                "downloads": entry.get("downloads", 0),
             }
             for cap in caps:
                 index.setdefault(cap, []).append(listing)
+            if not caps:
+                index.setdefault("general", []).append(listing)
             manifest_path = self.root / f"{entry['agentId']}.json"
             manifest_path.write_text(json.dumps(listing, indent=2), encoding="utf-8")
         index_path = self.root / "index.json"
@@ -40,8 +40,12 @@ class Marketplace:
         return index
 
     def search(self, capability: str) -> list[dict]:
-        index_path = self.root / "index.json"
-        if not index_path.exists():
-            self.index()
-        index = json.loads(index_path.read_text(encoding="utf-8"))
-        return index.get(capability, [])
+        return self.registry.search(capability=capability)
+
+    def trending(self, *, category: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
+        rows = self.registry.trending(category=category, limit=limit)
+        (self.root / "trending.json").write_text(
+            json.dumps({"category": category, "agents": rows}, indent=2),
+            encoding="utf-8",
+        )
+        return rows

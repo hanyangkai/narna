@@ -6,6 +6,7 @@ const links = [
   { to: "/docs", label: "Docs" },
   { to: "/sdk", label: "SDK" },
   { to: "/specification", label: "Specification" },
+  { to: "/registry", label: "Registry" },
   { to: "/enterprise", label: "Enterprise" },
   { to: "/pricing", label: "Pricing" },
 ];

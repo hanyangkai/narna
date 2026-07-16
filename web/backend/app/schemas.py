@@ -110,3 +110,41 @@ class BillingCryptoNetworkResponse(BaseModel):
     chainId: int
     assets: list[str]
     rpcConfigured: bool
+
+
+class RegistryPublishRequest(BaseModel):
+    agentId: str
+    name: str
+    version: str = "0.1.0"
+    creator: str = "local"
+    capabilities: list[str] = Field(default_factory=list)
+    category: str = "general"
+    trustScore: float | None = None
+    stars: int = 0
+    downloads: int = 0
+    executions: int = 0
+    passport: dict[str, Any] | None = None
+    identity: dict[str, Any] | None = None
+
+
+class RegistryAgentSummary(BaseModel):
+    agentId: str
+    name: str
+    version: str
+    creator: str
+    category: str
+    capabilities: list[str]
+    trustScore: float | None = None
+    stars: int = 0
+    downloads: int = 0
+    executions: int = 0
+    publishedAt: str
+    passportUrl: str
+
+
+class RegistryPublishResponse(BaseModel):
+    ok: bool = True
+    agentId: str
+    passportUrl: str
+    registryUrl: str
+    status: str = "published"

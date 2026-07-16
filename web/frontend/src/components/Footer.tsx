@@ -16,6 +16,7 @@ export default function Footer() {
           <Link to="/specification">UAP Specification</Link>
           <Link to="/docs">Documentation</Link>
           <Link to="/sdk">NARNA SDK</Link>
+          <Link to="/registry">Registry</Link>
           <Link to="/docs/examples">Examples</Link>
         </div>
         <div className="footer-col">

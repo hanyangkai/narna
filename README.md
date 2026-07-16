@@ -49,6 +49,22 @@ CLI:
 narna run --vap --input "btc price"
 ```
 
+## Phase 3 — Publish to Registry
+
+```python
+agent.enable_vap()
+agent.run("btc price")
+agent.publish()                 # local + remote (if NARNA_REGISTRY_URL set)
+```
+
+```bash
+narna publish --vap --category trade
+narna registry trending --category trade
+narna registry list --q Trading
+```
+
+Passport URL: `/passport/{agentId}` · Registry: `/registry`
+
 ```python
 from narna import wrap
 

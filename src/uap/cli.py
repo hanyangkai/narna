@@ -156,8 +156,25 @@ def cmd_resolve_ask(args: argparse.Namespace) -> int:
 
 
 def cmd_register(args: argparse.Namespace) -> int:
-    agent = Agent.from_spec(args.spec)
-    entry = agent.register()
+    agent = Agent.from_spec(args.spec) if Path(args.spec).exists() else Agent()
+    entry = agent.publish(remote=False)
+    _print_json(entry)
+    return 0
+
+
+def cmd_publish(args: argparse.Namespace) -> int:
+    if Path(args.spec).exists():
+        agent = Agent.from_spec(args.spec)
+    else:
+        agent = Agent()
+    if getattr(args, "vap", False):
+        agent.enable_vap()
+    entry = agent.publish(
+        remote=not args.local,
+        category=args.category,
+        registry_url=args.registry_url,
+        api_key=args.registry_key,
+    )
     _print_json(entry)
     return 0
 
@@ -165,6 +182,31 @@ def cmd_register(args: argparse.Namespace) -> int:
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
+    return 0
+
+
+def cmd_registry_list(args: argparse.Namespace) -> int:
+    from .registry import AgentRegistry
+
+    hits = AgentRegistry(Path.cwd()).search(capability=args.capability, q=args.q)
+    _print_json(hits)
+    return 0
+
+
+def cmd_registry_trending(args: argparse.Namespace) -> int:
+    hits = Marketplace(Path.cwd()).trending(category=args.category, limit=args.limit)
+    _print_json(hits)
+    return 0
+
+
+def cmd_registry_get(args: argparse.Namespace) -> int:
+    from .registry import AgentRegistry
+
+    entry = AgentRegistry(Path.cwd()).get(args.agent_id)
+    if entry is None:
+        print(f"not found: {args.agent_id}")
+        return 1
+    _print_json(entry)
     return 0
 
 
@@ -276,15 +318,38 @@ def build_parser() -> argparse.ArgumentParser:
     resolve.add_argument("--deny", action="store_true")
     resolve.set_defaults(func=cmd_resolve_ask)
 
-    reg = sub.add_parser("register", help="Register agent in local registry (V5)")
+    reg = sub.add_parser("register", help="Register agent in local registry")
     reg.add_argument("--spec", default="agent.yaml")
     reg.set_defaults(func=cmd_register)
 
-    mp = sub.add_parser("marketplace", help="Marketplace commands (V4)")
+    pub = sub.add_parser("publish", help="Publish agent to NARNA Registry (Phase 3)")
+    pub.add_argument("--spec", default="agent.yaml")
+    pub.add_argument("--category", default=None)
+    pub.add_argument("--local", action="store_true", help="Local registry only")
+    pub.add_argument("--vap", action="store_true", help="Enable VAP before publishing passport")
+    pub.add_argument("--registry-url", default=None)
+    pub.add_argument("--registry-key", default=None)
+    pub.set_defaults(func=cmd_publish)
+
+    mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)
     mp_search = mp_sub.add_parser("search", help="Search agents by capability")
     mp_search.add_argument("capability")
     mp_search.set_defaults(func=cmd_marketplace_search)
+
+    registry = sub.add_parser("registry", help="Agent Registry commands")
+    reg_sub = registry.add_subparsers(dest="registry_cmd", required=True)
+    reg_list = reg_sub.add_parser("list", help="List/search local registry")
+    reg_list.add_argument("--capability", default=None)
+    reg_list.add_argument("--q", default=None)
+    reg_list.set_defaults(func=cmd_registry_list)
+    reg_trend = reg_sub.add_parser("trending", help="Trending agents")
+    reg_trend.add_argument("--category", default=None)
+    reg_trend.add_argument("--limit", type=int, default=20)
+    reg_trend.set_defaults(func=cmd_registry_trending)
+    reg_get = reg_sub.add_parser("get", help="Get agent listing")
+    reg_get.add_argument("agent_id")
+    reg_get.set_defaults(func=cmd_registry_get)
 
     orch = sub.add_parser("orchestrate", help="Multi-agent pipeline (V6)")
     orch.add_argument("--coordinator", default="agent.yaml")

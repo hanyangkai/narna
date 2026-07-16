@@ -18,7 +18,7 @@ from .crypto_chains import build_pay_uri, list_supported_networks, validate_cryp
 from .invoice_utils import build_qr_payload, expire_pending_invoices, invoice_expires_at
 from .database import get_db, init_db
 from .metrics import METRICS
-from .models import ApiKey, Organization, PaymentInvoice, Run, RunEvent, generate_api_key
+from .models import ApiKey, Organization, PaymentInvoice, RegistryAgent, Run, RunEvent, generate_api_key
 from .observability import configure_logging, init_sentry_if_configured
 from .rate_limit import InMemoryRateLimiter
 from .schemas import (
@@ -33,6 +33,9 @@ from .schemas import (
     BillingStatusResponse,
     IngestRequest,
     IngestResponse,
+    RegistryAgentSummary,
+    RegistryPublishRequest,
+    RegistryPublishResponse,
     RunDetail,
     RunSummary,
 )
@@ -594,6 +597,157 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dic
                 db.commit()
 
     return {"ok": True}
+
+
+def _registry_summary(row: RegistryAgent, request: Request | None = None) -> RegistryAgentSummary:
+    caps = json.loads(row.capabilities_json or "[]")
+    base = ""
+    if request is not None:
+        base = str(request.base_url).rstrip("/")
+    return RegistryAgentSummary(
+        agentId=row.agent_id,
+        name=row.name,
+        version=row.version,
+        creator=row.creator,
+        category=row.category,
+        capabilities=caps if isinstance(caps, list) else [],
+        trustScore=row.trust_score,
+        stars=int(row.stars or 0),
+        downloads=int(row.downloads or 0),
+        executions=int(row.executions or 0),
+        publishedAt=row.published_at.isoformat() if row.published_at else "",
+        passportUrl=f"{base}/v1/passport/{row.agent_id}" if base else f"/v1/passport/{row.agent_id}",
+    )
+
+
+@app.post("/v1/registry/publish", response_model=RegistryPublishResponse)
+def registry_publish(
+    body: RegistryPublishRequest,
+    request: Request,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> RegistryPublishResponse:
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == body.agentId).first()
+    if row is None:
+        row = RegistryAgent(agent_id=body.agentId, org_id=org.id)
+        db.add(row)
+    row.name = body.name
+    row.version = body.version
+    row.creator = body.creator
+    row.category = body.category or "general"
+    row.capabilities_json = json.dumps(body.capabilities or [])
+    if body.trustScore is not None:
+        row.trust_score = body.trustScore
+    row.stars = max(int(row.stars or 0), int(body.stars or 0))
+    row.downloads = max(int(row.downloads or 0), int(body.downloads or 0))
+    row.executions = max(int(row.executions or 0), int(body.executions or 0))
+    row.passport_json = json.dumps(body.passport) if body.passport else row.passport_json
+    row.identity_json = json.dumps(body.identity) if body.identity else row.identity_json
+    row.org_id = org.id
+    row.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    base = str(request.base_url).rstrip("/")
+    return RegistryPublishResponse(
+        agentId=row.agent_id,
+        passportUrl=f"{base}/v1/passport/{row.agent_id}",
+        registryUrl=f"{base}/v1/registry/agents/{row.agent_id}",
+        status="published",
+    )
+
+
+@app.get("/v1/registry/agents", response_model=list[RegistryAgentSummary])
+def registry_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    capability: str | None = None,
+    category: str | None = None,
+    q: str | None = None,
+    limit: int = 50,
+) -> list[RegistryAgentSummary]:
+    rows = db.query(RegistryAgent).order_by(RegistryAgent.updated_at.desc()).limit(200).all()
+    out: list[RegistryAgentSummary] = []
+    for row in rows:
+        caps = json.loads(row.capabilities_json or "[]")
+        if capability and capability.lower() not in [str(c).lower() for c in caps]:
+            continue
+        if category and category.lower() != str(row.category or "").lower():
+            continue
+        if q:
+            needle = q.lower()
+            hay = f"{row.name} {row.agent_id} {row.creator}".lower()
+            if needle not in hay:
+                continue
+        out.append(_registry_summary(row, request))
+        if len(out) >= limit:
+            break
+    return out
+
+
+@app.get("/v1/registry/trending", response_model=list[RegistryAgentSummary])
+def registry_trending(
+    request: Request,
+    db: Session = Depends(get_db),
+    category: str | None = None,
+    limit: int = 20,
+) -> list[RegistryAgentSummary]:
+    rows = db.query(RegistryAgent).all()
+    if category:
+        rows = [r for r in rows if str(r.category or "").lower() == category.lower()]
+    rows.sort(
+        key=lambda r: (
+            float(r.trust_score or 0),
+            int(r.stars or 0),
+            int(r.downloads or 0),
+            int(r.executions or 0),
+        ),
+        reverse=True,
+    )
+    return [_registry_summary(r, request) for r in rows[:limit]]
+
+
+@app.get("/v1/registry/agents/{agent_id}", response_model=RegistryAgentSummary)
+def registry_get(
+    agent_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> RegistryAgentSummary:
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == agent_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="agent not found in registry")
+    return _registry_summary(row, request)
+
+
+@app.post("/v1/registry/agents/{agent_id}/star")
+def registry_star(agent_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == agent_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="agent not found")
+    row.stars = int(row.stars or 0) + 1
+    db.commit()
+    return {"ok": True, "agentId": agent_id, "stars": row.stars}
+
+
+@app.get("/v1/passport/{agent_id}")
+def public_passport(agent_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == agent_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="passport not found")
+    passport = json.loads(row.passport_json) if row.passport_json else None
+    return {
+        "agentId": row.agent_id,
+        "name": row.name,
+        "version": row.version,
+        "creator": row.creator,
+        "category": row.category,
+        "capabilities": json.loads(row.capabilities_json or "[]"),
+        "trustScore": row.trust_score,
+        "stars": row.stars,
+        "downloads": row.downloads,
+        "executions": row.executions,
+        "publishedAt": row.published_at.isoformat() if row.published_at else "",
+        "passport": passport,
+        "verified": bool(row.trust_score is not None and float(row.trust_score) >= 0.8),
+    }
 
 
 @app.post("/v1/keys", response_model=ApiKeyResponse)

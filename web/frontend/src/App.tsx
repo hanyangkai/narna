@@ -6,7 +6,9 @@ import Console from "./pages/Console";
 import Docs from "./pages/Docs";
 import Enterprise from "./pages/Enterprise";
 import Landing from "./pages/Landing";
+import PassportPage from "./pages/PassportPage";
 import Pricing from "./pages/Pricing";
+import Registry from "./pages/Registry";
 import RunDetail from "./pages/RunDetail";
 import Sdk from "./pages/Sdk";
 import Specification from "./pages/Specification";
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/docs/:slug" element={<Docs />} />
           <Route path="/specification" element={<Specification />} />
           <Route path="/sdk" element={<Sdk />} />
+          <Route path="/registry" element={<Registry />} />
+          <Route path="/passport/:agentId" element={<PassportPage />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/billing" element={<Billing />} />

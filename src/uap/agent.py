@@ -262,31 +262,94 @@ class Agent:
             },
         )
 
-    def publish(self) -> dict[str, Any]:
-        """Phase 3: publish to Registry (local for now; remote registry later)."""
+    def publish(
+        self,
+        *,
+        remote: bool = True,
+        category: str | None = None,
+        registry_url: str | None = None,
+        api_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Phase 3: publish agent to Registry (local + optional remote).
+
+        Example::
+
+            agent.enable_vap()
+            agent.run("btc price")
+            agent.publish()
+        """
+        import os
+
         IdentityStore(self.workspace).issue(self.spec)
+        passport = self.passport(refresh=True)
+
         if self._spec_path and Path(self._spec_path).exists():
-            entry = AgentRegistry(self.workspace).register(
-                self._spec_path, workspace=self.workspace
-            )
+            spec_path = Path(self._spec_path)
         else:
-            # Register from in-memory spec path
-            yaml_path = self.workspace / "agent.yaml"
-            self._write_minimal_yaml(yaml_path)
-            self._spec_path = yaml_path
-            entry = AgentRegistry(self.workspace).register(yaml_path, workspace=self.workspace)
+            spec_path = self.workspace / "agent.yaml"
+            self._write_minimal_yaml(spec_path)
+            self._spec_path = spec_path
+
+        entry = AgentRegistry(self.workspace).register(
+            spec_path,
+            workspace=self.workspace,
+            passport=passport,
+            category=category,
+        )
         Marketplace(self.workspace).index()
-        return {
+        Marketplace(self.workspace).trending()
+
+        result: dict[str, Any] = {
             **entry,
             "status": "local",
-            "message": "Published to local registry. Remote NARNA Registry ships next.",
+            "passportUrl": f"local://passport/{entry['agentId']}",
+            "message": "Published to local NARNA Registry.",
         }
 
+        if remote:
+            base = (
+                registry_url
+                or os.environ.get("NARNA_REGISTRY_URL")
+                or os.environ.get("UAP_CLOUD_URL")
+                or ""
+            ).rstrip("/")
+            key = api_key or os.environ.get("NARNA_REGISTRY_KEY") or os.environ.get("UAP_CLOUD_KEY") or ""
+            if base:
+                try:
+                    from uap_cloud.exporter import publish_agent
+
+                    remote_resp = publish_agent(
+                        listing=entry,
+                        passport=passport,
+                        api_key=key or "uap_live_dev_local_key_change_in_prod",
+                        base_url=base,
+                    )
+                    result["status"] = "published"
+                    result["remote"] = remote_resp
+                    result["passportUrl"] = remote_resp.get(
+                        "passportUrl", f"{base}/v1/passport/{entry['agentId']}"
+                    )
+                    result["message"] = "Published to local + remote NARNA Registry."
+                except Exception as e:
+                    result["remoteError"] = str(e)
+                    result["message"] = (
+                        "Published locally. Remote registry unavailable "
+                        f"({e}). Set NARNA_REGISTRY_URL / UAP_CLOUD_URL to sync."
+                    )
+
+        return result
+
     def register(self) -> dict[str, Any]:
-        return self.publish()
+        return self.publish(remote=False)
 
     def marketplace_index(self) -> dict[str, list[dict]]:
         return Marketplace(self.workspace).index()
+
+    def registry_search(self, *, capability: str | None = None, q: str | None = None) -> list[dict]:
+        return AgentRegistry(self.workspace).search(capability=capability, q=q)
+
+    def registry_trending(self, *, category: str | None = None, limit: int = 20) -> list[dict]:
+        return Marketplace(self.workspace).trending(category=category, limit=limit)
 
     def verify_bundle(self, bundle: dict[str, Any]) -> tuple[bool, list[str]]:
         return verify_proof_bundle(bundle)

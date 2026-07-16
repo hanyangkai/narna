@@ -99,3 +99,43 @@ def push_run(
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"cloud ingest failed ({e.code}): {body}") from e
+
+
+def publish_agent(
+    *,
+    listing: dict[str, Any],
+    passport: dict[str, Any] | None = None,
+    api_key: str,
+    base_url: str = "http://localhost:8000",
+) -> dict[str, Any]:
+    """Publish an agent listing + passport to NARNA Registry (cloud)."""
+    payload = {
+        "agentId": listing.get("agentId"),
+        "name": listing.get("name"),
+        "version": listing.get("version"),
+        "creator": listing.get("creator", "local"),
+        "capabilities": listing.get("capabilities", []),
+        "category": listing.get("category", "general"),
+        "trustScore": listing.get("trustScore"),
+        "stars": listing.get("stars", 0),
+        "downloads": listing.get("downloads", 0),
+        "executions": listing.get("executions", 0),
+        "passport": passport or listing.get("passport"),
+        "identity": listing.get("identity"),
+    }
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    req = urllib.request.Request(
+        f"{base_url.rstrip('/')}/v1/registry/publish",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"registry publish failed ({e.code}): {body}") from e

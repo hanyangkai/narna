@@ -65,32 +65,47 @@ def build_passport(
         "breakdown": {"evidence": 0.5, "policy": 0.5, "execution": 0.5, "feedback": 0.5},
     }
     hist = history or {"runCount": 0, "successCount": 0, "failureCount": 0, "violationCount": 0}
+    # Drop null optional history fields (schema rejects null)
+    hist = {k: v for k, v in hist.items() if v is not None}
 
     id_section = identity or {
         "agentId": spec.agent_id,
         "specHash": spec_hash(spec),
     }
 
+    trust_block: dict[str, Any] = {
+        "score": trust.get("score", 0.5),
+        "algorithm": trust.get("algorithm", "vap-trust-v0"),
+        "computedAt": trust.get("computedAt", issued),
+        "breakdown": trust.get("breakdown", {}),
+    }
+    if trust.get("inputsHash"):
+        trust_block["trustScoreRef"] = trust["inputsHash"]
+
+    # Permissions in AgentSpec may be strings; passport schema expects objects
+    raw_perms = list(spec.raw.get("spec", {}).get("permissions", []))
+    permissions: list[dict[str, Any]] = []
+    for p in raw_perms:
+        if isinstance(p, dict) and "name" in p:
+            permissions.append(p)
+        elif isinstance(p, str):
+            permissions.append({"name": p, "mode": "allow"})
+
     passport = {
         "passportId": new_id("passport"),
         "issuedAt": issued,
         "expiresAt": expires,
-        "derivedFrom": derived_from,
         "identity": id_section,
         "capability": {
             "declared": list(spec.raw.get("spec", {}).get("capability", [])),
             "observed": observed or [],
         },
-        "permissions": list(spec.raw.get("spec", {}).get("permissions", [])),
+        "permissions": permissions,
         "history": hist,
-        "trust": {
-            "score": trust.get("score", 0.5),
-            "algorithm": trust.get("algorithm", "vap-trust-v0"),
-            "computedAt": trust.get("computedAt", issued),
-            "breakdown": trust.get("breakdown", {}),
-            "trustScoreRef": trust.get("inputsHash"),
-        },
+        "trust": trust_block,
     }
+    if derived_from:
+        passport["derivedFrom"] = derived_from
     validator_for("passport.schema.json").validate(passport)
     return passport
 
