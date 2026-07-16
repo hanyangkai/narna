@@ -196,7 +196,10 @@ def cmd_orchestrate(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="uap", description="UAP CLI")
+    p = argparse.ArgumentParser(
+        prog="narna",
+        description="NARNA CLI — Open Runtime for Trusted AI Agents (UAP protocol)",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
 
     init = sub.add_parser("init", help="Initialize workspace, identity, registry")
