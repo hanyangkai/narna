@@ -3,26 +3,32 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "uap"
+name = "narna"
 version = "0.1.0"
-description = "UAP SDK (draft) — Understand · Act · Prove"
+description = "NARNA — The Open Runtime for Trusted AI Agents (UAP protocol + VAP trust)"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
-authors = [{ name = "UAP Contributors" }]
+license = { text = "MIT" }
+authors = [{ name = "NARNA Contributors" }]
+keywords = ["ai-agents", "runtime", "trust", "uap", "vap", "narna"]
 dependencies = [
   "PyYAML>=6.0.1",
   "jsonschema>=4.23.0",
   "cryptography>=42.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/hanyangkai/narna"
+Documentation = "https://github.com/hanyangkai/narna#readme"
+Repository = "https://github.com/hanyangkai/narna"
+
 [project.scripts]
+narna = "narna.cli:main"
 uap = "uap.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/uap", "src/uap_cloud"]
+packages = ["src/narna", "src/uap", "src/uap_cloud"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "specs/schemas" = "uap/_spec_schemas"
 "policies" = "uap/_policies"
-

@@ -10,31 +10,41 @@ type DocPage = {
 const DOCS: Record<string, DocPage> = {
   install: {
     title: "Install",
-    lead: "Install the UAP Python SDK and verify your environment.",
+    lead: "Install the NARNA Python SDK and verify your environment.",
     sections: [
       {
-        body: "UAP requires Python 3.10+. Install from PyPI or from source in this repository.",
-        code: "pip install uap\n\n# Or from source\ngit clone https://github.com/uap-standard/uap\ncd uap\npip install -e .",
+        body: "NARNA requires Python 3.11+. Offline by default — no account, no cloud.",
+        code: "pip install narna\n\n# Or from source\ngit clone https://github.com/hanyangkai/narna\ncd narna\npip install -e .",
+      },
+      {
+        heading: "30-second hello",
+        body: "Zero config. Create an agent and run.",
+        code: "from narna import Agent\n\nagent = Agent()\nagent.run()",
       },
       {
         heading: "Verify installation",
-        body: "Run the doctor command to check your environment and spec conformance.",
-        code: "uap doctor\nuap doctor --full",
+        body: "Run the doctor command to check your environment.",
+        code: "narna doctor\nnarna doctor --full",
       },
     ],
   },
   quickstart: {
     title: "Quickstart",
-    lead: "Create your first verifiable agent in five minutes.",
+    lead: "Create your first verifiable agent in under a minute.",
     sections: [
       {
-        heading: "1. Initialize workspace",
-        body: "Create a new agent workspace with a default AgentSpec.",
-        code: "uap init\n# Creates agent.yaml, policies/, and .uap/ workspace",
+        heading: "1. Install & run",
+        body: "No YAML required for the hello path.",
+        code: "pip install narna\n\nfrom narna import Agent\nagent = Agent(\"Researcher\")\nagent.run(\"hello\")",
       },
       {
-        heading: "2. Define your agent",
-        body: "AgentSpec is the declarative contract. Identity, permissions, tools, and policy are declared in YAML.",
+        heading: "2. Enable VAP (optional)",
+        body: "Every completed run gets Verify → Audit → Prove.",
+        code: "agent.enable_vap()\nagent.run(\"btc price\")",
+      },
+      {
+        heading: "3. Optional: AgentSpec YAML",
+        body: "For full policy and tools, use a declarative AgentSpec.",
         code: `agent:
   id: trading-agent
   name: Trading Agent
@@ -47,14 +57,9 @@ const DOCS: Record<string, DocPage> = {
   policy: policies/trading-default.yaml`,
       },
       {
-        heading: "3. Run and prove",
-        body: "Every execution produces a hash-chained event log. Prove generates a ProofBundle.",
-        code: 'uap run --input "btc price"\nuap prove --run <runId>\nuap verify --run <runId>',
-      },
-      {
-        heading: "4. Optional: push to cloud",
-        body: "Telemetry export is opt-in. Self-host or use UAP Cloud.",
-        code: "uap push --run <runId> --cloud-key <api_key>",
+        heading: "4. CLI",
+        body: "Same workflow from the terminal.",
+        code: "narna init\nnarna run --input \"btc price\"\nnarna prove --run <runId>\nnarna verify --run <runId>",
       },
     ],
   },

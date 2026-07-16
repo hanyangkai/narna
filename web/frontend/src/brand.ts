@@ -19,8 +19,8 @@ export const PROTOCOL = {
   name: "UAP",
   expand: "Understand · Act · Prove",
   steps: ["Understand", "Act", "Prove"] as const,
-  install: "pip install uap",
-  sdkPackage: "uap",
+  install: "pip install narna",
+  sdkPackage: "narna",
 } as const;
 
 export const TRUST = {
