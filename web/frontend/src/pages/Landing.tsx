@@ -50,7 +50,12 @@ export default function Landing() {
       <section className="hero hero-navy">
         <div className="layout-wide hero-grid">
           <div>
-            <p className="pill-label">{BRAND.name} · {PROTOCOL.name} Protocol v0.1</p>
+            <img
+              src="/brand/narna-logo.png"
+              alt="NARNA — Identity · Governance · Trust"
+              className="hero-brand-mark"
+            />
+            <p className="pill-label">{PROTOCOL.name} Protocol v0.1</p>
             <h1>{BRAND.tagline}</h1>
             <div className="uap-loop">
               {PROTOCOL.steps.map((s) => (

@@ -6,7 +6,13 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="layout-wide footer-inner">
         <div className="footer-brand">
-          <strong>{BRAND.name}</strong>
+          <Link to="/" style={{ textDecoration: "none" }}>
+            <img
+              src="/brand/narna-logo.png"
+              alt="NARNA"
+              style={{ height: 56, width: "auto", borderRadius: 8, background: "#000", marginBottom: 8 }}
+            />
+          </Link>
           <p>
             {BRAND.tagline} {PROTOCOL.name}: {PROTOCOL.expand}.
           </p>
@@ -42,7 +48,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="layout-wide footer-bottom">
-        {BRAND.name} · Constitution Layer · {PROTOCOL.name} v0.1 · MIT
+        {BRAND.name} · Governance Runtime · {PROTOCOL.name} v0.1 · MIT
       </div>
     </footer>
   );

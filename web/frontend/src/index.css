@@ -4,14 +4,15 @@
   --surface-2: #f1f5f9;
   --border: #e2e8f0;
   --text: #0f172a;
-  --muted: #64748b;
-  --navy: #1e3a5f;
-  --navy-dark: #0f2744;
-  --accent: #1e40af;
-  --accent-hover: #1e3a8a;
-  --accent-light: #eff6ff;
+  --muted: #475569;
+  --navy: #0e4a5c;
+  --navy-dark: #041018;
+  --accent: #00c2d7;
+  --accent-hover: #0891b2;
+  --accent-light: #ecfeff;
   --success: #166534;
   --danger: #b91c1c;
+  --on-light: #0f172a;
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -74,15 +75,27 @@ code,
 }
 
 .nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--text);
   letter-spacing: -0.02em;
+  text-decoration: none;
 }
 
 .nav-brand:hover {
   color: var(--navy);
   text-decoration: none;
+}
+
+.nav-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+  background: #000;
 }
 
 .nav-links {
@@ -126,12 +139,12 @@ code,
 }
 
 .btn-primary {
-  background: var(--navy);
-  color: #fff;
+  background: var(--accent);
+  color: #041018;
 }
 
 .btn-primary:hover {
-  background: var(--navy-dark);
+  background: var(--accent-hover);
   color: #fff;
   text-decoration: none;
 }
@@ -165,7 +178,7 @@ code,
 }
 
 .hero-navy {
-  background: var(--navy-dark);
+  background: radial-gradient(ellipse 80% 60% at 20% 0%, #0a3a45 0%, var(--navy-dark) 55%);
   color: #fff;
   margin: 0 -1.5rem;
   padding-left: 1.5rem;
@@ -183,9 +196,44 @@ code,
 }
 
 .hero-navy .uap-loop span {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #e2e8f0;
+  background: rgba(0, 194, 215, 0.12);
+  border-color: rgba(0, 194, 215, 0.35);
+  color: #e0f7fa;
+}
+
+/* Install box on dark hero: light surface + dark text (contrast fix) */
+.hero-navy .install-block label {
+  color: #a5f3fc;
+}
+
+.hero-navy .install-cmd {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.hero-navy .install-cmd code {
+  color: var(--on-light);
+  font-weight: 600;
+}
+
+.hero-navy .install-cmd .btn-secondary {
+  color: var(--on-light);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.hero-navy .install-cmd .btn-secondary:hover {
+  background: #e2e8f0;
+  color: var(--on-light);
+}
+
+.hero-brand-mark {
+  display: block;
+  height: 88px;
+  width: auto;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
 }
 
 .hero h1 {
@@ -263,6 +311,8 @@ code,
 .install-cmd code {
   flex: 1;
   font-size: 0.95rem;
+  color: var(--on-light);
+  font-weight: 600;
 }
 
 /* Hero flow animation */
@@ -656,6 +706,7 @@ pre.code-block {
   font-size: 0.85rem;
   line-height: 1.5;
   margin: 1rem 0;
+  color: var(--on-light);
 }
 
 @media (max-width: 768px) {

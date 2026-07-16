@@ -24,7 +24,7 @@ export default function Nav() {
     <header className="site-header">
       <div className="layout nav">
         <Link to="/" className="nav-brand" onClick={() => setOpen(false)}>
-          {BRAND.name}
+          <img src="/brand/narna-logo.png" alt="NARNA" className="nav-logo" />
         </Link>
 
         <button
