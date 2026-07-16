@@ -31,6 +31,8 @@ from .schemas import (
     BillingInvoiceResponse,
     BillingMockSetPlanRequest,
     BillingStatusResponse,
+    CertificationSubmitRequest,
+    CertificationSubmitResponse,
     IngestRequest,
     IngestResponse,
     RegistryAgentSummary,
@@ -604,6 +606,8 @@ def _registry_summary(row: RegistryAgent, request: Request | None = None) -> Reg
     base = ""
     if request is not None:
         base = str(request.base_url).rstrip("/")
+    verified = bool(getattr(row, "verified", 0))
+    badge = "Verified by NARNA" if verified else None
     return RegistryAgentSummary(
         agentId=row.agent_id,
         name=row.name,
@@ -617,6 +621,8 @@ def _registry_summary(row: RegistryAgent, request: Request | None = None) -> Reg
         executions=int(row.executions or 0),
         publishedAt=row.published_at.isoformat() if row.published_at else "",
         passportUrl=f"{base}/v1/passport/{row.agent_id}" if base else f"/v1/passport/{row.agent_id}",
+        verified=verified,
+        badge=badge,
     )
 
 
@@ -733,6 +739,8 @@ def public_passport(agent_id: str, db: Session = Depends(get_db)) -> dict[str, A
     if row is None:
         raise HTTPException(status_code=404, detail="passport not found")
     passport = json.loads(row.passport_json) if row.passport_json else None
+    cert = json.loads(row.certification_json) if getattr(row, "certification_json", None) else None
+    verified = bool(getattr(row, "verified", 0))
     return {
         "agentId": row.agent_id,
         "name": row.name,
@@ -746,8 +754,57 @@ def public_passport(agent_id: str, db: Session = Depends(get_db)) -> dict[str, A
         "executions": row.executions,
         "publishedAt": row.published_at.isoformat() if row.published_at else "",
         "passport": passport,
-        "verified": bool(row.trust_score is not None and float(row.trust_score) >= 0.8),
+        "verified": verified,
+        "badge": "Verified by NARNA" if verified else None,
+        "certification": cert,
     }
+
+
+@app.post("/v1/certification/submit", response_model=CertificationSubmitResponse)
+def certification_submit(
+    body: CertificationSubmitRequest,
+    request: Request,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> CertificationSubmitResponse:
+    """Accept a local certification result and stamp the Registry agent."""
+    if body.status != "passed":
+        raise HTTPException(status_code=400, detail="only passed certifications can be submitted")
+    row = db.query(RegistryAgent).filter(RegistryAgent.agent_id == body.agentId).first()
+    if row is None:
+        # auto-create a minimal listing so certify-after-publish order is flexible
+        row = RegistryAgent(agent_id=body.agentId, org_id=org.id, name=body.agentId)
+        db.add(row)
+    cert_payload = {
+        "certificationId": body.certificationId,
+        "agentId": body.agentId,
+        "status": body.status,
+        "badge": body.badge or "Verified by NARNA",
+        "algorithm": body.algorithm,
+        "issuedAt": body.issuedAt,
+        "expiresAt": body.expiresAt,
+        "trustScore": body.trustScore,
+        "checks": body.checks,
+        "runId": body.runId,
+        "proofHash": body.proofHash,
+        "passportHash": body.passportHash,
+        "orgId": org.id,
+    }
+    row.certification_json = json.dumps(cert_payload)
+    row.verified = 1
+    if body.trustScore is not None:
+        row.trust_score = body.trustScore
+    row.org_id = org.id
+    row.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    base = str(request.base_url).rstrip("/")
+    return CertificationSubmitResponse(
+        agentId=row.agent_id,
+        verified=True,
+        badge="Verified by NARNA",
+        passportUrl=f"{base}/v1/passport/{row.agent_id}",
+        status="verified",
+    )
 
 
 @app.post("/v1/keys", response_model=ApiKeyResponse)

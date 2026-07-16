@@ -19,6 +19,11 @@ Phase 3 (Registry)::
     agent.publish()
     # narna registry trending
 
+Phase 4 (Certification)::
+
+    cert = agent.certify()
+    print(cert["badge"])  # Verified by NARNA
+
 UAP is the protocol (Understand · Act · Prove).
 VAP is the trust engine (Verify · Audit · Prove).
 """

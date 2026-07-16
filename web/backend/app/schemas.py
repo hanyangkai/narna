@@ -140,6 +140,8 @@ class RegistryAgentSummary(BaseModel):
     executions: int = 0
     publishedAt: str
     passportUrl: str
+    verified: bool = False
+    badge: str | None = None
 
 
 class RegistryPublishResponse(BaseModel):
@@ -148,3 +150,27 @@ class RegistryPublishResponse(BaseModel):
     passportUrl: str
     registryUrl: str
     status: str = "published"
+
+
+class CertificationSubmitRequest(BaseModel):
+    agentId: str
+    certificationId: str
+    status: str
+    badge: str | None = None
+    algorithm: str = "narna-cert-v0"
+    issuedAt: str
+    expiresAt: str | None = None
+    trustScore: float | None = None
+    checks: list[dict[str, Any]] | None = None
+    runId: str | None = None
+    proofHash: str | None = None
+    passportHash: str | None = None
+
+
+class CertificationSubmitResponse(BaseModel):
+    ok: bool = True
+    agentId: str
+    verified: bool
+    badge: str | None = None
+    passportUrl: str
+    status: str

@@ -58,6 +58,11 @@ class Agent:
         agent.enable_vap()
         result = agent.run("btc price")
         print(result.trust_score)
+
+    Phase 4::
+
+        cert = agent.certify()
+        print(cert["badge"])  # Verified by NARNA
     """
 
     def __init__(
@@ -341,6 +346,116 @@ class Agent:
 
     def register(self) -> dict[str, Any]:
         return self.publish(remote=False)
+
+    def certify(
+        self,
+        *,
+        remote: bool = True,
+        min_trust: float = 0.7,
+        registry_url: str | None = None,
+        api_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Phase 4: run Certification suite → Verified by NARNA.
+
+        Example::
+
+            agent.enable_vap()
+            agent.run("btc price")
+            cert = agent.certify()
+            assert cert["badge"] == "Verified by NARNA"
+        """
+        import os
+
+        from .certify import load_certificate, run_certification, save_certificate
+
+        IdentityStore(self.workspace).issue(self.spec)
+        identity = IdentityStore(self.workspace).load()
+        passport = self.passport(refresh=True)
+        result = run_certification(
+            agent_id=self.spec.agent_id,
+            workspace=self.workspace,
+            identity=identity,
+            runs=self.runtime.list_runs(),
+            load_events=self.runtime.load_events,
+            passport=passport,
+            min_trust=min_trust,
+        )
+        path = save_certificate(self.workspace, result)
+        out = result.to_dict()
+        out["localPath"] = str(path)
+
+        # Stamp local registry listing when present
+        reg = AgentRegistry(self.workspace)
+        entry = reg.get(self.spec.agent_id)
+        if entry is None:
+            # ensure local listing exists
+            self.publish(remote=False)
+            entry = reg.get(self.spec.agent_id) or {}
+        entry["verified"] = result.status == "passed"
+        entry["certification"] = {
+            "certificationId": result.certificationId,
+            "status": result.status,
+            "badge": result.badge,
+            "issuedAt": result.issuedAt,
+            "expiresAt": result.expiresAt,
+            "trustScore": result.trustScore,
+            "algorithm": result.algorithm,
+        }
+        if result.status == "passed" and result.trustScore is not None:
+            entry["trustScore"] = result.trustScore
+        (reg.root / f"{self.spec.agent_id}.json").write_text(
+            json.dumps(entry, indent=2), encoding="utf-8"
+        )
+        out["registry"] = {
+            "agentId": self.spec.agent_id,
+            "verified": entry.get("verified"),
+            "badge": result.badge,
+        }
+
+        if remote and result.status == "passed":
+            base = (
+                registry_url
+                or os.environ.get("NARNA_REGISTRY_URL")
+                or os.environ.get("UAP_CLOUD_URL")
+                or ""
+            ).rstrip("/")
+            key = (
+                api_key
+                or os.environ.get("NARNA_REGISTRY_KEY")
+                or os.environ.get("UAP_CLOUD_KEY")
+                or ""
+            )
+            if base:
+                try:
+                    from uap_cloud.exporter import submit_certification
+
+                    remote_resp = submit_certification(
+                        certificate=out,
+                        api_key=key or "uap_live_dev_local_key_change_in_prod",
+                        base_url=base,
+                    )
+                    out["remote"] = remote_resp
+                    out["message"] = "Certified locally + submitted to NARNA Registry."
+                except Exception as e:
+                    out["remoteError"] = str(e)
+                    out["message"] = (
+                        "Certified locally. Remote submit unavailable "
+                        f"({e}). Set NARNA_REGISTRY_URL to sync."
+                    )
+            else:
+                out["message"] = "Certified locally (Verified by NARNA)."
+        elif result.status == "passed":
+            out["message"] = "Certified locally (Verified by NARNA)."
+        else:
+            out["message"] = (
+                "Certification failed: " + "; ".join(result.failures)
+            )
+
+        # refresh cached load path
+        cached = load_certificate(self.workspace, self.spec.agent_id)
+        if cached:
+            out["cached"] = True
+        return out
 
     def marketplace_index(self) -> dict[str, list[dict]]:
         return Marketplace(self.workspace).index()

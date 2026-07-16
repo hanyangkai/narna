@@ -179,6 +179,25 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_certify(args: argparse.Namespace) -> int:
+    if Path(args.spec).exists():
+        agent = Agent.from_spec(args.spec)
+    else:
+        agent = Agent()
+    if getattr(args, "vap", False):
+        agent.enable_vap()
+        if not agent.runtime.list_runs():
+            agent.run(input=args.input or "certification probe")
+    cert = agent.certify(
+        remote=not args.local,
+        min_trust=args.min_trust,
+        registry_url=args.registry_url,
+        api_key=args.registry_key,
+    )
+    _print_json(cert)
+    return 0 if cert.get("status") == "passed" else 1
+
+
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
@@ -330,6 +349,16 @@ def build_parser() -> argparse.ArgumentParser:
     pub.add_argument("--registry-url", default=None)
     pub.add_argument("--registry-key", default=None)
     pub.set_defaults(func=cmd_publish)
+
+    cert = sub.add_parser("certify", help="Run Certification suite (Phase 4 — Verified by NARNA)")
+    cert.add_argument("--spec", default="agent.yaml")
+    cert.add_argument("--local", action="store_true", help="Local certificate only")
+    cert.add_argument("--vap", action="store_true", help="Enable VAP + probe run if needed")
+    cert.add_argument("--input", default=None, help="Input for probe run with --vap")
+    cert.add_argument("--min-trust", type=float, default=0.7)
+    cert.add_argument("--registry-url", default=None)
+    cert.add_argument("--registry-key", default=None)
+    cert.set_defaults(func=cmd_certify)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)

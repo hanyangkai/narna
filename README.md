@@ -73,6 +73,23 @@ agent.enable_vap()
 agent.run("task")
 ```
 
+## Phase 4 — Certification (Verified by NARNA)
+
+```python
+agent.enable_vap()
+agent.run("btc price")
+cert = agent.certify()
+print(cert["badge"])            # Verified by NARNA
+print(cert["status"])           # passed
+```
+
+```bash
+narna certify --vap --local
+```
+
+Offline suite checks identity, Completed run, ProofBundle, trust threshold, passport.
+Passing agents get the **Verified by NARNA** badge on Registry / Passport.
+
 ## CLI
 
 ```bash
@@ -80,6 +97,7 @@ narna init
 narna doctor
 narna verify
 narna passport
+narna certify
 narna benchmark
 ```
 

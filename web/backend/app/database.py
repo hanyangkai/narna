@@ -29,14 +29,26 @@ def _migrate_schema() -> None:
     from sqlalchemy import inspect, text
 
     insp = inspect(engine)
-    if "payment_invoices" not in insp.get_table_names():
-        return
-    cols = {c["name"] for c in insp.get_columns("payment_invoices")}
-    if "expires_at" in cols:
-        return
-    col_type = "DATETIME" if DATABASE_URL.startswith("sqlite") else "TIMESTAMP WITH TIME ZONE"
-    with engine.begin() as conn:
-        conn.execute(text(f"ALTER TABLE payment_invoices ADD COLUMN expires_at {col_type}"))
+    tables = insp.get_table_names()
+
+    if "payment_invoices" in tables:
+        cols = {c["name"] for c in insp.get_columns("payment_invoices")}
+        if "expires_at" not in cols:
+            col_type = "DATETIME" if DATABASE_URL.startswith("sqlite") else "TIMESTAMP WITH TIME ZONE"
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE payment_invoices ADD COLUMN expires_at {col_type}"))
+
+    if "registry_agents" in tables:
+        cols = {c["name"] for c in insp.get_columns("registry_agents")}
+        alterations: list[str] = []
+        if "certification_json" not in cols:
+            alterations.append("ADD COLUMN certification_json TEXT")
+        if "verified" not in cols:
+            alterations.append("ADD COLUMN verified INTEGER DEFAULT 0")
+        if alterations:
+            with engine.begin() as conn:
+                for clause in alterations:
+                    conn.execute(text(f"ALTER TABLE registry_agents {clause}"))
 
 
 def init_db() -> None:

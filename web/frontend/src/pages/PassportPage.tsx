@@ -16,6 +16,8 @@ type PassportView = {
   executions: number;
   publishedAt: string;
   verified: boolean;
+  badge?: string | null;
+  certification?: Record<string, unknown> | null;
   passport: Record<string, unknown> | null;
 };
 
@@ -75,10 +77,18 @@ export default function PassportPage() {
               {data.trustScore != null ? data.trustScore.toFixed(3) : "—"}
               {data.verified && (
                 <span className="badge badge-ok" style={{ marginLeft: "0.5rem" }}>
-                  Verified by NARNA
+                  {data.badge || "Verified by NARNA"}
                 </span>
               )}
             </p>
+            {data.certification && (
+              <p>
+                <strong>Certification:</strong>{" "}
+                <span className="mono">
+                  {String((data.certification as { certificationId?: string }).certificationId || "—")}
+                </span>
+              </p>
+            )}
             <p>
               <strong>Stars:</strong> {data.stars} · <strong>Downloads:</strong> {data.downloads} ·{" "}
               <strong>Executions:</strong> {data.executions}

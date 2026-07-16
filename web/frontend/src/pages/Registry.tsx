@@ -16,6 +16,8 @@ type AgentRow = {
   executions: number;
   publishedAt: string;
   passportUrl: string;
+  verified?: boolean;
+  badge?: string | null;
 };
 
 export default function Registry() {
@@ -61,7 +63,7 @@ export default function Registry() {
         <h1>Agent Registry</h1>
         <p>
           GitHub for Agents — discover, star, and verify published agents.
-          Publish with <code>narna publish</code>.
+          Publish with <code>narna publish</code>, certify with <code>narna certify</code>.
         </p>
       </header>
 
@@ -113,6 +115,7 @@ function AgentTable({ rows, empty }: { rows: AgentRow[]; empty: string }) {
             <th>Agent</th>
             <th>Category</th>
             <th>Trust</th>
+            <th>Badge</th>
             <th>Stars</th>
             <th>Downloads</th>
             <th>Passport</th>
@@ -132,6 +135,13 @@ function AgentTable({ rows, empty }: { rows: AgentRow[]; empty: string }) {
               </td>
               <td>{a.category}</td>
               <td>{a.trustScore != null ? a.trustScore.toFixed(2) : "—"}</td>
+              <td>
+                {a.verified ? (
+                  <span className="badge badge-ok">{a.badge || "Verified by NARNA"}</span>
+                ) : (
+                  <span style={{ color: "var(--muted)" }}>—</span>
+                )}
+              </td>
               <td>{a.stars}</td>
               <td>{a.downloads}</td>
               <td>

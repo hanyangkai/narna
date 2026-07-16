@@ -132,6 +132,8 @@ class RegistryAgent(Base):
     executions: Mapped[int] = mapped_column(Integer, default=0)
     passport_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     identity_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    certification_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    verified: Mapped[int] = mapped_column(Integer, default=0)  # 0|1
     org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(

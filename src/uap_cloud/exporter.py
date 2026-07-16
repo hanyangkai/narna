@@ -139,3 +139,42 @@ def publish_agent(
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"registry publish failed ({e.code}): {body}") from e
+
+
+def submit_certification(
+    *,
+    certificate: dict[str, Any],
+    api_key: str,
+    base_url: str = "http://localhost:8000",
+) -> dict[str, Any]:
+    """Submit a local certification result to NARNA Cloud (Phase 4)."""
+    payload = {
+        "agentId": certificate.get("agentId"),
+        "certificationId": certificate.get("certificationId"),
+        "status": certificate.get("status"),
+        "badge": certificate.get("badge"),
+        "algorithm": certificate.get("algorithm"),
+        "issuedAt": certificate.get("issuedAt"),
+        "expiresAt": certificate.get("expiresAt"),
+        "trustScore": certificate.get("trustScore"),
+        "checks": certificate.get("checks"),
+        "runId": certificate.get("runId"),
+        "proofHash": certificate.get("proofHash"),
+        "passportHash": certificate.get("passportHash"),
+    }
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    req = urllib.request.Request(
+        f"{base_url.rstrip('/')}/v1/certification/submit",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"certification submit failed ({e.code}): {body}") from e
