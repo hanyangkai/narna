@@ -141,6 +141,39 @@ def publish_agent(
         raise RuntimeError(f"registry publish failed ({e.code}): {body}") from e
 
 
+def publish_plugin(
+    *,
+    listing: dict[str, Any],
+    api_key: str,
+    base_url: str = "http://localhost:8000",
+) -> dict[str, Any]:
+    """Publish a plugin listing to NARNA Registry (cloud)."""
+    payload = {
+        "pluginId": listing.get("pluginId"),
+        "name": listing.get("name"),
+        "version": listing.get("version", "0.1.0"),
+        "license": listing.get("license", "MIT"),
+        "spec": listing.get("spec") or {},
+        "stars": listing.get("stars", 0),
+        "downloads": listing.get("downloads", 0),
+    }
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    req = urllib.request.Request(
+        f"{base_url.rstrip('/')}/v1/plugins/publish",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"plugin publish failed ({e.code}): {body}") from e
+
+
 def submit_certification(
     *,
     certificate: dict[str, Any],

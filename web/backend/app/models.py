@@ -141,6 +141,26 @@ class RegistryAgent(Base):
     )
 
 
+class RegistryPlugin(Base):
+    """Community plugin listing."""
+
+    __tablename__ = "registry_plugins"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    plugin_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    version: Mapped[str] = mapped_column(String(64), default="0.1.0")
+    license: Mapped[str] = mapped_column(String(64), default="MIT")
+    spec_json: Mapped[str] = mapped_column(Text, default="{}")
+    stars: Mapped[int] = mapped_column(Integer, default=0)
+    downloads: Mapped[int] = mapped_column(Integer, default=0)
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
 def generate_api_key() -> tuple[str, str, str]:
     """Returns (full_key, prefix, sha256_hex_hash)."""
     import hashlib

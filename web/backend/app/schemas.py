@@ -183,3 +183,31 @@ class CertificationSubmitResponse(BaseModel):
     levelLabel: str | None = None
     passportUrl: str
     status: str
+
+
+class PluginPublishRequest(BaseModel):
+    pluginId: str
+    name: str
+    version: str = "0.1.0"
+    license: str = "MIT"
+    spec: dict[str, Any] = Field(default_factory=dict)
+    stars: int = 0
+    downloads: int = 0
+
+
+class PluginSummary(BaseModel):
+    pluginId: str
+    name: str
+    version: str
+    license: str
+    spec: dict[str, Any] = Field(default_factory=dict)
+    stars: int = 0
+    downloads: int = 0
+    publishedAt: str
+
+
+class PluginPublishResponse(BaseModel):
+    ok: bool = True
+    pluginId: str
+    status: str = "published"
+    registryUrl: str

@@ -4,28 +4,36 @@ from __future__ import annotations
 
 from typing import Any
 
+from .anthropic import AnthropicAdapter
 from .base import AdapterResult, BaseAdapter
 from .crewai import CrewAIAdapter
+from .google import GoogleAdapter
 from .langgraph import LangGraphAdapter
 from .mcp import McpAdapter
 from .openai_agents import OpenAIAdapter
+from .openshell import OpenShellAdapter
 from .otel import OpenTelemetryAdapter, export_run_as_otel_attributes
 
 _ADAPTERS: list[BaseAdapter] = [
     LangGraphAdapter(),
     CrewAIAdapter(),
     OpenAIAdapter(),
+    AnthropicAdapter(),
+    GoogleAdapter(),
     McpAdapter(),
     OpenTelemetryAdapter(),
+    OpenShellAdapter(),
 ]
 
-# Ordered heuristics for detect_framework (module markers)
 _MARKERS: list[tuple[str, tuple[str, ...]]] = [
     ("langgraph", ("langgraph", "CompiledStateGraph", "StateGraph")),
     ("crewai", ("crewai",)),
     ("openai", ("openai", "agents.agent", "agents.run")),
+    ("anthropic", ("anthropic", "claude")),
+    ("google", ("google.genai", "generativeai", "vertexai", "gemini", "google.adk")),
     ("mcp", ("mcp", "ClientSession", "FastMCP")),
     ("opentelemetry", ("opentelemetry",)),
+    ("openshell", ("openshell", "open_shell")),
     ("autogen", ("autogen", "ConversableAgent")),
     ("llamaindex", ("llama_index",)),
     ("haystack", ("haystack",)),
@@ -51,8 +59,12 @@ def detect_framework(obj: Any) -> str | None:
         "crewai": "crewai",
         "openai": "openai",
         "agents": "openai",
+        "anthropic": "anthropic",
+        "google": "google",
+        "vertexai": "google",
         "mcp": "mcp",
         "opentelemetry": "opentelemetry",
+        "openshell": "openshell",
         "autogen": "autogen",
         "llama_index": "llamaindex",
         "haystack": "haystack",
@@ -100,21 +112,15 @@ def attach_adapter(agent: Any, foreign: Any, framework: str | None) -> AdapterRe
     return result
 
 
-def _pkg_slug(framework: str | None) -> str:
-    if not framework:
-        return "generic"
-    return framework.replace("_", "-")
-
-
 ADAPTER_CATALOG = [
     {"id": "openai", "package": "narna-openai", "status": "available", "works_with": "OpenAI Agents / client"},
+    {"id": "anthropic", "package": "narna-anthropic", "status": "available", "works_with": "Anthropic / Claude"},
+    {"id": "google", "package": "narna-google", "status": "available", "works_with": "Google ADK / Gemini"},
     {"id": "langgraph", "package": "narna-langgraph", "status": "available", "works_with": "LangGraph"},
     {"id": "mcp", "package": "narna-mcp", "status": "available", "works_with": "MCP servers/clients"},
     {"id": "opentelemetry", "package": "narna-opentelemetry", "status": "available", "works_with": "OpenTelemetry"},
     {"id": "crewai", "package": "narna-crewai", "status": "available", "works_with": "CrewAI"},
-    {"id": "anthropic", "package": "narna-anthropic", "status": "planned", "works_with": "Anthropic"},
-    {"id": "google", "package": "narna-google", "status": "planned", "works_with": "Google ADK"},
-    {"id": "openshell", "package": "narna-openshell", "status": "planned", "works_with": "OpenShell"},
+    {"id": "openshell", "package": "narna-openshell", "status": "available", "works_with": "OpenShell"},
 ]
 
 __all__ = [
@@ -124,8 +130,11 @@ __all__ = [
     "resolve_adapter",
     "export_run_as_otel_attributes",
     "OpenAIAdapter",
+    "AnthropicAdapter",
+    "GoogleAdapter",
     "LangGraphAdapter",
     "McpAdapter",
     "OpenTelemetryAdapter",
     "CrewAIAdapter",
+    "OpenShellAdapter",
 ]

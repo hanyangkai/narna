@@ -9,6 +9,7 @@ import Docs from "./pages/Docs";
 import Enterprise from "./pages/Enterprise";
 import Landing from "./pages/Landing";
 import PassportPage from "./pages/PassportPage";
+import Plugins from "./pages/Plugins";
 import Pricing from "./pages/Pricing";
 import Registry from "./pages/Registry";
 import RunDetail from "./pages/RunDetail";
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/compatibility" element={<Compatibility />} />
           <Route path="/benchmark" element={<Benchmark />} />
           <Route path="/registry" element={<Registry />} />
+          <Route path="/plugins" element={<Plugins />} />
           <Route path="/passport/:agentId" element={<PassportPage />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/pricing" element={<Pricing />} />

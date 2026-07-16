@@ -309,6 +309,64 @@ def cmd_manifest(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_plugin_list(args: argparse.Namespace) -> int:
+    from .plugins import discover_plugins, list_local_plugins
+
+    discovered = discover_plugins(Path(args.root) if args.root else Path.cwd() / "plugins")
+    registered = list_local_plugins(Path.cwd())
+    _print_json({"discovered": discovered, "registered": registered})
+    return 0
+
+
+def cmd_plugin_publish(args: argparse.Namespace) -> int:
+    import os
+
+    from .plugins import register_plugin_local
+
+    plugin_dir = Path(args.path)
+    entry = register_plugin_local(Path.cwd(), plugin_dir)
+    out: dict = {**entry, "status": "local"}
+    if not args.local:
+        base = (
+            args.registry_url
+            or os.environ.get("NARNA_REGISTRY_URL")
+            or os.environ.get("UAP_CLOUD_URL")
+            or ""
+        ).rstrip("/")
+        key = (
+            args.registry_key
+            or os.environ.get("NARNA_REGISTRY_KEY")
+            or os.environ.get("UAP_CLOUD_KEY")
+            or "uap_live_dev_local_key_change_in_prod"
+        )
+        if base:
+            try:
+                from uap_cloud.exporter import publish_plugin
+
+                remote = publish_plugin(listing=entry, api_key=key, base_url=base)
+                out["remote"] = remote
+                out["status"] = "published"
+                out["message"] = "Plugin published to local + remote registry."
+            except Exception as e:
+                out["remoteError"] = str(e)
+                out["message"] = f"Published locally. Remote unavailable ({e})."
+        else:
+            out["message"] = "Published locally. Set NARNA_REGISTRY_URL to sync."
+    else:
+        out["message"] = "Published to local plugin registry."
+    _print_json(out)
+    return 0
+
+
+def cmd_plugin_attach(args: argparse.Namespace) -> int:
+    from .plugins import attach_plugin
+
+    agent = Agent.from_spec(args.spec) if Path(args.spec).exists() else Agent()
+    result = attach_plugin(agent, Path(args.path))
+    _print_json({"ok": True, "agentId": agent.spec.agent_id, "plugin": result})
+    return 0
+
+
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
@@ -500,6 +558,22 @@ def build_parser() -> argparse.ArgumentParser:
     manifest.add_argument("--compile", action="store_true", help="Compile to constitution.yaml")
     manifest.add_argument("--no-validate", action="store_true")
     manifest.set_defaults(func=cmd_manifest)
+
+    plugin = sub.add_parser("plugin", help="Plugin economy (list / publish / attach)")
+    plugin_sub = plugin.add_subparsers(dest="plugin_cmd", required=True)
+    pl_list = plugin_sub.add_parser("list", help="List discovered + registered plugins")
+    pl_list.add_argument("--root", default=None, help="plugins directory")
+    pl_list.set_defaults(func=cmd_plugin_list)
+    pl_pub = plugin_sub.add_parser("publish", help="Publish plugin to registry")
+    pl_pub.add_argument("path", help="plugin directory (contains narna-plugin.yaml)")
+    pl_pub.add_argument("--local", action="store_true")
+    pl_pub.add_argument("--registry-url", default=None)
+    pl_pub.add_argument("--registry-key", default=None)
+    pl_pub.set_defaults(func=cmd_plugin_publish)
+    pl_att = plugin_sub.add_parser("attach", help="Attach plugin to agent")
+    pl_att.add_argument("path", help="plugin directory")
+    pl_att.add_argument("--spec", default="agent.yaml")
+    pl_att.set_defaults(func=cmd_plugin_attach)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)

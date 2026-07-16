@@ -21,10 +21,10 @@ const LANGS = [
   },
   {
     name: "Go",
-    status: "planned",
-    install: "go get github.com/hanyangkai/narna-go",
-    desc: "Server-side Constitution + Evidence bindings.",
-    links: [],
+    status: "available",
+    install: "cd sdks/go && go test ./...",
+    desc: "Stub: LoadConstitution, BadgeForLevel. Specs remain source of truth.",
+    links: [{ to: "/docs/borrow-the-wave", label: "Strategy" }],
   },
   {
     name: "Rust",

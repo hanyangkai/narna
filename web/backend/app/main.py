@@ -18,7 +18,16 @@ from .crypto_chains import build_pay_uri, list_supported_networks, validate_cryp
 from .invoice_utils import build_qr_payload, expire_pending_invoices, invoice_expires_at
 from .database import get_db, init_db
 from .metrics import METRICS
-from .models import ApiKey, Organization, PaymentInvoice, RegistryAgent, Run, RunEvent, generate_api_key
+from .models import (
+    ApiKey,
+    Organization,
+    PaymentInvoice,
+    RegistryAgent,
+    RegistryPlugin,
+    Run,
+    RunEvent,
+    generate_api_key,
+)
 from .observability import configure_logging, init_sentry_if_configured
 from .rate_limit import InMemoryRateLimiter
 from .schemas import (
@@ -35,6 +44,9 @@ from .schemas import (
     CertificationSubmitResponse,
     IngestRequest,
     IngestResponse,
+    PluginPublishRequest,
+    PluginPublishResponse,
+    PluginSummary,
     RegistryAgentSummary,
     RegistryPublishRequest,
     RegistryPublishResponse,
@@ -897,6 +909,77 @@ def compatibility_badges(request: Request) -> dict[str, Any]:
         ],
         "programUrl": f"{base.replace(':8000', ':5173')}/compatibility",
     }
+
+
+@app.post("/v1/plugins/publish", response_model=PluginPublishResponse)
+def plugins_publish(
+    body: PluginPublishRequest,
+    request: Request,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> PluginPublishResponse:
+    row = db.query(RegistryPlugin).filter(RegistryPlugin.plugin_id == body.pluginId).first()
+    if row is None:
+        row = RegistryPlugin(plugin_id=body.pluginId, org_id=org.id)
+        db.add(row)
+    row.name = body.name
+    row.version = body.version
+    row.license = body.license
+    row.spec_json = json.dumps(body.spec or {})
+    row.stars = max(int(row.stars or 0), int(body.stars or 0))
+    row.downloads = max(int(row.downloads or 0), int(body.downloads or 0))
+    row.org_id = org.id
+    row.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    base = str(request.base_url).rstrip("/")
+    return PluginPublishResponse(
+        pluginId=row.plugin_id,
+        registryUrl=f"{base}/v1/plugins/{row.plugin_id}",
+        status="published",
+    )
+
+
+@app.get("/v1/plugins", response_model=list[PluginSummary])
+def plugins_list(db: Session = Depends(get_db), q: str | None = None, limit: int = 50) -> list[PluginSummary]:
+    rows = db.query(RegistryPlugin).order_by(RegistryPlugin.updated_at.desc()).limit(200).all()
+    out: list[PluginSummary] = []
+    for row in rows:
+        if q:
+            needle = q.lower()
+            if needle not in f"{row.name} {row.plugin_id}".lower():
+                continue
+        out.append(
+            PluginSummary(
+                pluginId=row.plugin_id,
+                name=row.name,
+                version=row.version,
+                license=row.license,
+                spec=json.loads(row.spec_json or "{}"),
+                stars=int(row.stars or 0),
+                downloads=int(row.downloads or 0),
+                publishedAt=row.published_at.isoformat() if row.published_at else "",
+            )
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
+@app.get("/v1/plugins/{plugin_id}", response_model=PluginSummary)
+def plugins_get(plugin_id: str, db: Session = Depends(get_db)) -> PluginSummary:
+    row = db.query(RegistryPlugin).filter(RegistryPlugin.plugin_id == plugin_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="plugin not found")
+    return PluginSummary(
+        pluginId=row.plugin_id,
+        name=row.name,
+        version=row.version,
+        license=row.license,
+        spec=json.loads(row.spec_json or "{}"),
+        stars=int(row.stars or 0),
+        downloads=int(row.downloads or 0),
+        publishedAt=row.published_at.isoformat() if row.published_at else "",
+    )
 
 
 @app.post("/v1/keys", response_model=ApiKeyResponse)

@@ -232,7 +232,7 @@ print(identity["identityId"], identity["kind"])`,
     lead: "Sit above frameworks — never replace them.",
     sections: [
       {
-        body: "NARNA integrates with OpenTelemetry, MCP, OpenAI Agents, LangGraph, CrewAI, OpenShell, Docker, and Kubernetes. Use narna.wrap() as a thin adapter while deeper adapters ship.",
+        body: "NARNA integrates with OpenTelemetry, MCP, OpenAI Agents, Anthropic, Google ADK/Gemini, LangGraph, CrewAI, OpenShell, Docker, and Kubernetes. Use narna.wrap() as a thin adapter. Publish community plugins with narna plugin publish.",
         code: `from narna import wrap\nagent = wrap(my_langgraph_app, name="Researcher")\nagent.enable_vap()\nagent.run("summarize")`,
       },
     ],
