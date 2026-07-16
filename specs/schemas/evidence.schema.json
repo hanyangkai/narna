@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/evidence.schema.json",
+  "title": "UAP Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidenceId",
+    "type",
+    "source",
+    "capturedAt",
+    "contentHash",
+    "provenance"
+  ],
+  "properties": {
+    "evidenceId": { "type": "string", "minLength": 1 },
+    "type": {
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9_]*|x\\.[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*)$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["provider"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "endpoint": { "type": "string" },
+        "toolName": { "type": "string" },
+        "requestFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "statusCode": { "type": "integer" },
+        "canonicalization": {
+          "type": "string",
+          "enum": ["raw_bytes", "canonical_json"]
+        }
+      }
+    },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "contentUri": { "type": "string" },
+    "mediaType": { "type": "string" },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "relatedEvidenceIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "verifiers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agentId", "runId", "parentEventId"],
+      "properties": {
+        "agentId": { "type": "string" },
+        "runId": { "type": "string" },
+        "toolName": { "type": "string" },
+        "permission": { "type": "string" },
+        "parentEventId": { "type": "string" },
+        "policyDecisionId": { "type": "string" },
+        "modelArtifactHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "keyId", "value"],
+      "properties": {
+        "alg": { "type": "string" },
+        "keyId": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "applied": { "type": "boolean" },
+        "rawContentHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "redactedContentHash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

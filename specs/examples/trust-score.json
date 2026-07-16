@@ -1,0 +1,27 @@
+{
+  "score": 0.82,
+  "breakdown": {
+    "evidence": 0.9,
+    "policy": 1.0,
+    "execution": 0.85,
+    "feedback": 0.5
+  },
+  "weights": {
+    "evidence": 0.4,
+    "policy": 0.2,
+    "execution": 0.2,
+    "feedback": 0.2
+  },
+  "reasons": [
+    "multi-source price evidence valid within tolerance",
+    "no policy violations",
+    "event hash chain intact",
+    "no human feedback yet (neutral 0.5)"
+  ],
+  "computedAt": "2026-07-16T06:00:10Z",
+  "inputsHash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "algorithm": "vap-trust-v0",
+  "agentId": "01JEXAMPLETRADINGAGENT00001",
+  "runId": "run_01JEXAMPLE0000000000000000",
+  "capsApplied": []
+}

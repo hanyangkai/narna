@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/proof-bundle.schema.json",
+  "title": "UAP ProofBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundleId",
+    "agentId",
+    "runId",
+    "createdAt",
+    "events",
+    "evidence",
+    "verifications",
+    "tipHash",
+    "bundleHash",
+    "vapVersion"
+  ],
+  "properties": {
+    "bundleId": { "type": "string", "minLength": 1 },
+    "agentId": { "type": "string", "minLength": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://uap.dev/schemas/v0.1/event.schema.json" }
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "https://uap.dev/schemas/v0.1/evidence.schema.json" }
+    },
+    "verifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidenceId",
+          "verifierId",
+          "status",
+          "checkedAt"
+        ],
+        "properties": {
+          "evidenceId": { "type": "string" },
+          "verifierId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "invalid",
+              "unavailable",
+              "expired",
+              "skipped"
+            ]
+          },
+          "checkedAt": { "type": "string", "format": "date-time" },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "scoreContribution": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "auditId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "verificationSummary": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        },
+        "violations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "eventRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fromSequence": { "type": "integer", "minimum": 0 },
+            "toSequence": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "auditor": { "type": "string" }
+      }
+    },
+    "trustScore": {
+      "$ref": "https://uap.dev/schemas/v0.1/trust-score.schema.json"
+    },
+    "tipHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "bundleHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "vapVersion": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

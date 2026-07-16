@@ -1,0 +1,5 @@
+# Self-host stack — run from repo root
+# Usage: docker compose up --build
+
+include:
+  - path: web/docker-compose.yml

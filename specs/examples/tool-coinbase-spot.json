@@ -1,0 +1,31 @@
+{
+  "name": "coinbase.spot_price",
+  "version": "1.0.0",
+  "description": "Fetch BTC-USD spot price from Coinbase.",
+  "capability": "trade",
+  "requiredPermissions": ["market.read"],
+  "sideEffect": "external",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["pair"],
+    "properties": {
+      "pair": { "type": "string", "examples": ["BTC-USD"] }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": ["pair", "amount", "currency"],
+    "properties": {
+      "pair": { "type": "string" },
+      "amount": { "type": "string" },
+      "currency": { "type": "string" }
+    }
+  },
+  "evidencePolicy": {
+    "requiredTypes": ["api_response"],
+    "minSources": 1,
+    "maxAgeSeconds": 60,
+    "onMissing": "fail"
+  }
+}

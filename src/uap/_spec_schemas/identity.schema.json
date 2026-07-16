@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/identity.schema.json",
+  "title": "UAP Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agentId",
+    "creator",
+    "createdAt",
+    "version",
+    "specHash",
+    "signature"
+  ],
+  "properties": {
+    "agentId": { "type": "string", "minLength": 1 },
+    "creator": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([+-][0-9A-Za-z.-]+)?$"
+    },
+    "specHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "supersedes": {
+      "type": "string",
+      "description": "Previous agentId if this identity rotates another."
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "keyId", "value"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["ed25519", "ecdsa-p256-sha256"]
+        },
+        "keyId": { "type": "string", "minLength": 1 },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Base64url signature over canonical identity payload."
+        }
+      }
+    }
+  }
+}

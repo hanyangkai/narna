@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/trust-score.schema.json",
+  "title": "UAP TrustScore",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "score",
+    "breakdown",
+    "weights",
+    "reasons",
+    "computedAt",
+    "inputsHash",
+    "algorithm"
+  ],
+  "properties": {
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "breakdown": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence", "policy", "execution", "feedback"],
+      "properties": {
+        "evidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "policy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "execution": { "type": "number", "minimum": 0, "maximum": 1 },
+        "feedback": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence", "policy", "execution", "feedback"],
+      "properties": {
+        "evidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "policy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "execution": { "type": "number", "minimum": 0, "maximum": 1 },
+        "feedback": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "computedAt": { "type": "string", "format": "date-time" },
+    "inputsHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "algorithm": {
+      "type": "string",
+      "const": "vap-trust-v0"
+    },
+    "agentId": { "type": "string" },
+    "runId": { "type": "string" },
+    "capsApplied": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "e.g. broken_chain, deny_bypass, missing_receipt"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+apiVersion: uap.dev/v1alpha1
+kind: Agent
+metadata:
+  id: 01JEXAMPLETRADINGAGENT00001
+  name: Trading Agent
+  version: 1.0.0
+  creator: did:uap:creator:alice
+  createdAt: "2026-07-16T00:00:00Z"
+  labels:
+    domain: markets
+spec:
+  capability:
+    - search
+    - trade
+  permissions:
+    - name: market.read
+      mode: allow
+    - name: browser.open
+      mode: allow
+      constraints:
+        domainsAllowlist:
+          - "*.exchange.com"
+          - "api.coinbase.com"
+          - "api.binance.com"
+    - name: wallet.transfer
+      mode: ask
+      constraints:
+        maxAmount: "100"
+        currency: USDT
+  tools:
+    - name: coinbase.spot_price
+    - name: binance.ticker
+    - name: wallet.transfer
+  model:
+    provider: any
+    preference: claude-opus
+  memory:
+    adapter: local-sqlite
+  policy:
+    ref: policies/trading-default@1.0.0

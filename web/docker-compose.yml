@@ -1,0 +1,95 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: web/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      UAP_DATABASE_URL: postgresql+psycopg2://uap:uap@postgres:5432/uap_cloud
+      UAP_REDIS_URL: redis://redis:6379/0
+      UAP_BILLING_MODE: mock
+      UAP_CRYPTO_MODE: mock
+      UAP_CRYPTO_RECEIVER_WALLET: 0x24DAb37fd89222710ce1D5A4c4E81e26D51E34D5
+      UAP_CRYPTO_BOT_ENABLED: "1"
+      UAP_CRYPTO_BOT_INTERVAL_SEC: "20"
+      UAP_CRYPTO_SCAN_BLOCKS: "6000"
+      UAP_CRYPTO_MIN_CONFIRMATIONS: "3"
+      UAP_RATE_LIMIT_PER_MIN: "120"
+      UAP_CLOUD_CORS_ORIGIN: "*"
+      # Per-chain RPC (required when UAP_CRYPTO_MODE=live)
+      UAP_ETH_RPC_URL: ${UAP_ETH_RPC_URL:-}
+      UAP_POLYGON_RPC_URL: ${UAP_POLYGON_RPC_URL:-}
+      UAP_BASE_RPC_URL: ${UAP_BASE_RPC_URL:-}
+      UAP_ARBITRUM_RPC_URL: ${UAP_ARBITRUM_RPC_URL:-}
+      UAP_BSC_RPC_URL: ${UAP_BSC_RPC_URL:-}
+      # Stripe (when UAP_BILLING_MODE=stripe)
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+      STRIPE_PRICE_ID_PRO: ${STRIPE_PRICE_ID_PRO:-}
+      STRIPE_PRICE_ID_TEAM: ${STRIPE_PRICE_ID_TEAM:-}
+      STRIPE_PRICE_ID_BUSINESS: ${STRIPE_PRICE_ID_BUSINESS:-}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:5173/console}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:5173/pricing}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    volumes:
+      - uap_data:/data
+    working_dir: /app/web/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health', timeout=2).read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: uap
+      POSTGRES_PASSWORD: uap
+      POSTGRES_DB: uap_cloud
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uap -d uap_cloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/frontend/Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  uap_data:
+  postgres_data:
+  redis_data:
+

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/event.schema.json",
+  "title": "UAP Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "eventType",
+    "apiVersion",
+    "agentId",
+    "runId",
+    "ts",
+    "sequence",
+    "hashPrev",
+    "payload"
+  ],
+  "properties": {
+    "eventId": { "type": "string", "minLength": 1 },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "AgentStarted",
+        "PolicyEvaluated",
+        "ToolCallRequested",
+        "ToolCallExecuted",
+        "MemoryRead",
+        "MemoryWrite",
+        "ModelGenerated",
+        "ActionExecuted",
+        "EvidenceAttached",
+        "Verified",
+        "AuditRecorded",
+        "TrustScored",
+        "Completed",
+        "Failed",
+        "Aborted"
+      ]
+    },
+    "apiVersion": {
+      "type": "string",
+      "const": "uap.dev/v1alpha1"
+    },
+    "agentId": { "type": "string", "minLength": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "ts": { "type": "string", "format": "date-time" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "hashPrev": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "schemaRef": { "type": "string" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

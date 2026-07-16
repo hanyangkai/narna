@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/policy-decision.schema.json",
+  "title": "UAP PolicyDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decisionId",
+    "decision",
+    "permission",
+    "reasons",
+    "policyRef",
+    "evaluatedAt",
+    "inputHash"
+  ],
+  "properties": {
+    "decisionId": { "type": "string", "minLength": 1 },
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "deny", "ask"]
+    },
+    "permission": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "policyRef": { "type": "string", "minLength": 1 },
+    "evaluatedAt": { "type": "string", "format": "date-time" },
+    "inputHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "agentId": { "type": "string" },
+    "runId": { "type": "string" },
+    "constraintsApplied": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

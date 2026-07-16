@@ -1,0 +1,24 @@
+{
+  "decisionId": "pd_0001",
+  "decision": "ask",
+  "permission": "wallet.transfer",
+  "parameters": {
+    "amount": "50",
+    "currency": "USDT",
+    "recipient": "0xabc..."
+  },
+  "reasons": [
+    "permission mode is ask",
+    "amount 50 USDT within maxAmount 100",
+    "recipient on allowlist"
+  ],
+  "policyRef": "policies/trading-default@1.0.0",
+  "evaluatedAt": "2026-07-16T06:00:05Z",
+  "inputHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "agentId": "01JEXAMPLETRADINGAGENT00001",
+  "runId": "run_01JEXAMPLE0000000000000000",
+  "constraintsApplied": {
+    "maxAmount": "100",
+    "currency": "USDT"
+  }
+}

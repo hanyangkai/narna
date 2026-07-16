@@ -1,0 +1,53 @@
+# Dependencies & build
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+node_modules/
+web/frontend/dist/
+web/frontend/node_modules/
+
+# Local UAP / agent runtime state
+.uap/
+agent.yaml
+
+# Secrets & local env (never commit)
+.env
+.env.*
+!.env.example
+!**/.env.example
+!**/.env.production.example
+web/deploy/selfhost/.env
+*.pem
+*.key
+secrets/
+credentials.json
+
+# Databases & local data
+*.db
+*.sqlite
+*.sqlite3
+uap_data/
+postgres_data/
+redis_data/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/tool.schema.json",
+  "title": "UAP Tool",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "capability",
+    "requiredPermissions",
+    "inputSchema",
+    "outputSchema",
+    "sideEffect",
+    "evidencePolicy"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "requiredPermissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+      },
+      "uniqueItems": true
+    },
+    "inputSchema": {
+      "type": "object",
+      "description": "JSON Schema for tool inputs.",
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "description": "JSON Schema for tool outputs.",
+      "additionalProperties": true
+    },
+    "sideEffect": {
+      "type": "string",
+      "enum": ["none", "local", "external", "irreversible"]
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["onMissing"],
+      "properties": {
+        "requiredTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "minSources": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxAgeSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "onMissing": {
+          "type": "string",
+          "enum": ["fail", "degrade"]
+        }
+      }
+    }
+  }
+}

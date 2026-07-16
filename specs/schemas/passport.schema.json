@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/passport.schema.json",
+  "title": "UAP Passport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "passportId",
+    "issuedAt",
+    "expiresAt",
+    "identity",
+    "capability",
+    "permissions",
+    "history",
+    "trust"
+  ],
+  "properties": {
+    "passportId": { "type": "string", "minLength": 1 },
+    "issuedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "derivedFrom": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Hash of event-log tip used to materialize this passport."
+    },
+    "identity": {
+      "oneOf": [
+        { "$ref": "https://uap.dev/schemas/v0.1/identity.schema.json" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agentId", "specHash"],
+          "properties": {
+            "agentId": { "type": "string" },
+            "specHash": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "identityUri": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared"],
+      "properties": {
+        "declared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        },
+        "observed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "mode"],
+        "properties": {
+          "name": { "type": "string" },
+          "mode": { "type": "string", "enum": ["allow", "deny", "ask"] },
+          "constraints": { "type": "object", "additionalProperties": true },
+          "scope": { "type": "string" }
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runCount"],
+      "properties": {
+        "runCount": { "type": "integer", "minimum": 0 },
+        "successCount": { "type": "integer", "minimum": 0 },
+        "failureCount": { "type": "integer", "minimum": 0 },
+        "violationCount": { "type": "integer", "minimum": 0 },
+        "lastRunAt": { "type": "string", "format": "date-time" },
+        "lastRunId": { "type": "string" }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "algorithm", "computedAt"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "algorithm": { "type": "string" },
+        "computedAt": { "type": "string", "format": "date-time" },
+        "breakdown": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "trustScoreRef": { "type": "string" }
+      }
+    }
+  }
+}

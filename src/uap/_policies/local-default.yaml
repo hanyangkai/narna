@@ -1,0 +1,12 @@
+apiVersion: uap.dev/v1alpha1
+kind: PolicyPack
+metadata:
+  name: local-default
+  version: 0.0.0
+rules:
+  - permission: market.read
+    decision: allow
+  - permission: memory.read
+    decision: allow
+  - permission: memory.write
+    decision: allow

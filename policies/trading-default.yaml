@@ -1,0 +1,24 @@
+apiVersion: uap.dev/v1alpha1
+kind: PolicyPack
+metadata:
+  name: trading-default
+  version: 1.0.0
+rules:
+  - permission: market.read
+    decision: allow
+  - permission: browser.open
+    decision: allow
+    constraints:
+      domainsAllowlist:
+        - "*.exchange.com"
+        - "api.coinbase.com"
+        - "api.binance.com"
+  - permission: wallet.transfer
+    decision: ask
+    constraints:
+      maxAmount: "100"
+      currency: USDT
+  - permission: memory.read
+    decision: allow
+  - permission: memory.write
+    decision: allow

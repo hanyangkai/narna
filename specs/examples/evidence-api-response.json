@@ -1,0 +1,25 @@
+{
+  "evidenceId": "ev_coinbase_btc_20260716T060000Z",
+  "type": "api_response",
+  "source": {
+    "provider": "coinbase",
+    "endpoint": "GET /v2/prices/BTC-USD/spot",
+    "toolName": "coinbase.spot_price",
+    "requestFingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "statusCode": 200,
+    "canonicalization": "raw_bytes"
+  },
+  "capturedAt": "2026-07-16T06:00:00Z",
+  "expiresAt": "2026-07-16T06:01:00Z",
+  "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "contentUri": "file://./evidence/ev_coinbase_btc.json",
+  "mediaType": "application/json",
+  "verifiers": ["hash_match", "freshness", "schema"],
+  "provenance": {
+    "agentId": "01JEXAMPLETRADINGAGENT00001",
+    "runId": "run_01JEXAMPLE0000000000000000",
+    "toolName": "coinbase.spot_price",
+    "permission": "market.read",
+    "parentEventId": "evt_tool_executed_0007"
+  }
+}
