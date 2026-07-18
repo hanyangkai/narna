@@ -1,0 +1,18 @@
+apiVersion: narna.ai/v1alpha1
+kind: Manifest
+metadata:
+  id: demo-agent
+  name: Demo Agent
+  version: "0.1.0"
+  creator: narna.org
+spec:
+  capabilities:
+    - general
+    - governance
+  permissions:
+    - name: external.invoke
+      mode: allow
+  policy:
+    ref: local-default@0.0.0
+  governance:
+    package: nist-ai-rmf

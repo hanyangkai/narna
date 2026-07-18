@@ -68,12 +68,13 @@ Not by replacing LangGraph, CrewAI, OpenAI SDK, or OpenTelemetry — by making t
 
 ## What is NARNA?
 
-NARNA is the **Governance Infrastructure for Agentic AI**.
+NARNA is **compliance & trust infrastructure for Agentic AI** — not an identity-only passport protocol.
 
-Portable **Identity, Governance, Evidence, Trust, and Certification** across every model, agent framework, and runtime.
+Portable **UGS** identity, **Governance Packages**, evidence (**VAP**), and **GU** metering across every model and framework.
 
 > **NARNA governs AI. Others execute it.**
 
+See [`DIFFERENTIATION.md`](./DIFFERENTIATION.md) for how this differs from Agent Passport System (APS) and similar neighbors.
 ---
 
 ## Where NARNA sits

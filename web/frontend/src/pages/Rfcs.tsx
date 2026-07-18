@@ -1,121 +1,98 @@
 import { Link } from "react-router-dom";
 
-const RFCS = [
-  {
-    id: "RFC-0001",
-    title: "Universal AI Identity",
-    status: "Accepted",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0001-agent-identity.md",
-  },
-  {
-    id: "RFC-0002",
-    title: "Permission Manifest",
-    status: "Accepted",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0002-permission-manifest.md",
-  },
-  {
-    id: "RFC-0003",
-    title: "Agent Passport",
-    status: "Accepted",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0003-agent-passport.md",
-  },
-  {
-    id: "RFC-0004",
-    title: "NARNA Score",
-    status: "Accepted",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0004-narna-score.md",
-  },
-  {
-    id: "RFC-0005",
-    title: "Manifest narna.yaml",
-    status: "Draft",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0005-narna-yaml-manifest.md",
-  },
-  {
-    id: "RFC-0006",
-    title: "Adapter Catalog",
-    status: "Accepted",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0006-adapter-catalog.md",
-  },
-  {
-    id: "RFC-0007",
-    title: "Governance Package",
-    status: "Draft",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0007-governance-package.md",
-  },
-  {
-    id: "RFC-0008",
-    title: "Constitution Runtime",
-    status: "Draft",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0008-constitution-runtime.md",
-  },
-  {
-    id: "RFC-0009",
-    title: "Constitution Compatibility",
-    status: "Draft",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0009-constitution-compatibility.md",
-  },
-  {
-    id: "RFC-0010",
-    title: "UGS Rename (UAP → UGS)",
-    status: "Draft",
-    href: "https://github.com/hanyangkai/narna/blob/main/rfcs/RFC-0010-ugs-rename.md",
-  },
+const GH = "https://github.com/hanyangkai/narna/blob/main/rfcs/ngs";
+
+const NGS_CORE = [
+  { id: "NGS-0001", file: "NGS-0001-ai-identity.md", title: "AI Identity", status: "Accepted" },
+  { id: "NGS-0002", file: "NGS-0002-capability.md", title: "Capability Specification", status: "Accepted" },
+  { id: "NGS-0003", file: "NGS-0003-permission.md", title: "Permission Model", status: "Accepted" },
+  { id: "NGS-0004", file: "NGS-0004-policy.md", title: "Policy Specification", status: "Accepted" },
+  { id: "NGS-0005", file: "NGS-0005-evidence.md", title: "Evidence Format", status: "Accepted" },
+  { id: "NGS-0006", file: "NGS-0006-trust-score.md", title: "Trust Score Model", status: "Accepted" },
 ];
+
+const NGS_DERIVED = [
+  { id: "NGS-0007", file: "NGS-0007-passport.md", title: "AI Passport", status: "Accepted" },
+  { id: "NGS-0008", file: "NGS-0008-governance-package.md", title: "Governance Package", status: "Accepted" },
+  { id: "NGS-0009", file: "NGS-0009-certification.md", title: "Certification", status: "Accepted" },
+  { id: "NGS-0010", file: "NGS-0010-audit-report.md", title: "Audit Report", status: "Accepted" },
+  { id: "NGS-0011", file: "NGS-0011-manifest.md", title: "Governance Manifest", status: "Draft" },
+  { id: "NGS-0012", file: "NGS-0012-registry.md", title: "Governance Registry", status: "Accepted" },
+  { id: "NGS-0013", file: "NGS-0013-governance-api.md", title: "Governance API", status: "Accepted" },
+];
+
+function Table({ rows }: { rows: typeof NGS_CORE }) {
+  return (
+    <div className="card" style={{ overflowX: "auto" }}>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td className="mono">
+                <a href={`${GH}/${r.file}`} target="_blank" rel="noreferrer">
+                  {r.id}
+                </a>
+              </td>
+              <td>{r.title}</td>
+              <td>
+                <span className={r.status === "Draft" ? "badge badge-wait" : "badge badge-ok"}>{r.status}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function Rfcs() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Community</p>
-        <h1>Request for Comments (RFC)</h1>
+        <p className="pill-label">Standards</p>
+        <h1>NGS — NARNA Governance Standards</h1>
         <p>
-          NARNA evolves through community RFCs — like Kubernetes KEPs or Python PEPs. Spec before code.
-          Never Replace. Always Extend.
+          IETF-style RFCs for AI Governance. Core six first. Derived standards build on top.{" "}
+          <a href={`${GH}/README.md`} target="_blank" rel="noreferrer">
+            Full index →
+          </a>
         </p>
       </header>
 
       <section className="section" style={{ paddingTop: 0, borderTop: "none" }}>
-        <div className="card">
-          <h3>Lifecycle</h3>
-          <pre className="code-block mono" style={{ margin: 0 }}>
-            Draft → Review → Accepted → Implemented → Final
-          </pre>
-        </div>
+        <h2>Core six</h2>
+        <Table rows={NGS_CORE} />
       </section>
 
       <section className="section">
-        <h2>Index</h2>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>RFC</th>
-              <th>Title</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {RFCS.map((r) => (
-              <tr key={r.id}>
-                <td className="mono">{r.id}</td>
-                <td>
-                  <a href={r.href} target="_blank" rel="noreferrer">
-                    {r.title}
-                  </a>
-                </td>
-                <td>{r.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div style={{ marginTop: "1.25rem" }}>
-          <a href="https://github.com/hanyangkai/narna/tree/main/rfcs" className="btn btn-secondary" target="_blank" rel="noreferrer">
-            All RFCs on GitHub →
+        <h2>Derived (Passport → API)</h2>
+        <Table rows={NGS_DERIVED} />
+      </section>
+
+      <section className="section">
+        <h2>Also</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Legacy <code>RFC-000x</code> files remain for history. OpenAPI:{" "}
+          <a
+            href="https://github.com/hanyangkai/narna/blob/main/specs/governance-api/openapi.yaml"
+            target="_blank"
+            rel="noreferrer"
+          >
+            governance-api/openapi.yaml
           </a>
-          <Link to="/docs/borrow-the-wave" className="btn btn-primary" style={{ marginLeft: "0.75rem" }}>
-            Borrow the Wave
-          </Link>
-        </div>
+        </p>
+        <p style={{ marginTop: "1rem" }}>
+          <Link to="/specification">Specification →</Link>
+          {" · "}
+          <Link to="/docs">Docs →</Link>
+        </p>
       </section>
     </div>
   );

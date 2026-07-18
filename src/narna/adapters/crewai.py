@@ -10,6 +10,7 @@ from .base import BaseAdapter
 class CrewAIAdapter(BaseAdapter):
     id = "crewai"
     package = "narna-crewai"
+    default_unit_kind = "sub_agent"
 
     def matches(self, obj: Any) -> bool:
         if obj is None:

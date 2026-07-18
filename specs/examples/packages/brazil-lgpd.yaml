@@ -1,0 +1,75 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_brazil_lgpd
+  name: Brazil LGPD — Lei Geral de Proteção de Dados
+  version: "2.0.0"
+  provider: brazil-lgpd
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of Lei nº 13.709/2018 (LGPD). Not an ANPD publication.
+    Not legal advice. Controllers/operators remain responsible for ANPD compliance.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: BR
+    instrument: Lei 13.709/2018
+spec:
+  supports:
+    - brazil-lgpd-v1
+  legalBasis:
+    title: Lei Geral de Proteção de Dados Pessoais
+    citation: Lei nº 13.709/2018
+    jurisdiction: Brazil
+    officialUrl: https://www.gov.br/anpd/
+  riskLevel: high
+  principles:
+    - "Purpose, adequacy, necessity, free access, data quality, transparency, security, prevention, non-discrimination, accountability (Art. 6)."
+    - "Sensitive personal data has heightened protections (Art. 11)."
+    - "International transfers require Art. 33 mechanisms."
+  evidence:
+    mustProve:
+      - consent.record
+      - policy.decision
+    mustLog:
+      - dados.pessoais.acesso
+      - dados.pessoais.eliminar
+      - transferencia.internacional
+    retentionDays: 1825
+  humanReview:
+    requiredFor:
+      - dados.sensiveis.processar
+      - transferencia.internacional
+      - decisao.automatizada
+  rules:
+    - id: lgpd-deny-no-legal-basis
+      effect: deny
+      action: dados.pessoais.processar
+      when: hipotese.legal.ausente
+      description: "Arts. 7–11 — Deny processing without LGPD legal hypothesis"
+    - id: lgpd-ask-sensitive
+      effect: ask
+      action: dados.sensiveis.processar
+      description: "Art. 11 — Sensitive personal data requires specific hypothesis / gate"
+    - id: lgpd-require-access
+      effect: require
+      action: dados.pessoais.acesso
+      when: titular.solicita
+      description: "Art. 18 — Honour data subject access rights"
+    - id: lgpd-require-delete
+      effect: require
+      action: dados.pessoais.eliminar
+      when: titular.solicita
+      description: "Art. 18 — Honour deletion/anonymization requests when applicable"
+    - id: lgpd-ask-intl-transfer
+      effect: ask
+      action: transferencia.internacional
+      description: "Art. 33 — International transfer needs adequacy/safeguards"
+    - id: lgpd-ask-automated
+      effect: ask
+      action: decisao.automatizada
+      description: "Art. 20 — Review of automated decisions affecting interests"
+    - id: lgpd-deny-exfil
+      effect: deny
+      action: dados.pessoais.exfiltrar
+      description: "Arts. 46–49 — Security — deny unauthorized exfiltration"

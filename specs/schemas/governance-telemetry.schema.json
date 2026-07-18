@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/governance-telemetry.schema.json",
+  "title": "NARNA Governance Telemetry Contribution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "type": "string", "const": "narna.ai/v1alpha1" },
+    "kind": { "type": "string", "const": "GovernanceTelemetryContribution" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "contributedAt", "consent"],
+      "properties": {
+        "schemaVersion": { "type": "string" },
+        "contributedAt": { "type": "string" },
+        "consent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["telemetryOptIn"],
+          "properties": {
+            "telemetryOptIn": { "type": "boolean" },
+            "trainOptIn": { "type": "boolean", "default": false }
+          }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantHash", "nodes", "totals"],
+      "properties": {
+        "tenantHash": { "type": "string", "minLength": 8 },
+        "sessionHash": { "type": ["string", "null"] },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "integer", "minimum": 0 },
+              "to": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "required": ["gu", "nodes"],
+          "properties": {
+            "gu": { "type": "integer", "minimum": 0 },
+            "nodes": { "type": "integer", "minimum": 0 },
+            "humanApprovals": { "type": "integer", "minimum": 0 },
+            "denies": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agentClass", "unitKind", "outcome", "guCost"],
+      "properties": {
+        "agentClass": {
+          "type": "string",
+          "enum": ["planner", "browser", "finance", "research", "robot", "medical", "general"]
+        },
+        "unitKind": {
+          "type": "string",
+          "enum": ["tool", "llm", "subagent", "mcp", "workflow", "other"]
+        },
+        "capabilityFamily": { "type": "string" },
+        "policyFamily": { "type": "string" },
+        "decision": {
+          "type": ["string", "null"],
+          "enum": ["allow", "deny", "ask", "require", null]
+        },
+        "humanApproval": { "type": "boolean" },
+        "outcome": {
+          "type": "string",
+          "enum": ["success", "failure", "aborted", "unknown"]
+        },
+        "riskBand": {
+          "type": ["string", "null"],
+          "enum": ["low", "medium", "high", "critical", null]
+        },
+        "failureClass": {
+          "type": ["string", "null"],
+          "enum": [
+            "policy_violation",
+            "permission_denied",
+            "timeout",
+            "loop",
+            "budget",
+            "other",
+            null
+          ]
+        },
+        "guCost": { "type": "integer", "minimum": 0 },
+        "trustBand": {
+          "type": ["string", "null"],
+          "enum": ["low", "medium", "high", null]
+        }
+      }
+    }
+  }
+}

@@ -2,8 +2,8 @@
 
 **Status:** Draft  
 **Audience:** founders, product, engineering  
-**Positioning:** *OpenTelemetry for AI Agents* (not “Trust Platform”)  
-**Protocol:** UAP Specification + VAP Specification (brand công ty: TBD)
+**Positioning:** Governance Infrastructure for Agentic AI — **Trust as a Service (TaaS)**  
+**Business model:** [`BUSINESS-MODEL.md`](./BUSINESS-MODEL.md) — price by governance assets, not events
 
 ---
 
@@ -85,7 +85,7 @@ VAP (OSS)          → verify offline, ProofBundle portable
 | Tầng | Sản phẩm | Thu tiền khi nào | MVP web |
 |------|----------|------------------|---------|
 | **1** | SDK OSS | Không | docs + GitHub + `pip install` |
-| **2** | **Cloud** | **Day 1** | console + billing |
+| **2** | **Cloud** | **Day 1** | console + billing — **governance assets** (agents, registry), not raw events |
 | **3** | Enterprise | Có lead production | sales page + contact |
 | **4** | Passport Verified | Có agent public/deploy | verify page + badge |
 | **5** | Marketplace | Có supply + demand | sau 6–12 tháng |
@@ -167,23 +167,22 @@ Mục tiêu: **có thể thu $19/tháng từ ngày đầu tiên có user trả t
 | **API Keys** | export protocol credentials |
 | **Billing** | Stripe |
 
-### 4.3 Free vs Paid (gắn cứng vào architecture)
+### 4.3 Free vs Paid (governance assets — locked)
 
-| | Free (OSS + Cloud free tier) | Pro $19/mo |
-|--|------------------------------|------------|
-| SDK | Unlimited local | Same |
-| Cloud ingest | 10k events/mo | 500k events/mo |
-| Retention | 7 ngày | 90 ngày |
-| Agents | 3 | 20 |
-| Audit export | ❌ | PDF/JSON |
-| Passport public | unverified | — |
-| Support | community | email |
+| | Developer (free) | Cloud Pro $19/mo | Cloud Team $49/mo |
+|--|------------------|------------------|-------------------|
+| SDK / local runtime | Unlimited | Same | Same |
+| Account required | No | Yes | Yes |
+| Governed agents | Local unlimited | 20 | 100 |
+| Governance packages | Local | Included | 100 |
+| Registry | Community (read) | Private | Shared org |
+| Passport + verification | Local only | Cloud | Cloud |
+| History retention | Local | 90 days | 365 days |
+| RBAC / org | — | — | Yes |
 
-**Passport Verified $99/yr** (tầng 4 — ship tháng 2–3):
+**Passport Verified** + **Certification** + **Marketplace (20% take)** — see [`BUSINESS-MODEL.md`](./BUSINESS-MODEL.md).
 
-- Identity review + badge SVG  
-- `verified.uap.dev/passport/{id}`  
-- Giống SSL / GitHub Verified — **không** bán trust score  
+Legacy cloud APIs may still meter `events/mo` during migration; public pricing uses agent/package limits.
 
 ---
 

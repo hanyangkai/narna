@@ -1,0 +1,75 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_china_pipl
+  name: China PIPL — Personal Information Protection Law
+  version: "2.0.0"
+  provider: china-pipl
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of the PRC Personal Information Protection Law (PIPL).
+    Unofficial English-oriented technical mapping. Not a CAC publication. Not legal advice.
+    Cross-border transfer and critical information infrastructure rules require local counsel.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: CN
+    instrument: PIPL 2021
+spec:
+  supports:
+    - china-pipl-v1
+  legalBasis:
+    title: Personal Information Protection Law of the People's Republic of China
+    citation: PIPL (effective 1 Nov 2021)
+    jurisdiction: People's Republic of China
+    officialUrl: http://www.npc.gov.cn/
+  riskLevel: high
+  principles:
+    - "Lawfulness, legitimacy, necessity, and good faith in PI processing."
+    - "Clear notice and consent (with separate consent for sensitive PI / certain transfers)."
+    - "Minimization and purpose limitation."
+    - "Cross-border transfers require security assessment, certification, or standard contract."
+  evidence:
+    mustProve:
+      - consent.record
+      - policy.decision
+    mustLog:
+      - personalinfo.process
+      - personalinfo.transfer.outbound
+      - sensitive.pi.process
+    retentionDays: 1095
+  humanReview:
+    requiredFor:
+      - sensitive.pi.process
+      - personalinfo.transfer.outbound
+      - automated.decision.significant
+  rules:
+    - id: pipl-deny-no-consent
+      effect: deny
+      action: personalinfo.process
+      when: consent.missing
+      description: "PIPL Arts. 13–14 — Deny processing without lawful basis / consent where required"
+    - id: pipl-ask-sensitive-pi
+      effect: ask
+      action: sensitive.pi.process
+      description: "PIPL Arts. 28–32 — Sensitive PI requires separate consent / necessity gate"
+    - id: pipl-ask-outbound-transfer
+      effect: ask
+      action: personalinfo.transfer.outbound
+      description: "PIPL Arts. 38–40 — Cross-border transfer needs assessment/SCC/certification path"
+    - id: pipl-require-notice
+      effect: require
+      action: personalinfo.collect
+      description: "PIPL Art. 17 — Inform individuals of processing rules before collection"
+    - id: pipl-deny-refuse-rights
+      effect: deny
+      action: individual.rights.block
+      description: "PIPL Arts. 44–50 — Do not obstruct access/correction/deletion rights"
+    - id: pipl-ask-automated-decision
+      effect: ask
+      action: automated.decision.significant
+      description: "PIPL Art. 24 — Automated decision-making transparency and opt-out/human review"
+    - id: pipl-deny-pi-exfil
+      effect: deny
+      action: personalinfo.exfiltrate
+      description: "Security obligations — Block unauthorized PI exfiltration"

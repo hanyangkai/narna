@@ -10,3 +10,5 @@ rules:
     decision: allow
   - permission: memory.write
     decision: allow
+  - permission: external.invoke
+    decision: allow

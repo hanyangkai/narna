@@ -9,6 +9,8 @@ export type RunSummary = {
   trustScore: number | null;
   eventCount: number;
   updatedAt: string;
+  sessionId?: string | null;
+  totalGu?: number;
 };
 
 export type RunDetail = RunSummary & {
@@ -19,8 +21,27 @@ export type RunDetail = RunSummary & {
     ts: string;
     payload: Record<string, unknown>;
     eventHash?: string;
+    sessionId?: string;
+    executionUnitId?: string;
   }>;
   proofBundle?: Record<string, unknown> | null;
+};
+
+export type SessionSummary = {
+  sessionId: string;
+  logicalAgentId: string;
+  state: string;
+  totalGu: number;
+  runCount: number;
+  createdAt: string;
+  closedAt: string | null;
+  terminateReason: string | null;
+};
+
+export type SessionDetail = SessionSummary & {
+  graph: { nodes?: Array<Record<string, unknown>> };
+  runs: RunSummary[];
+  units: Array<Record<string, unknown>>;
 };
 
 export type BillingStatus = {
@@ -28,6 +49,8 @@ export type BillingStatus = {
   periodStartAt: string;
   eventsInPeriod: number;
   eventsLimit: number | null;
+  guInPeriod?: number;
+  guLimit?: number | null;
   billingMode: string;
 };
 
@@ -89,6 +112,76 @@ export async function fetchRuns(apiKey: string): Promise<RunSummary[]> {
 
 export async function fetchRun(apiKey: string, runId: string): Promise<RunDetail> {
   const res = await fetch(`${API_BASE}/v1/runs/${runId}`, { headers: authHeaders(apiKey) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchSessions(apiKey: string): Promise<SessionSummary[]> {
+  const res = await fetch(`${API_BASE}/v1/sessions`, { headers: authHeaders(apiKey) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchSession(apiKey: string, sessionId: string): Promise<SessionDetail> {
+  const res = await fetch(`${API_BASE}/v1/sessions/${sessionId}`, { headers: authHeaders(apiKey) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function purchasePackage(
+  apiKey: string,
+  packageId: string
+): Promise<{
+  packageId: string;
+  guCharged: number;
+  platformCutUsd: number;
+  authorCutUsd: number;
+  status: string;
+  mode: string;
+  checkoutUrl?: string | null;
+  message: string;
+}> {
+  const res = await fetch(`${API_BASE}/v1/packages/purchase`, {
+    method: "POST",
+    headers: authHeaders(apiKey),
+    body: JSON.stringify({ packageId }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export type PackageDetail = {
+  packageId: string;
+  name: string;
+  version: string;
+  provider: string;
+  packageKind: string;
+  license: string;
+  disclaimer: string;
+  packageHash: string;
+  spec: Record<string, unknown>;
+  priceUsd?: number;
+  takeRateBps?: number;
+  stars: number;
+  downloads: number;
+  publishedAt: string;
+};
+
+export async function fetchPackage(packageId: string): Promise<PackageDetail> {
+  const res = await fetch(`${API_BASE}/v1/packages/${packageId}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function verifyPackageSession(
+  apiKey: string,
+  sessionId: string
+): Promise<{ packageId: string; status: string; mode: string; guCharged: number; message: string }> {
+  const res = await fetch(`${API_BASE}/v1/packages/verify-session`, {
+    method: "POST",
+    headers: authHeaders(apiKey),
+    body: JSON.stringify({ sessionId }),
+  });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

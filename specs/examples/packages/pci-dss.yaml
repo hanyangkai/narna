@@ -1,0 +1,82 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_pci_dss_v4
+  name: PCI DSS v4.0 — Payment Card Data
+  version: "2.0.0"
+  provider: pci-dss
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of PCI DSS v4.0 requirements for agent systems
+    handling cardholder data. Not a PCI SSC publication. Not a QSA assessment.
+    Merchants/service providers remain responsible for formal PCI validation.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: Global
+    instrument: PCI DSS v4.0
+spec:
+  supports:
+    - pci-dss-v4
+    - pci-dss
+  legalBasis:
+    title: Payment Card Industry Data Security Standard
+    citation: PCI DSS Requirements and Testing Procedures v4.0
+    jurisdiction: Global (card brand contracts)
+    officialUrl: https://www.pcisecuritystandards.org/
+  riskLevel: critical
+  principles:
+    - "Protect stored account data; never store sensitive authentication data after authorization."
+    - "Encrypt transmission of cardholder data across open networks."
+    - "Restrict access by business need-to-know; uniquely identify users."
+    - "Log and monitor all access to network resources and CHD."
+  evidence:
+    mustProve:
+      - tool.receipt
+      - policy.decision
+    mustLog:
+      - card.data.access
+      - card.data.transmit
+      - payment.authorize
+    retentionDays: 365
+  humanReview:
+    requiredFor:
+      - card.data.export
+      - payment.refund.large
+      - pan.display.full
+  constraints:
+    - "Do not store SAD (full track, CVV2, PIN) after authorization."
+    - "Mask PAN when displayed (show at most first 6 / last 4 where applicable)."
+  rules:
+    - id: pci-deny-store-sad
+      effect: deny
+      action: card.sad.store
+      description: "Req 3 — Never store sensitive authentication data after auth"
+    - id: pci-deny-pan-plaintext-store
+      effect: deny
+      action: card.pan.store.plaintext
+      description: "Req 3 — Deny storing PAN in plaintext"
+    - id: pci-deny-chd-exfil
+      effect: deny
+      action: card.data.exfiltrate
+      description: "Req 1/3/4 — Block CHD exfiltration outside CDE controls"
+    - id: pci-require-tls-transmit
+      effect: require
+      action: card.data.transmit
+      description: "Req 4 — Strong cryptography for CHD over open networks"
+    - id: pci-ask-full-pan-display
+      effect: ask
+      action: pan.display.full
+      description: "Req 3.4 — Full PAN display requires justified human gate"
+    - id: pci-deny-llm-train-on-chd
+      effect: deny
+      action: card.data.train
+      description: "Deny using CHD in model training / prompts without tokenization"
+    - id: pci-require-access-log
+      effect: require
+      action: card.data.access
+      description: "Req 10 — Log access to cardholder data"
+    - id: pci-ask-export-chd
+      effect: ask
+      action: card.data.export
+      description: "Export of CHD requires explicit approval"

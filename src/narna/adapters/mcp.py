@@ -10,6 +10,7 @@ from .base import BaseAdapter
 class McpAdapter(BaseAdapter):
     id = "mcp"
     package = "narna-mcp"
+    default_unit_kind = "mcp"
 
     def matches(self, obj: Any) -> bool:
         if obj is None:

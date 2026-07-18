@@ -78,6 +78,7 @@ def push_run(
         "runId": run_id,
         "state": state,
         "tipHash": tip_hash,
+        "sessionId": next((e.get("sessionId") for e in events if e.get("sessionId")), None),
         "events": events,
         "evidence": proof_bundle.get("evidence", []) if proof_bundle else [],
         "proofBundle": proof_bundle,
@@ -99,6 +100,59 @@ def push_run(
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"cloud ingest failed ({e.code}): {body}") from e
+
+
+def contribute_run(
+    *,
+    workspace: Path,
+    run_id: str,
+    api_key: str,
+    base_url: str = "http://localhost:8000",
+    agent_id: str = "",
+    agent_name: str = "",
+    org_id: str | int = "local",
+) -> dict[str, Any]:
+    """Opt-in: push sanitized Governance Telemetry (no prompts) to Cloud Intelligence.
+
+    Requires org telemetryOptIn=true (POST /v1/telemetry/consent) and preferably
+    NARNA_TELEMETRY_OPT_IN=1 locally.
+    """
+    if not api_key:
+        raise ValueError("UAP_CLOUD_KEY or api_key required")
+
+    from uap.telemetry import (
+        build_contribution_from_run_dir,
+        telemetry_opt_in_from_env,
+    )
+
+    if not telemetry_opt_in_from_env():
+        raise ValueError(
+            "NARNA_TELEMETRY_OPT_IN is off — set to 1 to contribute anonymized governance metadata"
+        )
+
+    contribution = build_contribution_from_run_dir(
+        workspace=workspace,
+        run_id=run_id,
+        org_id=org_id,
+        agent_id=agent_id,
+        agent_name=agent_name,
+        telemetry_opt_in=True,
+    )
+    req = urllib.request.Request(
+        f"{base_url.rstrip('/')}/v1/telemetry/contribute",
+        data=json.dumps({"contribution": contribution, "runId": run_id}).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"telemetry contribute failed ({e.code}): {body}") from e
 
 
 def publish_agent(

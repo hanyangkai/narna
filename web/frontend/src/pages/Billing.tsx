@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import PaymentQr from "../components/PaymentQr";
+import PaddleCheckout from "../components/PaddleCheckout";
 import {
   DEFAULT_DEV_KEY,
   PLAN_PRICES,
@@ -157,11 +158,12 @@ export default function Billing() {
 
   return (
     <div className="layout-wide">
+      <PaddleCheckout />
       <section>
         <header className="page-header" style={{ paddingTop: "1rem" }}>
           <p className="pill-label">Billing</p>
           <h1>Subscribe to NARNA Cloud</h1>
-          <p>Card (Stripe) or stablecoin (USDC/USDT) on 5 chains. Bot confirms on-chain payments automatically.</p>
+          <p>Card (Paddle) or stablecoin (USDC/USDT) on 5 chains. Bot confirms on-chain payments automatically.</p>
         </header>
 
         <div className="console-bar">
@@ -180,7 +182,10 @@ export default function Billing() {
           <div className="card">
             <p><strong>Plan:</strong> <span className="mono">{status.plan}</span></p>
             <p><strong>Billing mode:</strong> <span className="mono">{status.billingMode}</span></p>
-            <p><strong>Usage:</strong> {status.eventsInPeriod} / {status.eventsLimit ?? "unlimited"} events</p>
+            <p><strong>Usage:</strong> {status.guInPeriod ?? 0} / {status.guLimit ?? "unlimited"} GU</p>
+            <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+              Events (legacy): {status.eventsInPeriod} / {status.eventsLimit ?? "unlimited"}
+            </p>
           </div>
         )}
 

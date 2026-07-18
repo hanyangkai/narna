@@ -16,6 +16,7 @@ from .memory import LocalMemoryAdapter
 from .model import create_model_adapter
 from .policy import PolicyEngine
 from .governance_runtime import ConstitutionRuntime
+from .governor import Governor
 from .spec import AgentSpec, load_agent_spec
 from .state import RunState, transition
 from .tools import execute_tool, load_tool_definition
@@ -41,6 +42,8 @@ class RunResult:
     proof_path: Path | None = None
     verifications: list[dict[str, Any]] = field(default_factory=list)
     vap: dict[str, Any] | None = None
+    session_id: str | None = None
+    root_execution_unit_id: str | None = None
 
 
 @dataclass
@@ -53,6 +56,12 @@ class RunContext:
     evidence: list[dict[str, Any]] = field(default_factory=list)
     evidence_blobs: dict[str, bytes] = field(default_factory=dict)
     action_verifications: list[dict[str, Any]] = field(default_factory=list)
+    session_id: str | None = None
+    current_execution_unit_id: str | None = None
+    root_execution_unit_id: str | None = None
+    owns_session: bool = True
+    parent_unit_id: str | None = None
+    unit_kind: str = "agent"
 
 
 class LocalRuntime:
@@ -62,12 +71,46 @@ class LocalRuntime:
         self.runs_dir = self.root / "runs"
         self.policy = PolicyEngine(self.workspace)
         self.governance = ConstitutionRuntime(self.workspace)
+        self.governor = Governor(self.workspace)
         self.evidence_store = EvidenceStore(self.workspace)
         # Phase 2: Verify → Audit → Prove (off by default for Phase 1 lightness)
         self.vap_enabled = False
 
     def enable_vap(self, enabled: bool = True) -> None:
         self.vap_enabled = enabled
+
+    def _register_eu(
+        self,
+        *,
+        spec: AgentSpec,
+        ctx: RunContext,
+        log: EventLog,
+        unit_kind: str,
+        tool_name: str | None = None,
+        label: str | None = None,
+    ) -> None:
+        if not ctx.session_id:
+            return
+        session = self.governor.sessions.load(ctx.session_id)
+        result = self.governor.begin_unit(
+            session,
+            logical_agent_id=spec.agent_id,
+            unit_kind=unit_kind,
+            run_id=ctx.run_id,
+            tool_name=tool_name,
+            label=label,
+            parent_unit_id=ctx.current_execution_unit_id,
+        )
+        ctx.current_execution_unit_id = result.unit.unit_id
+        self.governor.emit_session_events(
+            log.append,
+            agent_id=spec.agent_id,
+            run_id=ctx.run_id,
+            session=result.session,
+            result=result,
+            event_id_fn=lambda: new_id("evt"),
+            ts_fn=_now_rfc3339,
+        )
 
     def init(self) -> None:
         self.runs_dir.mkdir(parents=True, exist_ok=True)
@@ -81,12 +124,25 @@ class LocalRuntime:
         user_input: str | None = None,
         auto_approve_ask: bool = False,
         spec_path: str | Path | None = None,
+        session_id: str | None = None,
+        parent_unit_id: str | None = None,
+        unit_kind: str = "agent",
+        close_session: bool = True,
     ) -> RunResult:
         self.init()
         run_id = new_id("run")
         run_dir = self.runs_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=False)
-        ctx = RunContext(run_id=run_id, run_dir=run_dir)
+        ctx = RunContext(
+            run_id=run_id,
+            run_dir=run_dir,
+            session_id=session_id,
+            parent_unit_id=parent_unit_id,
+            unit_kind=unit_kind,
+            owns_session=close_session and session_id is None,
+        )
+        if session_id is not None:
+            ctx.owns_session = close_session
         log = EventLog(run_dir / "events.jsonl")
         return self._execute_run(
             spec=spec,
@@ -149,6 +205,41 @@ class LocalRuntime:
         spec_path: str | Path | None,
     ) -> RunResult:
         try:
+            if ctx.session_id:
+                session = self.governor.sessions.load(ctx.session_id)
+            else:
+                session = self.governor.open_session(spec.agent_id, root_run_id=ctx.run_id)
+                ctx.session_id = session.session_id
+                # Keep caller-provided owns_session (orchestrator sets close_session=False)
+                log.append(
+                    event_id=new_id("evt"),
+                    event_type="SessionStarted",
+                    agent_id=spec.agent_id,
+                    run_id=ctx.run_id,
+                    ts=_now_rfc3339(),
+                    payload={"session": session.to_dict()},
+                    session_id=session.session_id,
+                )
+            root = self.governor.begin_unit(
+                session,
+                logical_agent_id=spec.agent_id,
+                unit_kind=ctx.unit_kind,
+                run_id=ctx.run_id,
+                label=spec.name,
+                parent_unit_id=ctx.parent_unit_id,
+            )
+            ctx.current_execution_unit_id = root.unit.unit_id
+            ctx.root_execution_unit_id = root.unit.unit_id
+            self.governor.emit_session_events(
+                log.append,
+                agent_id=spec.agent_id,
+                run_id=ctx.run_id,
+                session=session,
+                result=root,
+                event_id_fn=lambda: new_id("evt"),
+                ts_fn=_now_rfc3339,
+            )
+
             ctx.state = transition(ctx.state, RunState.STARTING)
             log.append(
                 event_id=new_id("evt"),
@@ -164,6 +255,7 @@ class LocalRuntime:
 
             if user_input:
                 intent = model.understand(user_input)
+                self._register_eu(spec=spec, ctx=ctx, log=log, unit_kind="llm", label="understand")
                 log.append(
                     event_id=new_id("evt"),
                     event_type="ModelGenerated",
@@ -289,6 +381,18 @@ class LocalRuntime:
             audit_id = str(vap["audit"]["auditId"])
             verifications = vap["verifications"]
 
+        if ctx.session_id and ctx.owns_session:
+            closed = self.governor.close_session(ctx.session_id)
+            log.append(
+                event_id=new_id("evt"),
+                event_type="SessionCompleted",
+                agent_id=spec.agent_id,
+                run_id=ctx.run_id,
+                ts=_now_rfc3339(),
+                payload={"session": closed.to_dict()},
+                session_id=ctx.session_id,
+            )
+
         ctx.state = transition(RunState.COMPLETING, RunState.COMPLETED)
         log.append(
             event_id=new_id("evt"),
@@ -300,7 +404,10 @@ class LocalRuntime:
                 "status": "ok",
                 "vap": self.vap_enabled,
                 "trustScore": trust_score,
+                "sessionId": ctx.session_id,
             },
+            session_id=ctx.session_id,
+            execution_unit_id=ctx.root_execution_unit_id,
         )
         log.flush()
         return RunResult(
@@ -313,6 +420,8 @@ class LocalRuntime:
             audit_id=audit_id,
             proof_path=proof_path,
             verifications=verifications,
+            session_id=ctx.session_id,
+            root_execution_unit_id=ctx.root_execution_unit_id,
             vap=vap,
         )
 
@@ -344,6 +453,7 @@ class LocalRuntime:
         tool_input: dict[str, Any],
         auto_approve_ask: bool,
     ) -> None:
+        self._register_eu(spec=spec, ctx=ctx, log=log, unit_kind="tool", tool_name=tool_name)
         defn = load_tool_definition(tool_name)
         policy_ref = spec.raw["spec"]["policy"]["ref"]
         permissions = spec.raw["spec"].get("permissions", [])

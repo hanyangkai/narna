@@ -2,21 +2,27 @@ apiVersion: narna.ai/v1alpha1
 kind: GovernancePackage
 metadata:
   id: pkg_anthropic_constitution_stub
-  name: Anthropic-style Constitution (stub)
-  version: "3.0.0"
+  name: Anthropic-style Constitution (values pack)
+  version: "3.1.0"
   provider: anthropic
   packageKind: Constitution
   license: MIT
-  disclaimer: "Community stub for NARNA demos — not an official Anthropic publication."
-  createdAt: "2026-07-16T00:00:00Z"
+  disclaimer: >-
+    Community values pack inspired by public Constitutional AI themes.
+    NOT a law, NOT an official Anthropic publication, NOT a compliance certification.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: none
+    instrument: values-charter
 spec:
   supports:
     - anthropic-v2
     - anthropic-v3
-  principles:
-    - Be helpful, honest, and harmless.
-    - Prefer refuse over unsafe compliance.
   riskLevel: medium
+  principles:
+    - "Be helpful, honest, and harmless."
+    - "Prefer refuse over unsafe compliance."
+    - "This pack is a Constitution/values layer — pair with GDPR/EU AI Act/HIPAA for legal compliance."
   evidence:
     mustProve:
       - tool.receipt

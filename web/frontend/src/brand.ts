@@ -9,7 +9,7 @@ export const BRAND = {
   heroTitle: "Build Agentic AI that Enterprises Can Trust",
   heroLead: "One governance layer. Every model. Every framework. Every runtime.",
   heroSub:
-    "NARNA provides portable identity, governance, evidence, and trust for autonomous AI systems. Compatible with OpenAI, Anthropic, LangGraph, CrewAI, MCP, and OpenTelemetry.",
+    "Portable UGS identity, Governance Packages (EU AI Act, HIPAA…), evidence, and GU metering — across OpenAI, Anthropic, LangGraph, CrewAI, MCP, and OpenTelemetry.",
   northStar:
     "Every Agentic AI system gets Identity, Governance, and Trust — NARNA governs AI. Others execute it.",
   primary: "Govern Once. Run Anywhere.",
@@ -19,9 +19,9 @@ export const BRAND = {
   vision:
     "Build the universal governance layer that enables every agentic system — multi-agent, long-running, tool-calling — to operate safely and portably across any AI stack.",
   elevator:
-    "NARNA is the Governance Infrastructure for Agentic AI — portable Identity, Governance, Evidence, Trust, and Certification across LangGraph, CrewAI, OpenAI SDK, and every model.",
+    "NARNA is compliance & trust infrastructure for Agentic AI — UGS, Governance Packages, and GU metering. Others execute agents; NARNA makes fleets governable.",
   contrast:
-    "OpenTelemetry records what AI did. NARNA proves what AI was allowed to do.",
+    "OpenTelemetry records what AI did. Identity-only passports prove who signed. NARNA proves what was allowed — with portable compliance packages.",
   enterprise: "Trust Every Agentic Decision.",
   technical: "Identity. Governance. Evidence. Trust.",
   community: "Open Governance for the Agentic AI Era.",
@@ -88,6 +88,7 @@ export const ADAPTERS = [
   "narna-openai",
   "narna-anthropic",
   "narna-semantic-kernel",
+  "narna-moltbook",
 ] as const;
 
 export const MARKETPLACE_PACKAGES = [
@@ -115,7 +116,7 @@ export const PRODUCT_FAMILY = [
   "NARNA Runtime",
   "NARNA SDK",
   "NARNA CLI",
-  "Agent Passport",
+  "UGS Passport",
   "Governance Package Marketplace",
   "NARNA Registry",
   "NARNA Identity",
@@ -142,3 +143,85 @@ export const COMPATIBILITY = [
   "Kubernetes",
   "OpenShell",
 ] as const;
+
+/** Pricing — governance assets, not events. See docs/BUSINESS-MODEL.md */
+export const PRICING = {
+  tagline: "Runtime is free. Trust is the product.",
+  subline:
+    "Like Docker: OSS engine is open. NARNA Cloud sells Registry, Passport, Verification, and Compliance.",
+  philosophy: "Trust as a Service — metered by Governance Units (GU)",
+  unit: "GU",
+  plans: [
+    {
+      id: "developer",
+      name: "Developer",
+      price: "Free",
+      period: "",
+      limit: "Unlimited local runtime",
+      retention: "Local only",
+      features: [
+        "OSS SDK + CLI",
+        "Local GU metering + Governor",
+        "Community registry",
+        "No account required",
+      ],
+      cta: "Get Started",
+      ctaTo: "/docs/install",
+      featured: false,
+    },
+    {
+      id: "pro",
+      name: "Cloud Pro",
+      price: "$19",
+      period: "/mo",
+      limit: "100,000 GU / month",
+      retention: "90-day history",
+      features: [
+        "Private registry",
+        "Agent Passport + verification API",
+        "Governor + Cost Guard",
+        "Governance dashboard",
+      ],
+      cta: "Subscribe",
+      ctaTo: "/billing",
+      featured: true,
+    },
+    {
+      id: "team",
+      name: "Cloud Team",
+      price: "$49",
+      period: "/mo",
+      limit: "500,000 GU / month",
+      retention: "365-day history",
+      features: [
+        "Organization + shared registry",
+        "RBAC + Evidence Center",
+        "Loop & recursion detection",
+        "Priority support",
+      ],
+      cta: "Subscribe",
+      ctaTo: "/billing",
+      featured: false,
+    },
+    {
+      id: "enterprise",
+      name: "Enterprise",
+      price: "Contact",
+      period: "",
+      limit: "Unlimited GU",
+      retention: "Custom",
+      features: ["SSO", "SOC2", "On-prem", "Compliance packages", "Dedicated support"],
+      cta: "Contact",
+      ctaTo: "/enterprise",
+      featured: false,
+    },
+  ],
+  revenueStreams: [
+    "Cloud subscription",
+    "Private registry",
+    "Passport Verification API",
+    "Certification",
+    "Governance Package Marketplace (20% take)",
+    "Enterprise support",
+  ],
+} as const;

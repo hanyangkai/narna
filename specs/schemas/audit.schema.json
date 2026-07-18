@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.dev/schemas/v0.1/audit.schema.json",
+  "title": "NGS AuditReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["auditId", "runId", "actor", "occurredAt", "decision", "reasons"],
+  "properties": {
+    "auditId": { "type": "string", "minLength": 1 },
+    "sessionId": { "type": "string" },
+    "runId": { "type": "string", "minLength": 1 },
+    "actor": { "type": "string", "minLength": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "decision": { "type": "string", "enum": ["allow", "deny", "ask", "completed", "failed"] },
+    "permission": { "type": "string" },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "policyRef": { "type": "string" },
+    "evidenceIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "eventRange": {
+      "type": "object",
+      "properties": {
+        "fromSequence": { "type": "integer", "minimum": 0 },
+        "toSequence": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "trustScore": { "type": "number", "minimum": 0, "maximum": 1 },
+    "algorithm": { "type": "string" }
+  }
+}

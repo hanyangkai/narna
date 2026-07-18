@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.dev/schemas/v0.1/certification.schema.json",
+  "title": "NGS Certification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["agentId", "level", "status", "issuedAt"],
+  "properties": {
+    "certificationId": { "type": "string" },
+    "agentId": { "type": "string", "minLength": 1 },
+    "level": {
+      "type": "string",
+      "enum": ["L1", "L2", "L3", "EnterpriseReady"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "passed", "failed", "revoked"]
+    },
+    "badge": { "type": "string" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "passed"],
+        "properties": {
+          "id": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "issuedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "passportUrl": { "type": "string" },
+    "evidenceHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

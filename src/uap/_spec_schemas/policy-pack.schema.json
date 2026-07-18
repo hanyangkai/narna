@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.dev/schemas/v0.1/policy-pack.schema.json",
+  "title": "NGS PolicyPack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "type": "string", "const": "narna.ai/v1alpha1" },
+    "kind": { "type": "string", "const": "PolicyPack" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "rules"],
+      "properties": {
+        "default": { "type": "string", "enum": ["allow", "deny", "ask"] },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["match", "decision", "reasons"],
+            "properties": {
+              "id": { "type": "string" },
+              "match": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "permission": { "type": "string" },
+                  "capability": { "type": "string" },
+                  "agentId": { "type": "string" }
+                }
+              },
+              "decision": { "type": "string", "enum": ["allow", "deny", "ask"] },
+              "reasons": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" }
+              },
+              "when": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

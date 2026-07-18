@@ -59,6 +59,7 @@ class PluginEconomyTest(unittest.TestCase):
         found = discover_plugins(REPO / "plugins")
         ids = {p["id"] for p in found}
         self.assertIn("narna-slack", ids)
+        self.assertIn("narna-moltbook", ids)
 
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/execution-unit.schema.json",
+  "title": "Execution Unit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["unitId", "sessionId", "logicalAgentId", "unitKind", "guCost"],
+  "properties": {
+    "unitId": { "type": "string", "pattern": "^eu_[a-f0-9]+$" },
+    "sessionId": { "type": "string", "pattern": "^session_[a-f0-9]+$" },
+    "logicalAgentId": { "type": "string", "minLength": 1 },
+    "unitKind": {
+      "type": "string",
+      "enum": ["agent", "sub_agent", "tool", "mcp", "llm", "workflow_step"]
+    },
+    "parentUnitId": { "type": "string" },
+    "runId": { "type": "string" },
+    "toolName": { "type": "string" },
+    "label": { "type": "string" },
+    "guCost": { "type": "integer", "minimum": 1 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" }
+  }
+}

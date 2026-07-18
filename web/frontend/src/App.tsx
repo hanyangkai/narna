@@ -8,6 +8,7 @@ import Console from "./pages/Console";
 import Docs from "./pages/Docs";
 import Enterprise from "./pages/Enterprise";
 import Landing from "./pages/Landing";
+import PackageDetail from "./pages/PackageDetail";
 import Packages from "./pages/Packages";
 import PassportPage from "./pages/PassportPage";
 import Playground from "./pages/Playground";
@@ -17,6 +18,7 @@ import Registry from "./pages/Registry";
 import Rfcs from "./pages/Rfcs";
 import RunDetail from "./pages/RunDetail";
 import Sdk from "./pages/Sdk";
+import SessionDetail from "./pages/SessionDetail";
 import Specification from "./pages/Specification";
 
 export default function App() {
@@ -37,12 +39,14 @@ export default function App() {
           <Route path="/registry" element={<Registry />} />
           <Route path="/plugins" element={<Plugins />} />
           <Route path="/packages" element={<Packages />} />
+          <Route path="/packages/:packageId" element={<PackageDetail />} />
           <Route path="/passport/:agentId" element={<PassportPage />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/console" element={<Console />} />
           <Route path="/console/runs/:runId" element={<RunDetail />} />
+          <Route path="/console/sessions/:sessionId" element={<SessionDetail />} />
         </Routes>
       </main>
       <Footer />
