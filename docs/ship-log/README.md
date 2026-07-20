@@ -20,4 +20,4 @@ Public build journal — one short entry per day. Goal: **prove progress**, not 
 
 | Date | Title |
 |------|-------|
-| [2026-07-20](./2026-07-20.md) | Ship log launch + MVP audit |
+| [2026-07-20](./2026-07-20.md) | UGS v0.1 freeze + adapter e2e + ship log |

@@ -9,9 +9,11 @@
 **Strategy lock:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)  
 **NGS index:** [`../rfcs/ngs/README.md`](../rfcs/ngs/README.md)
 
-**Status:** Draft v0.4  
-**Scope:** normative specs + JSON Schemas + OpenAPI
+**Status:** Released v0.1.0  
+**Scope:** normative specs + JSON Schemas + OpenAPI  
+**Freeze tag:** `ugs-v0.1.0` (semver aligned with [`VERSION`](./VERSION))
 
+> UGS v0.1 locks the core six (Identity → Trust) + Manifest, Passport, Governance Package, Registry, and Governance API. Later minors may add telemetry/metering without breaking the core contracts.
 ---
 
 ## Core six (NGS-0001…0006)

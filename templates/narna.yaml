@@ -15,4 +15,4 @@ spec:
   policy:
     ref: local-default@0.0.0
   governance:
-    package: nist-ai-rmf
+    package: eu-ai-act@2.0.0
