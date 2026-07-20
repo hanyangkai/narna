@@ -195,7 +195,10 @@ def _seed_dev_org() -> None:
 
 
 def _seed_demo_registry_agent() -> None:
-    """Public demo passport for /passport/narna-demo-agent (no login)."""
+    """Public demo passport for /passport/narna-demo-agent (no login) — Ed25519 signed."""
+    from pathlib import Path
+    import tempfile
+
     from .database import SessionLocal
 
     db = SessionLocal()
@@ -204,21 +207,57 @@ def _seed_demo_registry_agent() -> None:
         existing = (
             db.query(RegistryAgent).filter(RegistryAgent.agent_id == agent_id).first()
         )
-        passport = {
-            "passportId": "passport_demo_001",
-            "identity": {"agentId": agent_id, "name": "NARNA Demo Agent", "version": "0.1.0"},
-            "capability": {"declared": ["general", "governance", "audit"]},
-            "governance": {"policyRef": "local-default@0.0.0"},
-            "trust": {"score": 0.92, "band": "high"},
-            "history": {"runCount": 128, "successCount": 126},
-        }
+
+        def _build_signed_passport() -> dict[str, Any]:
+            passport: dict[str, Any] = {
+                "passportId": "passport_demo_001",
+                "apiVersion": "narna.ai/v1alpha1",
+                "kind": "Passport",
+                "identity": {
+                    "agentId": agent_id,
+                    "name": "NARNA Demo Agent",
+                    "version": "0.1.0",
+                    "creator": "narna.org",
+                },
+                "capability": {"declared": ["general", "governance", "audit"]},
+                "governance": {
+                    "policyRef": "local-default@0.0.0",
+                    "package": "eu-ai-act@2.0.0",
+                },
+                "trust": {"score": 0.92, "band": "high", "algorithm": "vap-trust-v0"},
+                "history": {"runCount": 128, "successCount": 126, "failureCount": 2, "violationCount": 0},
+            }
+            try:
+                from uap.passport_sign import sign_passport
+
+                with tempfile.TemporaryDirectory() as td:
+                    return sign_passport(passport, Path(td))
+            except Exception as e:
+                logger.warning("demo passport sign failed: %s", e)
+                return passport
+
+        def _needs_resign(row: RegistryAgent) -> bool:
+            if not row.passport_json:
+                return True
+            try:
+                doc = json.loads(row.passport_json)
+            except Exception:
+                return True
+            sig = doc.get("signature") if isinstance(doc, dict) else None
+            return not (isinstance(sig, dict) and sig.get("value") and sig.get("publicKey"))
+
         if existing is not None:
-            if not existing.passport_json:
-                existing.passport_json = json.dumps(passport)
+            if _needs_resign(existing):
+                signed = _build_signed_passport()
+                existing.passport_json = json.dumps(signed)
                 existing.trust_score = 0.92
-                existing.verified = 1
+                existing.verified = 1 if isinstance(signed.get("signature"), dict) else 0
+                existing.name = "NARNA Demo Agent"
+                existing.creator = "narna.org"
                 db.commit()
             return
+
+        signed = _build_signed_passport()
         org = db.query(Organization).first()
         db.add(
             RegistryAgent(
@@ -232,8 +271,8 @@ def _seed_demo_registry_agent() -> None:
                 stars=42,
                 downloads=1000,
                 executions=5000,
-                passport_json=json.dumps(passport),
-                verified=1,
+                passport_json=json.dumps(signed),
+                verified=1 if isinstance(signed.get("signature"), dict) else 0,
                 org_id=org.id if org else None,
             )
         )
