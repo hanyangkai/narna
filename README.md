@@ -63,6 +63,8 @@ agent.run()
 |--|--|
 | Site | https://narna.org |
 | API | https://api.narna.org/v1/health |
+| **Ship log (daily)** | [`docs/SHIP-LOG.md`](./docs/SHIP-LOG.md) |
+| MVP status | [`docs/MVP-CHECKLIST.md`](./docs/MVP-CHECKLIST.md) |
 | Strategy | [`docs/STRATEGY.md`](./docs/STRATEGY.md) |
 | Business | [`docs/BUSINESS-MODEL.md`](./docs/BUSINESS-MODEL.md) |
 | Differentiation | [`docs/DIFFERENTIATION.md`](./docs/DIFFERENTIATION.md) |
