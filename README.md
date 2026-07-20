@@ -27,7 +27,7 @@ It does **not** replace those runtimes. It does **not** train models. It sits in
 ## Install
 
 ```bash
-pip install -e .   # or: pip install narna  (when published)
+pip install narna
 ```
 
 ```python
@@ -36,6 +36,12 @@ from narna import wrap
 # Enforce before host side-effects (default). Use mode="observe" to migrate.
 agent = wrap(my_langgraph_app, vap=True, mode="enforce")
 agent.run("quarterly summary")
+```
+
+From source (dev):
+
+```bash
+pip install -e .
 ```
 
 ## 30 seconds — package + runtime
