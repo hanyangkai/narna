@@ -65,6 +65,8 @@ agent.run()
 | API | https://api.narna.org/v1/health |
 | **Ship log (daily)** | [`docs/SHIP-LOG.md`](./docs/SHIP-LOG.md) |
 | MVP status | [`docs/MVP-CHECKLIST.md`](./docs/MVP-CHECKLIST.md) |
+| Adapter e2e | [`docs/ADAPTERS-E2E.md`](./docs/ADAPTERS-E2E.md) |
+| UGS v0.1 | [`specs/RELEASE-v0.1.md`](./specs/RELEASE-v0.1.md) |
 | Strategy | [`docs/STRATEGY.md`](./docs/STRATEGY.md) |
 | Business | [`docs/BUSINESS-MODEL.md`](./docs/BUSINESS-MODEL.md) |
 | Differentiation | [`docs/DIFFERENTIATION.md`](./docs/DIFFERENTIATION.md) |
