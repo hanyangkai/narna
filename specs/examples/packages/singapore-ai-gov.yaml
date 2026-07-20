@@ -1,0 +1,76 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_singapore_ai_gov
+  name: Singapore Model AI Governance Framework
+  version: "2.0.0"
+  provider: singapore-ai
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of Singapore's Model AI Governance Framework (IMDA/PDPC)
+    and PDPA alignment points. Voluntary guidance + PDPA duties. Not an IMDA publication.
+    Not legal advice.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: SG
+    instrument: Model AI Governance + PDPA
+spec:
+  supports:
+    - singapore-ai-gov-v1
+    - pdpa-sg
+  legalBasis:
+    title: Model AI Governance Framework / Personal Data Protection Act
+    citation: IMDA Model AI Governance Framework (2nd Ed.) · PDPA 2012
+    jurisdiction: Singapore
+    officialUrl: https://www.pdpc.gov.sg/
+  riskLevel: medium
+  principles:
+    - "Human-centric AI with clear accountability."
+    - "Transparency and explainability proportionate to risk."
+    - "Robustness, safety, and reproducibility."
+    - "Fairness and avoidance of unjustified discrimination."
+    - "PDPA consent, purpose limitation, and protection obligations."
+  evidence:
+    mustProve:
+      - policy.decision
+      - tool.receipt
+    mustLog:
+      - model.inference
+      - personaldata.access
+    retentionDays: 1095
+  humanReview:
+    requiredFor:
+      - decision.consequential
+      - personaldata.use.secondary
+  rules:
+    - id: sg-require-human-agency
+      effect: require
+      action: decision.consequential
+      description: "Model Framework — Maintain human agency over consequential AI decisions"
+    - id: sg-require-explainability
+      effect: require
+      action: decision.consequential
+      description: "Model Framework — Provide explainability proportionate to impact"
+    - id: sg-deny-undisclosed-ai
+      effect: deny
+      action: user.interact.undisclosed.ai
+      description: "Transparency — Do not conceal AI interaction when material"
+    - id: pdpa-deny-no-consent
+      effect: deny
+      action: personaldata.process
+      when: consent.missing
+      description: "PDPA — Deny processing without consent or applicable exception"
+    - id: pdpa-require-purpose-limit
+      effect: require
+      action: personaldata.collect
+      description: "PDPA — Purpose limitation at collection"
+    - id: pdpa-ask-secondary-use
+      effect: ask
+      action: personaldata.use.secondary
+      description: "PDPA — Secondary use beyond notified purpose needs gate"
+    - id: sg-deny-unsafe-deploy
+      effect: deny
+      action: model.deploy.production
+      when: safety.eval.missing
+      description: "Model Framework — No production deploy without safety evaluation evidence"

@@ -18,6 +18,8 @@ Implementation follows the specs, not the other way around.
 
 Passport, NARNA Score, Registry, and Governance Packages are **consequences** of these three pillars — not separate product concepts.
 
+**Standards series:** [NGS — NARNA Governance Standards](../rfcs/ngs/README.md) (NGS-0001…0013). Core six = Identity, Capability, Permission, Policy, Evidence, Trust.
+
 **Category:** Governance Infrastructure for **Agentic AI** — first users are teams building multi-agent, long-running, tool-calling workflows.
 
 ---
@@ -174,7 +176,17 @@ AI should not only be intelligent. It should be:
 
 Governance Packages (`constitution.yaml` and peers). Write once. Run anywhere.
 
-Normative: [`../specs/`](../specs/) · Brand: [`BRAND.md`](./BRAND.md) · Positioning: [`POSITIONING.md`](./POSITIONING.md)
+Normative: [`../specs/`](../specs/) · Brand: [`BRAND.md`](./BRAND.md) · Positioning: [`POSITIONING.md`](./POSITIONING.md) · Business: [`BUSINESS-MODEL.md`](./BUSINESS-MODEL.md)
+
+---
+
+## Business model (locked)
+
+> **Trust as a Service (TaaS)** — Runtime is free OSS. Cloud sells Registry, Passport, Verification, and Compliance. Enterprise sells org-scale governance.
+
+NARNA does **not** compete on runtime pricing. It competes on **governed trust** — the same wedge Docker used with Hub, and GitHub with private repos + Actions.
+
+Pricing is by **governance assets** (agents, packages, registry) — not raw event volume. Full model: [`BUSINESS-MODEL.md`](./BUSINESS-MODEL.md).
 
 ---
 

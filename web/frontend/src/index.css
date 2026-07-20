@@ -274,10 +274,11 @@ code,
 }
 
 .arch-layer-accent {
-  border-color: rgba(0, 194, 215, 0.45);
-  background: rgba(0, 194, 215, 0.12);
-  color: #e0f7fa;
-  font-weight: 600;
+  border-color: var(--accent);
+  background: var(--navy);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(14, 74, 92, 0.18);
 }
 
 .hero-actions {
@@ -1113,4 +1114,44 @@ table.data-table th {
   border: 1px solid var(--border);
   border-radius: 8px;
   font-weight: 600;
+}
+
+.session-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.session-node {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.session-node.kind-agent { border-left-color: #2563eb; }
+.session-node.kind-sub_agent { border-left-color: #7c3aed; }
+.session-node.kind-tool { border-left-color: #059669; }
+.session-node.kind-mcp { border-left-color: #d97706; }
+.session-node.kind-llm { border-left-color: #db2777; }
+.session-node.kind-workflow_step { border-left-color: #0891b2; }
+
+.session-node-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.session-node-label {
+  font-weight: 600;
+  margin: 0.15rem 0;
+}
+
+.session-node-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
 }

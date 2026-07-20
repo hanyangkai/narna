@@ -125,7 +125,7 @@ apiVersion: narna.ai/v1alpha1
 kind: Manifest
 identity: {id: test-agent}
 governance:
-  package: eu-ai-act@1.0.0
+  package: eu-ai-act@2.0.0
 """
             )
             result = bind_governance_from_manifest(doc, ws)

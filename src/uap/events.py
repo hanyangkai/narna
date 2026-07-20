@@ -24,6 +24,9 @@ def make_event(
     hash_prev: str,
     api_version: str = "uap.dev/v1alpha1",
     schema_ref: str | None = None,
+    session_id: str | None = None,
+    execution_unit_id: str | None = None,
+    parent_execution_unit_id: str | None = None,
 ) -> dict[str, Any]:
     evt: dict[str, Any] = {
         "eventId": event_id,
@@ -36,6 +39,12 @@ def make_event(
         "hashPrev": hash_prev,
         "payload": payload,
     }
+    if session_id is not None:
+        evt["sessionId"] = session_id
+    if execution_unit_id is not None:
+        evt["executionUnitId"] = execution_unit_id
+    if parent_execution_unit_id is not None:
+        evt["parentExecutionUnitId"] = parent_execution_unit_id
     if schema_ref is not None:
         evt["schemaRef"] = schema_ref
     return evt

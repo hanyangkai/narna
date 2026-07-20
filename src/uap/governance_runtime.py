@@ -92,11 +92,27 @@ def resolve_provider_package(
             if provider.lower() not in path.stem.lower():
                 continue
         if version and str(meta.get("version")) != str(version):
-            # allow major match anthropic 3.0 vs 3.0.0
-            if not str(meta.get("version", "")).startswith(str(version).rstrip(".0")):
-                if str(meta.get("version")) != version:
-                    continue
+            # allow major match (2.0.0 vs 2.0) and provider-latest when major differs
+            meta_v = str(meta.get("version") or "")
+            req_v = str(version)
+            if meta_v.split(".")[0] == req_v.split(".")[0]:
+                return path
+            # Prefer exact provider match even if version drifted (DX); caller can pin path
+            if provider.lower() in path.stem.lower() or str(meta.get("provider", "")).lower() == provider.lower():
+                # keep scanning for exact; fall through to last matching provider
+                continue
+            continue
         return path
+    # Fallback: any package for provider (ignore version pin) — last resort for scaffold DX
+    if version:
+        for path in candidates:
+            try:
+                doc = load_package_file(path)
+            except Exception:
+                continue
+            meta = doc.get("metadata") or {}
+            if str(meta.get("provider", "")).lower() == provider.lower() or provider.lower() in path.stem.lower():
+                return path
     raise FileNotFoundError(f"governance package not found: provider={provider} version={version}")
 
 

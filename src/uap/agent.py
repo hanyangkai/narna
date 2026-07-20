@@ -184,12 +184,25 @@ class Agent:
         self.runtime.enable_vap(enabled)
         return self
 
-    def run(self, input: str | None = None, *, auto_approve_ask: bool = False) -> RunResult:
+    def run(
+        self,
+        input: str | None = None,
+        *,
+        auto_approve_ask: bool = False,
+        session_id: str | None = None,
+        parent_unit_id: str | None = None,
+        unit_kind: str = "agent",
+        close_session: bool = True,
+    ) -> RunResult:
         result = self.runtime.run(
             self.spec,
             user_input=input,
             auto_approve_ask=auto_approve_ask,
             spec_path=self._spec_path,
+            session_id=session_id,
+            parent_unit_id=parent_unit_id,
+            unit_kind=unit_kind,
+            close_session=close_session,
         )
         self.last_result = result
         if result.vap is not None:

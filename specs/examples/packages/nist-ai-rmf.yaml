@@ -1,0 +1,76 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_nist_ai_rmf_1
+  name: NIST AI Risk Management Framework 1.0
+  version: "2.0.0"
+  provider: nist-ai-rmf
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of NIST AI RMF 1.0 (NIST AI 100-1). Voluntary US framework,
+    not a statute. Not a NIST endorsement. Organizations remain responsible for their risk
+    posture and any applicable legal duties.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: US-Global
+    instrument: NIST AI 100-1
+spec:
+  supports:
+    - nist-ai-rmf-1.0
+  legalBasis:
+    title: Artificial Intelligence Risk Management Framework
+    citation: NIST AI 100-1 (January 2023)
+    jurisdiction: United States (voluntary) / global best practice
+    officialUrl: https://www.nist.gov/itl/ai-risk-management-framework
+  riskLevel: high
+  principles:
+    - "Govern — cultivate a culture of risk management (GOVERN)."
+    - "Map — context and risks of AI systems (MAP)."
+    - "Measure — track, analyze, and monitor risks (MEASURE)."
+    - "Manage — prioritize and act on risks (MANAGE)."
+  evidence:
+    mustProve:
+      - risk.assessment
+      - policy.decision
+      - tool.receipt
+    mustLog:
+      - model.inference
+      - agent.action
+      - incident.report
+    retentionDays: 1095
+  humanReview:
+    requiredFor:
+      - decision.consequential
+      - model.deploy.production
+      - risk.accept.high
+  rules:
+    - id: govern-require-accountability
+      effect: require
+      action: model.deploy.production
+      description: "GOVERN 1 — Clear accountability before production deploy"
+    - id: map-require-context
+      effect: require
+      action: system.commission
+      description: "MAP 1 — Document intended use, context, and impacted parties"
+    - id: measure-require-eval
+      effect: require
+      action: model.deploy.production
+      when: eval.missing
+      description: "MEASURE — Deny/require gate when evaluation evidence missing"
+    - id: manage-ask-high-residual
+      effect: ask
+      action: risk.accept.high
+      description: "MANAGE 1 — Human acceptance of high residual risk"
+    - id: manage-deny-unmonitored-prod
+      effect: deny
+      action: model.serve.unmonitored
+      description: "MANAGE 2 — No unmonitored production serving of AI"
+    - id: govern-deny-undocumented-tool
+      effect: deny
+      action: tool.invoke.undocumented
+      description: "GOVERN — Deny undocumented high-impact tool invocation"
+    - id: measure-require-incident-log
+      effect: require
+      action: incident.report
+      description: "MEASURE/MANAGE — Log AI incidents and near-misses"

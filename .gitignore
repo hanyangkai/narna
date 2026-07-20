@@ -51,3 +51,12 @@ htmlcov/
 
 # Logs
 *.log
+
+.deploy-secrets/
+
+narna-deploy.tar
+dist/
+*.egg-info/
+
+examples/_demo_*/
+examples/**/.uap/

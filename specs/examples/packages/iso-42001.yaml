@@ -1,0 +1,70 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_iso_42001
+  name: ISO/IEC 42001 — AI Management System
+  version: "2.0.0"
+  provider: iso-42001
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of ISO/IEC 42001:2023 AI management system themes.
+    Not an ISO publication or certification. Formal certification requires an accredited body.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: Global
+    instrument: ISO/IEC 42001:2023
+spec:
+  supports:
+    - iso-42001-2023
+  legalBasis:
+    title: Artificial intelligence — Management system
+    citation: ISO/IEC 42001:2023
+    jurisdiction: Global (voluntary standard)
+    officialUrl: https://www.iso.org/standard/81230.html
+  riskLevel: high
+  principles:
+    - "Establish an AI management system with leadership accountability."
+    - "Assess AI risks and impacts across the lifecycle."
+    - "Control AI system development, deployment, and monitoring."
+    - "Continually improve based on performance evaluation."
+  evidence:
+    mustProve:
+      - risk.assessment
+      - policy.decision
+      - tool.receipt
+    mustLog:
+      - model.deploy
+      - model.inference
+      - nonconformity
+    retentionDays: 1095
+  humanReview:
+    requiredFor:
+      - model.deploy.production
+      - risk.accept.high
+      - aims.policy.exception
+  rules:
+    - id: iso-require-policy
+      effect: require
+      action: model.deploy.production
+      description: "ISO 42001 — AI policy and roles before production use"
+    - id: iso-require-impact-assessment
+      effect: require
+      action: system.commission
+      description: "ISO 42001 — AI impact/risk assessment for new systems"
+    - id: iso-ask-exception
+      effect: ask
+      action: aims.policy.exception
+      description: "Management approval for AIMS policy exceptions"
+    - id: iso-deny-uncontrolled-change
+      effect: deny
+      action: model.change.uncontrolled
+      description: "Deny uncontrolled model/system changes in production"
+    - id: iso-require-monitoring
+      effect: require
+      action: model.serve
+      description: "Monitor AI system performance and impacts in operation"
+    - id: iso-require-nonconformity-log
+      effect: require
+      action: nonconformity
+      description: "Log nonconformities and corrective actions"

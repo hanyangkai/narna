@@ -1,0 +1,90 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_hipaa_phi
+  name: HIPAA — US Health Privacy (PHI)
+  version: "2.0.0"
+  provider: hipaa
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of HIPAA Privacy & Security Rules (45 CFR Parts 160/164).
+    Not an HHS publication. Not legal advice. Covered entities and business associates
+    remain responsible for BAAs, risk analysis, and counsel review.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: US
+    instrument: 45 CFR 160/164
+spec:
+  supports:
+    - hipaa-v1
+    - medical-v1
+    - medical-v3
+  legalBasis:
+    title: Health Insurance Portability and Accountability Act — Privacy & Security Rules
+    citation: 45 CFR Parts 160 and 164
+    jurisdiction: United States
+    officialUrl: https://www.hhs.gov/hipaa/for-professionals/privacy/index.html
+  riskLevel: critical
+  principles:
+    - "Use and disclose PHI only as permitted or required (Privacy Rule)."
+    - "Minimum necessary standard for routine uses/disclosures."
+    - "Administrative, physical, and technical safeguards for ePHI (Security Rule)."
+    - "Business Associate Agreements required before vendor PHI access."
+  evidence:
+    mustProve:
+      - tool.receipt
+      - human.review
+      - access.authorization
+    mustLog:
+      - phi.access
+      - phi.disclose
+      - phi.amend
+    retentionDays: 2190
+  humanReview:
+    requiredFor:
+      - diagnosis.suggest
+      - prescription.suggest
+      - phi.disclose.external
+      - treatment.decision
+  constraints:
+    - "No marketing with PHI without authorization (with limited exceptions)."
+    - "No sale of PHI."
+  rules:
+    - id: hipaa-deny-phi-exfil
+      effect: deny
+      action: phi.exfiltrate
+      description: "Security Rule — Block unauthorized PHI exfiltration"
+    - id: hipaa-deny-phi-sale
+      effect: deny
+      action: phi.sale
+      description: "Privacy Rule — Prohibit sale of PHI"
+    - id: hipaa-deny-autonomous-prescription
+      effect: deny
+      action: prescription.autonomous
+      description: "Clinical safety — No autonomous prescribing without licensed human"
+    - id: hipaa-ask-diagnosis
+      effect: ask
+      action: diagnosis.suggest
+      description: "Require qualified human review for diagnosis suggestions"
+    - id: hipaa-require-min-necessary
+      effect: require
+      action: phi.access
+      description: "Minimum necessary — limit PHI access to needed elements"
+    - id: hipaa-ask-external-disclose
+      effect: ask
+      action: phi.disclose.external
+      description: "External PHI disclosure requires authorization or permitted purpose gate"
+    - id: hipaa-deny-no-baa-vendor
+      effect: deny
+      action: phi.share.vendor
+      when: baa.missing
+      description: "Deny vendor PHI sharing without Business Associate Agreement"
+    - id: hipaa-require-audit-log
+      effect: require
+      action: phi.access
+      description: "Security Rule §164.312(b) — Audit controls for ePHI access"
+    - id: hipaa-deny-public-post-phi
+      effect: deny
+      action: phi.publish.public
+      description: "Deny publishing PHI to public channels / training corpora"

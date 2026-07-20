@@ -39,6 +39,9 @@ class EventLog:
         run_id: str,
         ts: str,
         payload: dict[str, Any],
+        session_id: str | None = None,
+        execution_unit_id: str | None = None,
+        parent_execution_unit_id: str | None = None,
     ) -> dict[str, Any]:
         evt = make_event(
             event_id=event_id,
@@ -49,6 +52,9 @@ class EventLog:
             sequence=self._seq,
             hash_prev=self._prev,
             payload=payload,
+            session_id=session_id,
+            execution_unit_id=execution_unit_id,
+            parent_execution_unit_id=parent_execution_unit_id,
         )
         validator_for("event.schema.json").validate(evt)
         h = hash_event(evt)

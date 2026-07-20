@@ -1,0 +1,83 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_uk_dpa_2018
+  name: UK GDPR / Data Protection Act 2018
+  version: "2.0.0"
+  provider: uk-dpa
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of UK GDPR and the Data Protection Act 2018.
+    Not an ICO publication. Not legal advice. Controllers remain responsible for
+    ICO registration, DPIAs, and counsel review.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: UK
+    instrument: UK GDPR + DPA 2018
+spec:
+  supports:
+    - uk-gdpr-v1
+    - uk-dpa-2018
+  legalBasis:
+    title: UK GDPR and Data Protection Act 2018
+    citation: Retained EU law version of GDPR · Data Protection Act 2018
+    jurisdiction: United Kingdom
+    officialUrl: https://ico.org.uk/
+  riskLevel: high
+  principles:
+    - "UK GDPR Art. 5 principles — lawfulness, fairness, transparency, purpose limitation, minimisation, accuracy, storage limitation, integrity & confidentiality, accountability."
+    - "Special category data requires DPA Schedule 1 / Art. 9 conditions."
+    - "Automated decision-making safeguards (UK GDPR Art. 22)."
+    - "International transfers under UK adequacy / IDTA / addendums."
+  evidence:
+    mustProve:
+      - consent.record
+      - policy.decision
+      - tool.receipt
+    mustLog:
+      - personaldata.access
+      - personaldata.erase
+      - transfer.international
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - decision.automated.significant
+      - personaldata.special.category
+      - transfer.international
+  rules:
+    - id: uk-deny-no-lawful-basis
+      effect: deny
+      action: personaldata.process
+      when: lawful.basis.missing
+      description: "UK GDPR Art. 6 — Deny processing without lawful basis"
+    - id: uk-ask-special-category
+      effect: ask
+      action: personaldata.special.category
+      description: "UK GDPR Art. 9 / DPA Sch.1 — Special category gate"
+    - id: uk-ask-automated
+      effect: ask
+      action: decision.automated.significant
+      description: "UK GDPR Art. 22 — Significant automated decisions need safeguards"
+    - id: uk-require-sar
+      effect: require
+      action: personaldata.access
+      when: subject.access.request
+      description: "Arts. 12–15 — Honour subject access requests"
+    - id: uk-require-erase
+      effect: require
+      action: personaldata.erase
+      when: erasure.request
+      description: "Art. 17 — Right to erasure when applicable"
+    - id: uk-ask-intl-transfer
+      effect: ask
+      action: transfer.international
+      description: "Chapter V — International transfers need UK transfer tool"
+    - id: uk-deny-exfil
+      effect: deny
+      action: personaldata.exfiltrate
+      description: "Art. 32 — Deny insecure personal data exfiltration"
+    - id: uk-require-ai-transparency
+      effect: require
+      action: user.interact
+      description: "Fairness/transparency — Disclose material AI decision support to individuals"

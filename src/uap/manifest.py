@@ -272,7 +272,7 @@ def ensure_workspace_manifest(workspace: Path, *, agent_name: str = "Agent") -> 
         "capabilities": ["general", "reasoning"],
         "permissions": [{"name": "network", "mode": "allow"}],
         "policies": ["log_every_action", "human_approval"],
-        "governance": {"package": "eu-ai-act@1.0.0"},
+        "governance": {"package": "eu-ai-act@2.0.0"},
         "runtime": {"narna": True},
         "passport": {"enabled": True, "publish": False},
         "trust": {"enabled": True, "minimum_score": 0.7},

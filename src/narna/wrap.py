@@ -20,6 +20,7 @@ def wrap(
     workspace: str | Path | None = None,
     vap: bool = False,
     manifest: str | Path | None = None,
+    mode: str | None = None,
 ) -> Agent:
     """Wrap any existing agent / graph / callable with NARNA.
 
@@ -67,6 +68,8 @@ def wrap(
     )
     agent._wrapped = foreign
     agent._framework = framework  # type: ignore[attr-defined]
+    if mode is not None:
+        agent._narna_adapter_mode = mode  # type: ignore[attr-defined]
     attach_adapter(agent, foreign, framework)
     return agent
 

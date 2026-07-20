@@ -24,12 +24,16 @@ class Organization(Base):
         DateTime(timezone=True), default=_utcnow
     )
     events_in_period: Mapped[int] = mapped_column(Integer, default=0)
+    gu_in_period: Mapped[int] = mapped_column(Integer, default=0)
     # Stripe optional (for P6 integration)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     stripe_subscription_status: Mapped[str | None] = mapped_column(
         String(32), nullable=True
     )
+    # Privacy-preserving Governance Telemetry (default OFF)
+    telemetry_opt_in: Mapped[int] = mapped_column(Integer, default=0)  # 0/1
+    train_opt_in: Mapped[int] = mapped_column(Integer, default=0)  # 0/1
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     api_keys: Mapped[list["ApiKey"]] = relationship(back_populates="organization")
@@ -64,6 +68,8 @@ class Run(Base):
     state: Mapped[str] = mapped_column(String(32), default="Unknown")
     tip_hash: Mapped[str] = mapped_column(String(80), default="")
     trust_score: Mapped[float | None] = mapped_column(nullable=True)
+    session_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    total_gu: Mapped[int] = mapped_column(Integer, default=0)
     proof_bundle_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
@@ -176,6 +182,10 @@ class RegistryGovernancePackage(Base):
     disclaimer: Mapped[str] = mapped_column(Text, default="")
     package_hash: Mapped[str] = mapped_column(String(128), default="")
     spec_json: Mapped[str] = mapped_column(Text, default="{}")
+    price_usd: Mapped[int] = mapped_column(Integer, default=0)  # cents; 0 = free
+    take_rate_bps: Mapped[int] = mapped_column(Integer, default=2000)  # 20% = 2000 bps
+    author_revenue_usd: Mapped[int] = mapped_column(Integer, default=0)
+    platform_revenue_usd: Mapped[int] = mapped_column(Integer, default=0)
     stars: Mapped[int] = mapped_column(Integer, default=0)
     downloads: Mapped[int] = mapped_column(Integer, default=0)
     org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
@@ -183,6 +193,61 @@ class RegistryGovernancePackage(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+
+
+class GovernanceSessionRow(Base):
+    """Cloud-side Governance Session for Console graph view."""
+
+    __tablename__ = "governance_sessions"
+    __table_args__ = (UniqueConstraint("org_id", "session_id", name="uq_org_session"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True)
+    session_id: Mapped[str] = mapped_column(String(80), index=True)
+    logical_agent_id: Mapped[str] = mapped_column(String(128), default="")
+    state: Mapped[str] = mapped_column(String(32), default="open")
+    total_gu: Mapped[int] = mapped_column(Integer, default=0)
+    graph_json: Mapped[str] = mapped_column(Text, default="{}")
+    terminate_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class MarketplacePurchase(Base):
+    """Governance Package purchase with NARNA take-rate split."""
+
+    __tablename__ = "marketplace_purchases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True)
+    package_id: Mapped[str] = mapped_column(String(128), index=True)
+    price_usd: Mapped[int] = mapped_column(Integer, default=0)
+    take_rate_bps: Mapped[int] = mapped_column(Integer, default=2000)
+    platform_cut_usd: Mapped[int] = mapped_column(Integer, default=0)
+    author_cut_usd: Mapped[int] = mapped_column(Integer, default=0)
+    gu_charged: Mapped[int] = mapped_column(Integer, default=0)
+    # pending | paid | free | mock
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    stripe_session_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class TelemetryContribution(Base):
+    """Sanitized, hashed Governance Telemetry contribution (no prompts / PII)."""
+
+    __tablename__ = "telemetry_contributions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True)
+    tenant_hash: Mapped[str] = mapped_column(String(64), index=True)
+    session_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    train_opt_in: Mapped[int] = mapped_column(Integer, default=0)
+    nodes_json: Mapped[str] = mapped_column(Text, default="[]")
+    edges_json: Mapped[str] = mapped_column(Text, default="[]")
+    totals_json: Mapped[str] = mapped_column(Text, default="{}")
+    node_count: Mapped[int] = mapped_column(Integer, default=0)
+    gu_total: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
 def generate_api_key() -> tuple[str, str, str]:

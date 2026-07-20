@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.dev/schemas/v0.1/capability.schema.json",
+  "title": "NGS Capability Declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capabilities"],
+  "properties": {
+    "apiVersion": { "type": "string", "const": "narna.ai/v1alpha1" },
+    "capabilities": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+      },
+      "uniqueItems": true
+    },
+    "vocabularyVersion": {
+      "type": "string",
+      "description": "Capability vocabulary version, e.g. ngs-0002/v0"
+    }
+  }
+}

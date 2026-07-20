@@ -1,0 +1,82 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_ccpa_cpra
+  name: CCPA/CPRA — California Consumer Privacy
+  version: "2.0.0"
+  provider: ccpa
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of the California Consumer Privacy Act as amended by
+    the CPRA (Cal. Civ. Code §1798.100 et seq.). Not a CPPA publication. Not legal advice.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: US-CA
+    instrument: Cal. Civ. Code 1798.100+
+spec:
+  supports:
+    - ccpa-v1
+    - cpra-v1
+  legalBasis:
+    title: California Consumer Privacy Act / California Privacy Rights Act
+    citation: Cal. Civ. Code §1798.100 et seq.
+    jurisdiction: California, United States
+    officialUrl: https://cppa.ca.gov/
+  riskLevel: high
+  principles:
+    - "Consumers have rights to know, delete, correct, and opt-out of sale/sharing."
+    - "Limit use of sensitive personal information."
+    - "No retaliation for exercising privacy rights."
+    - "Purpose limitation and data minimization under CPRA."
+  evidence:
+    mustProve:
+      - consumer.request.receipt
+      - policy.decision
+    mustLog:
+      - personalinfo.sale
+      - personalinfo.share
+      - personalinfo.delete
+      - personalinfo.access
+    retentionDays: 1825
+  humanReview:
+    requiredFor:
+      - personalinfo.sale
+      - personalinfo.share.crosscontext
+      - sensitive.pi.use.secondary
+  rules:
+    - id: ccpa-require-notice-at-collection
+      effect: require
+      action: personalinfo.collect
+      description: "§1798.100 — Notice at collection of categories and purposes"
+    - id: ccpa-require-delete
+      effect: require
+      action: personalinfo.delete
+      when: deletion.request
+      description: "§1798.105 — Honour deletion requests (with exceptions)"
+    - id: ccpa-ask-sale-share
+      effect: ask
+      action: personalinfo.sale
+      description: "§1798.120 — Sale/sharing subject to opt-out; gate by default"
+    - id: ccpa-deny-sale-opted-out
+      effect: deny
+      action: personalinfo.sale
+      when: consumer.opted_out
+      description: "Deny sale/share when consumer opted out"
+    - id: ccpa-ask-sensitive-pi
+      effect: ask
+      action: sensitive.pi.use.secondary
+      description: "§1798.121 — Limit use of sensitive personal information"
+    - id: ccpa-deny-retaliation
+      effect: deny
+      action: consumer.retaliate
+      description: "§1798.125 — No retaliation for exercising CCPA rights"
+    - id: ccpa-require-access
+      effect: require
+      action: personalinfo.access
+      when: access.request
+      description: "§1798.110 — Right to know / access"
+    - id: ccpa-deny-dark-pattern-consent
+      effect: deny
+      action: consent.darkpattern
+      description: "CPRA — Consent must not be obtained via dark patterns"

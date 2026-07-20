@@ -1,0 +1,21 @@
+apiVersion: narna.ai/v1alpha1
+kind: PolicyPack
+metadata:
+  id: local-default
+  name: Local Default
+  version: 0.0.0
+spec:
+  default: deny
+  rules:
+    - id: allow-market-read
+      match:
+        permission: market.read
+      decision: allow
+      reasons:
+        - read-only market data
+    - id: ask-email-send
+      match:
+        permission: email.send
+      decision: ask
+      reasons:
+        - external communication requires approval

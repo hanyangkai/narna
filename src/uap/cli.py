@@ -622,6 +622,14 @@ def cmd_package_pull(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_package_buy(args: argparse.Namespace) -> int:
+    from .packages import record_local_purchase
+
+    out = record_local_purchase(Path.cwd(), args.package_id)
+    _print_json({"ok": True, **out})
+    return 0
+
+
 def cmd_marketplace_search(args: argparse.Namespace) -> int:
     mp = Marketplace(Path.cwd())
     _print_json({"capability": args.capability, "agents": mp.search(args.capability)})
@@ -688,6 +696,21 @@ def cmd_orchestrate(args: argparse.Namespace) -> int:
         {"coordinatorRunId": result.coordinator_run_id, "children": result.child_results}
     )
     return 0
+
+
+def cmd_conformance(args: argparse.Namespace) -> int:
+    from narna.conformance import run_conformance
+
+    report = run_conformance(workspace=Path(args.workspace))
+    if args.json:
+        _print_json(report)
+    else:
+        status = "PASS" if report["conformant"] else "FAIL"
+        print(f"UGS conformance: {status}")
+        for c in report["checks"]:
+            mark = "ok" if c["ok"] else "FAIL"
+            print(f"  [{mark}] {c['id']}: {c['detail']}")
+    return 0 if report["conformant"] else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -897,6 +920,9 @@ def build_parser() -> argparse.ArgumentParser:
     pk_pull.add_argument("provider")
     pk_pull.add_argument("--version", default=None)
     pk_pull.set_defaults(func=cmd_package_pull)
+    pk_buy = pkg_sub.add_parser("buy", help="Purchase package (local take-rate ledger)")
+    pk_buy.add_argument("package_id")
+    pk_buy.set_defaults(func=cmd_package_buy)
 
     mp = sub.add_parser("marketplace", help="Marketplace commands")
     mp_sub = mp.add_subparsers(dest="mp_cmd", required=True)
@@ -923,6 +949,11 @@ def build_parser() -> argparse.ArgumentParser:
     orch.add_argument("--child", action="append", default=[])
     orch.add_argument("--input", required=True)
     orch.set_defaults(func=cmd_orchestrate)
+
+    conf = sub.add_parser("conformance", help="UGS conformance checks (badge eligibility)")
+    conf.add_argument("--workspace", default=".", help="Workspace with narna.yaml")
+    conf.add_argument("--json", action="store_true")
+    conf.set_defaults(func=cmd_conformance)
 
     return p
 

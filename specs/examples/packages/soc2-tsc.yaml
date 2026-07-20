@@ -1,0 +1,80 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_soc2_tsc
+  name: SOC 2 — Trust Services Criteria
+  version: "2.0.0"
+  provider: soc2
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of AICPA Trust Services Criteria (SOC 2) control themes
+    for agent/cloud systems. Not an AICPA publication. Not a SOC 2 examination report.
+    Formal attestation requires a licensed CPA firm.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: Global
+    instrument: AICPA TSC
+spec:
+  supports:
+    - soc2-v1
+  legalBasis:
+    title: SOC 2 Trust Services Criteria
+    citation: AICPA TSC (Security, Availability, Processing Integrity, Confidentiality, Privacy)
+    jurisdiction: Global (assurance standard)
+    officialUrl: https://www.aicpa-cima.com/
+  riskLevel: high
+  principles:
+    - "Security — protect against unauthorized access."
+    - "Availability — systems available for operation as committed."
+    - "Processing integrity — system processing is complete, valid, accurate, timely."
+    - "Confidentiality — confidential information protected."
+    - "Privacy — personal information collected/used/retained/disclosed per notice."
+  evidence:
+    mustProve:
+      - access.authorization
+      - tool.receipt
+      - policy.decision
+    mustLog:
+      - access.admin
+      - config.change
+      - security.alert
+    retentionDays: 365
+  humanReview:
+    requiredFor:
+      - access.admin.grant
+      - production.change
+      - data.export.bulk
+  rules:
+    - id: soc2-deny-unauth-access
+      effect: deny
+      action: access.unauthorized
+      description: "CC6 — Deny unauthorized logical access"
+    - id: soc2-require-authn
+      effect: require
+      action: access.admin
+      description: "CC6 — Authenticate before privileged access"
+    - id: soc2-ask-admin-grant
+      effect: ask
+      action: access.admin.grant
+      description: "CC6 — Human approval for admin privilege grants"
+    - id: soc2-require-change-log
+      effect: require
+      action: production.change
+      description: "CC8 — Log and control production changes"
+    - id: soc2-deny-secret-exfil
+      effect: deny
+      action: secret.exfiltrate
+      description: "CC6/CC7 — Block secret/credential exfiltration"
+    - id: soc2-ask-bulk-export
+      effect: ask
+      action: data.export.bulk
+      description: "Confidentiality/Privacy — Bulk export requires approval"
+    - id: soc2-require-incident-response
+      effect: require
+      action: security.incident
+      description: "CC7 — Detect and respond to security incidents"
+    - id: soc2-deny-unencrypted-public
+      effect: deny
+      action: data.transmit.public.plaintext
+      description: "CC6 — Deny plaintext transmission of confidential data publicly"

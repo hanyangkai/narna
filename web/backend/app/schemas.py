@@ -11,6 +11,7 @@ class IngestRequest(BaseModel):
     runId: str
     state: str = "Unknown"
     tipHash: str = ""
+    sessionId: str | None = None
     events: list[dict[str, Any]] = Field(default_factory=list)
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     proofBundle: dict[str, Any] | None = None
@@ -21,6 +22,8 @@ class IngestResponse(BaseModel):
     ok: bool = True
     runId: str
     eventsIngested: int
+    guIngested: int = 0
+    sessionId: str | None = None
     url: str
 
 
@@ -33,11 +36,30 @@ class RunSummary(BaseModel):
     trustScore: float | None
     eventCount: int
     updatedAt: str
+    sessionId: str | None = None
+    totalGu: int = 0
 
 
 class RunDetail(RunSummary):
     events: list[dict[str, Any]]
     proofBundle: dict[str, Any] | None = None
+
+
+class SessionSummary(BaseModel):
+    sessionId: str
+    logicalAgentId: str
+    state: str
+    totalGu: int
+    runCount: int = 0
+    createdAt: str
+    closedAt: str | None = None
+    terminateReason: str | None = None
+
+
+class SessionDetail(SessionSummary):
+    graph: dict[str, Any] = Field(default_factory=dict)
+    runs: list[RunSummary] = Field(default_factory=list)
+    units: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ApiKeyResponse(BaseModel):
@@ -66,6 +88,8 @@ class BillingStatusResponse(BaseModel):
     periodStartAt: str
     eventsInPeriod: int
     eventsLimit: int | None
+    guInPeriod: int = 0
+    guLimit: int | None = None
     billingMode: str
 
 
@@ -223,6 +247,8 @@ class PackagePublishRequest(BaseModel):
     disclaimer: str = ""
     spec: dict[str, Any] = Field(default_factory=dict)
     packageHash: str | None = None
+    priceUsd: int = 0
+    takeRateBps: int = 2000
     stars: int = 0
     downloads: int = 0
 
@@ -237,6 +263,10 @@ class PackageSummary(BaseModel):
     disclaimer: str = ""
     packageHash: str = ""
     spec: dict[str, Any] = Field(default_factory=dict)
+    priceUsd: int = 0
+    takeRateBps: int = 2000
+    authorRevenueUsd: int = 0
+    platformRevenueUsd: int = 0
     stars: int = 0
     downloads: int = 0
     publishedAt: str
@@ -247,3 +277,72 @@ class PackagePublishResponse(BaseModel):
     packageId: str
     status: str = "published"
     registryUrl: str
+
+
+class PackagePurchaseRequest(BaseModel):
+    packageId: str
+
+
+class PackagePurchaseResponse(BaseModel):
+    ok: bool = True
+    packageId: str
+    priceUsd: int
+    takeRateBps: int
+    platformCutUsd: int
+    authorCutUsd: int
+    guCharged: int
+    status: str = "paid"  # pending | paid | free | mock
+    mode: str = "mock"  # mock | stripe | free
+    checkoutUrl: str | None = None
+    message: str = "Purchase recorded"
+
+
+class TelemetryConsentRequest(BaseModel):
+    telemetryOptIn: bool = False
+    trainOptIn: bool = False
+
+
+class TelemetryConsentResponse(BaseModel):
+    ok: bool = True
+    telemetryOptIn: bool
+    trainOptIn: bool
+    message: str = "Consent updated"
+
+
+class TelemetryContributeRequest(BaseModel):
+    """Accepts either a prebuilt contribution or raw events to sanitize server-side."""
+
+    contribution: dict[str, Any] | None = None
+    events: list[dict[str, Any]] = Field(default_factory=list)
+    agentId: str = ""
+    agentName: str = ""
+    trustScore: float | None = None
+    runId: str | None = None
+
+
+class TelemetryContributeResponse(BaseModel):
+    ok: bool = True
+    contributionId: int
+    nodeCount: int
+    guTotal: int
+    message: str = "Contribution accepted"
+
+
+class TelemetryAggregateRow(BaseModel):
+    agentClass: str
+    capabilityFamily: str
+    humanApprovalRate: float
+    denyRate: float
+    loopFailureRate: float
+    avgGu: float
+    tenantCount: int
+    sampleNodes: int
+
+
+class TelemetryAggregateResponse(BaseModel):
+    ok: bool = True
+    k: int = 5
+    rows: list[TelemetryAggregateRow] = Field(default_factory=list)
+    description: str = (
+        "k-anonymous Governance Intelligence aggregates — no prompts, no tenant IDs."
+    )

@@ -10,6 +10,7 @@ from .crewai import CrewAIAdapter
 from .google import GoogleAdapter
 from .langgraph import LangGraphAdapter
 from .mcp import McpAdapter
+from .moltbook import MoltbookAdapter
 from .openai_agents import OpenAIAdapter
 from .openshell import OpenShellAdapter
 from .otel import OpenTelemetryAdapter, export_run_as_otel_attributes
@@ -22,6 +23,7 @@ _ADAPTERS: list[BaseAdapter] = [
     AnthropicAdapter(),
     GoogleAdapter(),
     McpAdapter(),
+    MoltbookAdapter(),
     OpenTelemetryAdapter(),
     OpenShellAdapter(),
 ]
@@ -33,6 +35,7 @@ _MARKERS: list[tuple[str, tuple[str, ...]]] = [
     ("anthropic", ("anthropic", "claude")),
     ("google", ("google.genai", "generativeai", "vertexai", "gemini", "google.adk")),
     ("mcp", ("mcp", "ClientSession", "FastMCP")),
+    ("moltbook", ("moltbook", "MoltbookClient", "openclaw")),
     ("opentelemetry", ("opentelemetry",)),
     ("openshell", ("openshell", "open_shell")),
     ("autogen", ("autogen", "ConversableAgent")),
@@ -64,6 +67,7 @@ def detect_framework(obj: Any) -> str | None:
         "google": "google",
         "vertexai": "google",
         "mcp": "mcp",
+        "moltbook": "moltbook",
         "opentelemetry": "opentelemetry",
         "openshell": "openshell",
         "autogen": "autogen",
@@ -119,6 +123,7 @@ ADAPTER_CATALOG = [
     {"id": "google", "package": "narna-google", "status": "available", "works_with": "Google ADK / Gemini"},
     {"id": "langgraph", "package": "narna-langgraph", "status": "available", "works_with": "LangGraph"},
     {"id": "mcp", "package": "narna-mcp", "status": "available", "works_with": "MCP servers/clients"},
+    {"id": "moltbook", "package": "narna-moltbook", "status": "available", "works_with": "Moltbook / OpenClaw"},
     {"id": "opentelemetry", "package": "narna-opentelemetry", "status": "available", "works_with": "OpenTelemetry"},
     {"id": "crewai", "package": "narna-crewai", "status": "available", "works_with": "CrewAI"},
     {"id": "openshell", "package": "narna-openshell", "status": "available", "works_with": "OpenShell"},
@@ -136,6 +141,7 @@ __all__ = [
     "GoogleAdapter",
     "LangGraphAdapter",
     "McpAdapter",
+    "MoltbookAdapter",
     "OpenTelemetryAdapter",
     "CrewAIAdapter",
     "OpenShellAdapter",

@@ -1,0 +1,97 @@
+apiVersion: narna.ai/v1alpha1
+kind: GovernancePackage
+metadata:
+  id: pkg_gdpr_2016
+  name: GDPR — General Data Protection Regulation
+  version: "2.0.0"
+  provider: gdpr
+  packageKind: Compliance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Machine-enforceable mapping of Regulation (EU) 2016/679 (GDPR).
+    Not an official EU publication. Not legal advice. Controllers/processors remain
+    responsible for lawful basis, DPIA, and supervisory authority obligations.
+  createdAt: "2026-07-17T00:00:00Z"
+  labels:
+    jurisdiction: EU-EEA
+    instrument: Regulation (EU) 2016/679
+spec:
+  supports:
+    - gdpr-v1
+    - gdpr-2016
+  legalBasis:
+    title: General Data Protection Regulation
+    citation: Regulation (EU) 2016/679
+    jurisdiction: European Union / EEA
+    officialUrl: https://eur-lex.europa.eu/eli/reg/2016/679/oj
+  riskLevel: high
+  principles:
+    - "Lawfulness, fairness and transparency (Art. 5(1)(a))."
+    - "Purpose limitation and data minimisation (Art. 5(1)(b)–(c))."
+    - "Integrity, confidentiality and accountability (Art. 5(1)(f), Art. 5(2))."
+    - "Data subject rights must be actionable (Arts. 12–22)."
+    - "Cross-border transfers require Chapter V safeguards (Arts. 44–49)."
+  evidence:
+    mustProve:
+      - consent.record
+      - policy.decision
+      - tool.receipt
+    mustLog:
+      - personaldata.access
+      - personaldata.export
+      - personaldata.erase
+      - transfer.crossborder
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - profiling.automated
+      - decision.automated.significant
+      - personaldata.special.category
+      - transfer.crossborder
+  constraints:
+    - "Special categories of personal data require Art. 9 condition."
+    - "Automated decisions with legal/significant effects need Art. 22 safeguards."
+  rules:
+    - id: art5-deny-purpose-creep
+      effect: deny
+      action: personaldata.reuse.incompatible
+      description: "Art. 5(1)(b) — Deny processing incompatible with original purpose"
+    - id: art5-require-minimisation
+      effect: require
+      action: personaldata.collect
+      description: "Art. 5(1)(c) — Collect only adequate, relevant, limited data"
+    - id: art6-deny-no-lawful-basis
+      effect: deny
+      action: personaldata.process
+      when: lawful.basis.missing
+      description: "Art. 6 — Deny processing without documented lawful basis"
+    - id: art9-ask-special-category
+      effect: ask
+      action: personaldata.special.category
+      description: "Art. 9 — Special category data requires explicit condition / human gate"
+    - id: art17-require-erasure
+      effect: require
+      action: personaldata.erase
+      when: erasure.request
+      description: "Art. 17 — Honour right to erasure when applicable"
+    - id: art20-require-portability
+      effect: require
+      action: personaldata.export
+      when: portability.request
+      description: "Art. 20 — Provide data portability in structured format"
+    - id: art22-ask-automated-decision
+      effect: ask
+      action: decision.automated.significant
+      description: "Art. 22 — Significant automated decisions require human involvement / safeguards"
+    - id: art32-deny-unencrypted-exfil
+      effect: deny
+      action: personaldata.exfiltrate
+      description: "Art. 32 — Deny insecure exfiltration of personal data"
+    - id: art33-require-breach-log
+      effect: require
+      action: security.breach
+      description: "Arts. 33–34 — Log and escalate personal data breaches"
+    - id: art44-ask-crossborder
+      effect: ask
+      action: transfer.crossborder
+      description: "Art. 44 et seq. — Cross-border transfer needs adequacy/SCC/other safeguard"

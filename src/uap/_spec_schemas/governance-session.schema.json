@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/governance-session.schema.json",
+  "title": "Governance Session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sessionId", "logicalAgentId", "state", "createdAt"],
+  "properties": {
+    "sessionId": { "type": "string", "pattern": "^session_[a-f0-9]+$" },
+    "logicalAgentId": { "type": "string", "minLength": 1 },
+    "rootRunId": { "type": "string" },
+    "state": { "type": "string", "enum": ["open", "closed", "terminated"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "closedAt": { "type": "string", "format": "date-time" },
+    "totalGu": { "type": "integer", "minimum": 0 },
+    "terminateReason": { "type": "string" }
+  }
+}

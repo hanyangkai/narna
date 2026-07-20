@@ -2,76 +2,72 @@
 
 **NARNA** — *The Governance Infrastructure for Agentic AI.*  
 **UGS** — *Universal Governance Specification* (open standard)  
+**NGS** — *NARNA Governance Standards* (numbered RFCs — IETF-style)  
 **VAP** — *Verify · Audit · Prove* (trust engine)
 
 **Primary:** Govern Once. Run Anywhere.  
-**Hero:** Build Agentic AI that Enterprises Can Trust.  
 **Strategy lock:** [`../docs/STRATEGY.md`](../docs/STRATEGY.md)  
-**Positioning:** [`../docs/POSITIONING.md`](../docs/POSITIONING.md)  
-**Brand:** [`../docs/BRAND.md`](../docs/BRAND.md)
+**NGS index:** [`../rfcs/ngs/README.md`](../rfcs/ngs/README.md)
 
-**Status:** Draft v0.3  
-**Scope:** normative specs + JSON Schemas (executable contracts)
+**Status:** Released v0.1.0  
+**Scope:** normative specs + JSON Schemas + OpenAPI  
+**Freeze tag:** `ugs-v0.1.0` (semver aligned with [`VERSION`](./VERSION))
+
+> UGS v0.1 locks the core six (Identity → Trust) + Manifest, Passport, Governance Package, Registry, and Governance API. Later minors may add telemetry/metering without breaking the core contracts.
+---
+
+## Core six (NGS-0001…0006)
+
+| NGS | Spec | Schema |
+|-----|------|--------|
+| Identity | [`identity/SPEC.md`](identity/SPEC.md) | `universal-identity.schema.json` |
+| Capability | [`capability/SPEC.md`](capability/SPEC.md) | `capability.schema.json` |
+| Permission | [`permission/SPEC.md`](permission/SPEC.md) | (AgentSpec / Manifest) |
+| Policy | [`policy/SPEC.md`](policy/SPEC.md) | `policy-pack.schema.json`, `policy-decision.schema.json` |
+| Evidence | [`uap-evidence/SPEC.md`](uap-evidence/SPEC.md) | `evidence.schema.json` |
+| Trust | [`vap/SPEC.md`](vap/SPEC.md) §6 | `trust-score.schema.json` |
 
 ---
 
-## What this is
+## Derived standards
 
-NARNA is an **infrastructure layer** (peer category: Docker, Kubernetes, OpenTelemetry) — not an IDE, agent framework, or model wrapper.
-
-| Layer | Name | Role |
-|-------|------|------|
-| Brand / runtime | NARNA | Governance Infrastructure for Agentic AI (reference impl) |
-| Open standard | **UGS** | Universal Governance Specification |
-| Runtime loop | Constitution Runtime | Load · Validate · Enforce · Audit · Verify · Certify |
-| Package | Governance Package | Constitution · Compliance · OrgPolicy · Risk · HumanApproval |
-| Trust | VAP | Verify → Audit → Prove |
-| Impl | `narna` SDK | Reference client — Python package `uap` is a legacy path alias |
-
-Design axiom:
-
-```text
-Governance Package → Runtime (Load/Enforce) → Evidence → Trust → Certification
-```
-
-**Legacy note:** Specs historically named *UAP (Understand → Act → Prove)*. Public standard is **UGS**. Filenames under `uap-*` remain until a major rename.
+| NGS | Spec |
+|-----|------|
+| Passport | [`passport/SPEC.md`](passport/SPEC.md) |
+| Governance Package | [`governance-package/SPEC.md`](governance-package/SPEC.md) |
+| Certification | [`certification/SPEC.md`](certification/SPEC.md) · `certification.schema.json` |
+| Audit Report | [`audit/SPEC.md`](audit/SPEC.md) · `audit.schema.json` |
+| Manifest | [`manifest/SPEC.md`](manifest/SPEC.md) |
+| Registry | [`registry/SPEC.md`](registry/SPEC.md) |
+| Governance API | [`governance-api/SPEC.md`](governance-api/SPEC.md) · [`openapi.yaml`](governance-api/openapi.yaml) |
 
 ---
 
-## Spec documents
+## Runtime / metering (orthogonal)
 
-| Spec | Path | Normative contents |
-|------|------|--------------------|
-| **Governance Package** | [`governance-package/SPEC.md`](governance-package/SPEC.md) | Distributable governance unit + kinds |
-| **Constitution Runtime** | [`constitution-runtime/SPEC.md`](constitution-runtime/SPEC.md) | Load → Execute → Verify → Audit → Version → Switch |
-| **Constitution** | [`constitution/SPEC.md`](constitution/SPEC.md) | `constitution.yaml` charter |
-| **Universal Identity** | [`identity/SPEC.md`](identity/SPEC.md) | Portable birth record |
-| **Manifest** | [`manifest/SPEC.md`](manifest/SPEC.md) | `narna.yaml` → Constitution |
-| **Compatibility** | [`compatibility/SPEC.md`](compatibility/SPEC.md) | Badge program |
-| **Governance (Fleet)** | [`governance/SPEC.md`](governance/SPEC.md) | Fleet governance |
-| **Certification** | [`certification/SPEC.md`](certification/SPEC.md) | L1 / L2 / Enterprise Ready |
-| **UGS Core** (legacy UAP-Core) | [`uap-core/SPEC.md`](uap-core/SPEC.md) | AgentSpec, Identity, Passport, Events |
-| **UGS Execution** | [`uap-execution/SPEC.md`](uap-execution/SPEC.md) | Run lifecycle |
-| **UGS Evidence** | [`uap-evidence/SPEC.md`](uap-evidence/SPEC.md) | Evidence hashing |
-| **VAP** | [`vap/SPEC.md`](vap/SPEC.md) | ProofBundle, Trust Score |
-| **Architecture** | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Stack orientation |
+| Spec | Path |
+|------|------|
+| Constitution | [`constitution/SPEC.md`](constitution/SPEC.md) |
+| Constitution Runtime | [`constitution-runtime/SPEC.md`](constitution-runtime/SPEC.md) |
+| Governance Session | [`governance-session/SPEC.md`](governance-session/SPEC.md) |
+| Execution Graph / Unit | [`execution-graph/SPEC.md`](execution-graph/SPEC.md), [`execution-unit/SPEC.md`](execution-unit/SPEC.md) |
+| Governor / Metering | [`governor/SPEC.md`](governor/SPEC.md), [`metering/SPEC.md`](metering/SPEC.md) |
+| Governance Telemetry (privacy-preserving) | [`governance-telemetry/SPEC.md`](governance-telemetry/SPEC.md) · `governance-telemetry.schema.json` |
+| UGS Execution / Core | [`uap-execution/SPEC.md`](uap-execution/SPEC.md), [`uap-core/SPEC.md`](uap-core/SPEC.md) |
+| Export | [`uap-export/SPEC.md`](uap-export/SPEC.md) |
 
 ---
 
 ## Conformance
 
-A system is **UGS-conformant** if it implements the normative Identity / Package / Evidence / Trust contracts.  
-A system is **Constitution-Runtime-conformant** if it implements Load → Enforce → Verify → Audit → Switch.  
-**VAP-conformant** systems additionally implement ProofBundle + offline verify.
+- **NGS-0001…0006 conformant** — implements the six core contracts + schemas.  
+- **Governance-API conformant** — exposes OpenAPI paths or equivalent.  
+- **VAP-conformant** — ProofBundle + offline verify + Trust Score.
 
----
+Design axiom:
 
-## Design principles
-
-1. Spec before code  
-2. Deny by default  
-3. Constitution over prompt  
-4. Evidence over eloquence  
-5. Compatibility first — never replace host stacks  
-6. Portable governance — vendor switch must not alone reset identity/trust  
-7. Open standard (UGS) separate from brand (NARNA)
+```text
+Identity · Capability · Permission · Policy · Evidence · Trust
+        ↓
+Passport · Package · Certification · Manifest · Registry · API
+```

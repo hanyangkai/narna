@@ -15,15 +15,15 @@ class ConstitutionRuntimeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
             rt = ConstitutionRuntime(ws)
-            loaded = rt.load(provider="eu-ai-act", version="1.0.0")
+            loaded = rt.load(provider="eu-ai-act", version="2.0.0")
             self.assertEqual(loaded["binding"]["provider"], "eu-ai-act")
             hash1 = loaded["binding"]["packageHash"]
 
-            denied = rt.execute(action="biometric.surveillance")
+            denied = rt.execute(action="biometric.scrape")
             self.assertEqual(denied["decision"], "deny")
             self.assertEqual(denied["packageHash"], hash1)
 
-            switched = rt.switch(provider="medical", version="1.0.0")
+            switched = rt.switch(provider="hipaa", version="2.0.0")
             hash2 = switched["binding"]["packageHash"]
             self.assertNotEqual(hash1, hash2)
             denied2 = rt.execute(action="prescription.autonomous")
@@ -73,7 +73,7 @@ class PortableGovernanceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
             rt = ConstitutionRuntime(ws)
-            binding = rt.load(provider="eu-ai-act", version="1.0.0")["binding"]
+            binding = rt.load(provider="eu-ai-act", version="2.0.0")["binding"]
             pkg_hash = binding["packageHash"]
 
             a1 = wrap(FakeOpenAI(), workspace=ws, vap=False, name="Portable A")
@@ -93,7 +93,7 @@ class PortableGovernanceTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
-            ConstitutionRuntime(ws).load(provider="eu-ai-act", version="1.0.0")
+            ConstitutionRuntime(ws).load(provider="eu-ai-act", version="2.0.0")
             agent = Agent(workspace=ws, name="GovBot")
             passport = agent.passport(refresh=True)
             self.assertIn("governance", passport)
@@ -106,8 +106,8 @@ class PortableGovernanceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             ws = Path(td)
             agent = Agent(workspace=ws, name="Loader")
-            loaded = agent.load_governance(provider="medical", version="1.0.0")
-            self.assertEqual(loaded["binding"]["provider"], "medical")
+            loaded = agent.load_governance(provider="hipaa", version="2.0.0")
+            self.assertEqual(loaded["binding"]["provider"], "hipaa")
 
     def test_fleet_min_certification_blocks_publish(self) -> None:
         import yaml

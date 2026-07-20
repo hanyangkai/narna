@@ -38,6 +38,10 @@ def register_package_local(workspace: Path, package_path: Path) -> dict[str, Any
         "status": "published",
         "stars": 0,
         "downloads": 0,
+        "priceUsd": int((doc.get("metadata") or {}).get("priceUsd") or 0),
+        "takeRateBps": int((doc.get("metadata") or {}).get("takeRateBps") or 2000),
+        "authorRevenueUsd": 0,
+        "platformRevenueUsd": 0,
     }
     (root / f"{package_id}.json").write_text(json.dumps(entry, indent=2), encoding="utf-8")
     dest = root / f"{package_id}.yaml"
@@ -85,3 +89,41 @@ def pull_package(workspace: Path, provider: str, version: str | None = None) -> 
     entry = register_package_local(workspace, Path(result["binding"]["path"]))
     entry["binding"] = result["binding"]
     return entry
+
+
+def marketplace_take(
+    price_usd: int,
+    *,
+    take_rate_bps: int = 2000,
+) -> dict[str, int]:
+    """Split marketplace purchase: NARNA take rate (default 20%)."""
+    platform = (int(price_usd) * int(take_rate_bps)) // 10_000
+    author = int(price_usd) - platform
+    return {
+        "priceUsd": int(price_usd),
+        "takeRateBps": int(take_rate_bps),
+        "platformCutUsd": platform,
+        "authorCutUsd": author,
+        "guCharged": 1 if price_usd == 0 else max(1, int(price_usd) // 100),
+    }
+
+
+def record_local_purchase(workspace: Path, package_id: str) -> dict[str, Any]:
+    rows = list_local_packages(workspace)
+    match = next((r for r in rows if r.get("packageId") == package_id), None)
+    if match is None:
+        raise FileNotFoundError(f"package not found: {package_id}")
+    split = marketplace_take(
+        int(match.get("priceUsd") or 0),
+        take_rate_bps=int(match.get("takeRateBps") or 2000),
+    )
+    match["downloads"] = int(match.get("downloads") or 0) + 1
+    match["authorRevenueUsd"] = int(match.get("authorRevenueUsd") or 0) + split["authorCutUsd"]
+    match["platformRevenueUsd"] = int(match.get("platformRevenueUsd") or 0) + split["platformCutUsd"]
+    root = workspace / ".uap" / "package-registry"
+    (root / f"{package_id}.json").write_text(json.dumps(match, indent=2), encoding="utf-8")
+    ledger = workspace / ".uap" / "marketplace-purchases.jsonl"
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    with ledger.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"packageId": package_id, **split, "at": _now()}) + "\n")
+    return {"package": match, **split}

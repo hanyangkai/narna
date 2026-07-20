@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import PaddleCheckout from "../components/PaddleCheckout";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -33,6 +34,7 @@ function constitutionFromPassport(passport: Record<string, unknown> | null) {
 export default function PassportPage() {
   const { agentId } = useParams();
   const [data, setData] = useState<PassportView | null>(null);
+  const [verify, setVerify] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +46,10 @@ export default function PassportPage() {
       })
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    fetch(`${API_BASE}/v1/passport/${agentId}/verify`)
+      .then(async (res) => (res.ok ? res.json() : null))
+      .then((v) => setVerify(v))
+      .catch(() => undefined);
   }, [agentId]);
 
   const star = async () => {
@@ -55,6 +61,7 @@ export default function PassportPage() {
 
   return (
     <div className="layout-wide">
+      <PaddleCheckout />
       <header className="page-header">
         <p className="pill-label">Passport</p>
         <h1>{data?.name || agentId}</h1>
@@ -62,6 +69,25 @@ export default function PassportPage() {
       </header>
 
       {error && <div className="error">{error}</div>}
+
+      {verify && (
+        <div className="card" style={{ marginBottom: "1rem" }}>
+          <p>
+            <strong>Signature:</strong>{" "}
+            <span className={`badge badge-${verify.signatureValid ? "ok" : "fail"}`}>
+              {verify.signatureValid ? "Valid" : "Invalid / unsigned"}
+            </span>
+          </p>
+          {Array.isArray(verify.problems) && verify.problems.length > 0 && (
+            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+              {String(verify.problems.join("; "))}
+            </p>
+          )}
+          <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+            Public verify API: <span className="mono">GET /v1/passport/{agentId}/verify</span>
+          </p>
+        </div>
+      )}
 
       {data && (
         <div className="two-col">

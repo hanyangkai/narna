@@ -5,21 +5,40 @@ build-backend = "hatchling.build"
 [project]
 name = "narna"
 version = "0.1.0"
-description = "NARNA — Universal AI Governance Runtime (Identity, Governance, Trust, UGS)"
+description = "NARNA — Governance Infrastructure for Agentic AI (UGS reference runtime)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "NARNA Contributors" }]
-keywords = ["ai-agents", "runtime", "trust", "uap", "vap", "narna"]
+keywords = ["ai-agents", "agentic-ai", "governance", "runtime", "trust", "uap", "ugs", "narna"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+]
 dependencies = [
   "PyYAML>=6.0.1",
   "jsonschema>=4.23.0",
   "cryptography>=42.0.0",
 ]
 
+[project.optional-dependencies]
+dev = ["jsonschema>=4.23.0", "build>=1.0.0"]
+cloud = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "sqlalchemy>=2.0.36",
+  "pydantic>=2.10.0",
+  "python-multipart>=0.0.12",
+  "PyYAML>=6.0.1",
+]
+
 [project.urls]
-Homepage = "https://github.com/hanyangkai/narna"
-Documentation = "https://github.com/hanyangkai/narna#readme"
+Homepage = "https://narna.org"
+Documentation = "https://narna.org/docs"
 Repository = "https://github.com/hanyangkai/narna"
 
 [project.scripts]
@@ -29,6 +48,11 @@ uap = "uap.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/narna", "src/uap", "src/uap_cloud"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"specs/schemas" = "uap/_spec_schemas"
-"policies" = "uap/_policies"
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/policies",
+  "/specs",
+  "/README.md",
+  "/pyproject.toml",
+]

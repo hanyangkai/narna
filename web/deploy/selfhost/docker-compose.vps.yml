@@ -1,0 +1,74 @@
+# VPS co-locate with 99x — bind localhost only; host nginx terminates TLS.
+services:
+  api:
+    build:
+      context: ../../..
+      dockerfile: web/backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      UAP_DATABASE_URL: postgresql+psycopg2://uap:${POSTGRES_PASSWORD}@postgres:5432/uap_cloud
+      UAP_REDIS_URL: redis://redis:6379/0
+      UAP_CLOUD_CORS_ORIGIN: ${UAP_CLOUD_CORS_ORIGIN:-https://narna.org}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health', timeout=2).read()\""]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    ports:
+      - "127.0.0.1:8100:8000"
+
+  web:
+    build:
+      context: ../../..
+      dockerfile: web/frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.narna.org}
+        VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8101:80"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: uap_cloud
+    volumes:
+      - narna_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uap -d uap_cloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "127.0.0.1:5435:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - narna_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "127.0.0.1:6381:6379"
+
+volumes:
+  narna_postgres_data:
+  narna_redis_data:

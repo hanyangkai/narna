@@ -10,6 +10,7 @@ from .base import BaseAdapter
 class LangGraphAdapter(BaseAdapter):
     id = "langgraph"
     package = "narna-langgraph"
+    default_unit_kind = "workflow_step"
 
     def matches(self, obj: Any) -> bool:
         if obj is None:

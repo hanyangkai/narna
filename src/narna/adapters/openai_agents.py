@@ -10,6 +10,7 @@ from .base import AdapterResult, BaseAdapter
 class OpenAIAdapter(BaseAdapter):
     id = "openai"
     package = "narna-openai"
+    default_unit_kind = "llm"
 
     def matches(self, obj: Any) -> bool:
         if obj is None:

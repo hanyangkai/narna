@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uap.dev/schemas/v0.1/budget.schema.json",
+  "title": "Governance Budget",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "monthlyLimitGu": { "type": "integer", "minimum": 0 },
+    "sessionLimitGu": { "type": "integer", "minimum": 0 },
+    "logicalAgentBudgetGu": { "type": "integer", "minimum": 0 },
+    "usedGu": { "type": "integer", "minimum": 0 },
+    "periodStart": { "type": "string", "format": "date-time" }
+  }
+}

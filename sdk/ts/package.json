@@ -1,0 +1,18 @@
+{
+  "name": "@narna/client",
+  "version": "0.1.0",
+  "description": "TypeScript client for NARNA Cloud Governance API",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["narna", "governance", "agentic-ai", "ugs"],
+  "license": "MIT",
+  "repository": "https://github.com/hanyangkai/narna"
+}

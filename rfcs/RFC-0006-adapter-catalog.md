@@ -31,6 +31,7 @@ Borrow the Wave requires a discoverable, versioned list of supported hosts so ev
 | `mcp` | `narna-mcp` | MCP servers/clients |
 | `opentelemetry` | `narna-opentelemetry` | OpenTelemetry traces |
 | `openshell` | `narna-openshell` | OpenShell |
+| `moltbook` | `narna-moltbook` | Moltbook / OpenClaw |
 
 ### Planned
 

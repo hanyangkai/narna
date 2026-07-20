@@ -9,6 +9,7 @@ import {
   COMPATIBILITY,
   MARKETPLACE_PACKAGES,
   POSITIONING,
+  PRICING,
   PRODUCT_FAMILY,
   SPEC,
   TRUST,
@@ -61,7 +62,7 @@ const howSteps = [
   { title: "Load into NARNA Runtime", desc: "governance: package: banking-v2" },
   { title: "Attach via adapter", desc: "narna-langgraph · narna-crewai · narna-openai …" },
   { title: "Enforce · Audit · Verify", desc: "Deny by default; human approval when required" },
-  { title: "Agent Passport", desc: "Portable trust signal per agent" },
+  { title: "UGS Passport", desc: "Portable trust + package binding" },
 ];
 
 const agentChain = [
@@ -120,7 +121,7 @@ export default function Landing() {
 
       <div className="trusted-bar">
         <p>
-          {BRAND.primary} · Open {SPEC.name} · Agent Passport · Governance Packages · Self-host first
+          {BRAND.primary} · Open {SPEC.name} · UGS Passport · Governance Packages · Self-host first
         </p>
       </div>
 
@@ -224,21 +225,21 @@ export default function Landing() {
 
         <section className="section two-col">
           <div>
-            <p className="section-label">Agent Passport</p>
-            <h2>Verified agents — like Docker Official Image</h2>
+            <p className="section-label">UGS Passport</p>
+            <h2>Verified agents — bound to a Governance Package</h2>
             <p className="section-desc">
-              Every agent ships a portable passport: identity, capabilities, trust score, and verification
-              status. Signal trust across OpenAI, LangGraph, CrewAI, and your own runtimes.
+              Every agent ships a UGS passport: identity, capabilities, trust score, package binding, and
+              verification status — portable across OpenAI, LangGraph, CrewAI, and your own runtimes.
             </p>
             <Link to="/registry" className="btn btn-primary">
               Registry &amp; Passport
             </Link>
           </div>
           <pre className="code-block mono">{`id: research-agent
-owner: openai
+owner: acme
+package: eu-ai-act@2.0.0
 capabilities:
   - browser
-  - wallet
   - memory
 trust: 0.97
 verified: true`}</pre>
@@ -438,24 +439,25 @@ verified: true`}</pre>
 
         <section className="section">
           <p className="section-label">Pricing</p>
-          <h2>Spec &amp; SDK are free. Cloud is optional.</h2>
+          <h2>{PRICING.tagline}</h2>
+          <p className="section-desc">{PRICING.subline}</p>
           <div className="pricing-grid">
             <div className="card">
               <h3>Developer</h3>
               <div className="price">Free</div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{SPEC.name} + OSS SDK + self-host</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Unlimited local runtime — no account</p>
             </div>
             <div className="card featured">
-              <h3>Cloud</h3>
+              <h3>Cloud Pro</h3>
               <div className="price">
                 $19<span style={{ fontSize: "1rem" }}>/mo</span>
               </div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Registry, Agent Passport, certification</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>100k GU/mo · Passport · registry</p>
             </div>
             <div className="card">
               <h3>Enterprise</h3>
               <div className="price" style={{ fontSize: "1.5rem" }}>Contact</div>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Fleet governance + compliance packages</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Compliance · SSO · marketplace at scale</p>
             </div>
           </div>
           <Link to="/pricing" className="btn btn-secondary">

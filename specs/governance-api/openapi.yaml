@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: NARNA Governance API
+  description: |
+    NGS-0013 — OTel-shaped Governance API for Agentic AI.
+    Identity · Trust · Policy · Evidence · Passport · Certification · Registry.
+  version: 0.1.0
+  contact:
+    name: NARNA
+    url: https://github.com/hanyangkai/narna
+servers:
+  - url: https://api.narna.dev
+    description: Production (when deployed)
+  - url: http://localhost:8000
+    description: Local cloud
+paths:
+  /v1/health:
+    get:
+      summary: Health
+      operationId: health
+      responses:
+        "200":
+          description: OK
+  /v1/passport/{agentId}:
+    get:
+      summary: Get Agent Passport
+      operationId: getPassport
+      tags: [Passport]
+      parameters:
+        - $ref: "#/components/parameters/agentId"
+      responses:
+        "200":
+          description: Passport JSON (NGS-0007)
+  /v1/passport/verify:
+    post:
+      summary: Verify signed Passport
+      operationId: verifyPassport
+      tags: [Passport]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Verification result
+  /v1/score/{agentId}:
+    get:
+      summary: NARNA / Trust score view
+      operationId: getScore
+      tags: [Trust]
+      parameters:
+        - $ref: "#/components/parameters/agentId"
+      responses:
+        "200":
+          description: Score payload
+  /v1/policy/evaluate:
+    post:
+      summary: Evaluate permission against PolicyPack
+      operationId: evaluatePolicy
+      tags: [Policy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permission]
+              properties:
+                agentId: { type: string }
+                permission: { type: string }
+                parameters: { type: object }
+                policyRef: { type: string }
+      responses:
+        "200":
+          description: PolicyDecision (NGS-0004)
+  /v1/ingest:
+    post:
+      summary: Ingest run events + optional ProofBundle (OTLP-like)
+      operationId: ingest
+      tags: [Evidence, Session]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId, runId, events]
+              properties:
+                agentId: { type: string }
+                agentName: { type: string }
+                runId: { type: string }
+                sessionId: { type: string }
+                events: { type: array, items: { type: object } }
+                proofBundle: { type: object }
+      responses:
+        "200":
+          description: Ingest accepted
+        "402":
+          description: Plan GU limit exceeded
+  /v1/telemetry/consent:
+    get:
+      summary: Read org Governance Telemetry consent (default off)
+      operationId: getTelemetryConsent
+      tags: [Telemetry]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Consent status
+    post:
+      summary: Set telemetryOptIn / trainOptIn
+      operationId: setTelemetryConsent
+      tags: [Telemetry]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telemetryOptIn: { type: boolean }
+                trainOptIn: { type: boolean }
+      responses:
+        "200":
+          description: Consent updated
+  /v1/telemetry/contribute:
+    post:
+      summary: Opt-in sanitized Governance Graph contribution (no prompts)
+      operationId: contributeTelemetry
+      tags: [Telemetry]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Contribution accepted
+        "403":
+          description: telemetryOptIn false
+  /v1/telemetry/aggregate:
+    get:
+      summary: k-anonymous Governance Intelligence aggregates
+      operationId: aggregateTelemetry
+      tags: [Telemetry]
+      parameters:
+        - name: k
+          in: query
+          schema: { type: integer, default: 5 }
+      responses:
+        "200":
+          description: Aggregate rows
+  /v1/telemetry/contributions:
+    delete:
+      summary: Delete this org's hashed telemetry contributions
+      operationId: deleteTelemetryContributions
+      tags: [Telemetry]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deleted count
+  /v1/runs/{runId}:
+    get:
+      summary: Run detail + events (audit slice)
+      operationId: getRun
+      tags: [Audit]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Run + events
+  /v1/sessions:
+    get:
+      summary: List Governance Sessions
+      operationId: listSessions
+      tags: [Session]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Session list
+  /v1/sessions/{sessionId}:
+    get:
+      summary: Session + Execution Graph
+      operationId: getSession
+      tags: [Session]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Session detail
+  /v1/certification/submit:
+    post:
+      summary: Submit certification
+      operationId: submitCertification
+      tags: [Certification]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Certification result
+  /v1/registry/publish:
+    post:
+      summary: Publish agent to registry
+      operationId: publishAgent
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Published
+  /v1/packages:
+    get:
+      summary: List Governance Packages
+      operationId: listPackages
+      tags: [Registry]
+      responses:
+        "200":
+          description: Package list
+  /v1/packages/purchase:
+    post:
+      summary: Purchase package (marketplace take rate)
+      operationId: purchasePackage
+      tags: [Registry]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Purchase recorded
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: NARNA Cloud API key (uap_live_…)
+  parameters:
+    agentId:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+tags:
+  - name: Identity
+  - name: Trust
+  - name: Policy
+  - name: Evidence
+  - name: Passport
+  - name: Certification
+  - name: Registry
+  - name: Audit
+  - name: Session

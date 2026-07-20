@@ -1,7 +1,7 @@
 # NARNA Manifest Specification (`narna.yaml`)
 
 **Version:** 0.1.0  
-**Status:** Draft  
+**Status:** Accepted (v0)  
 **Strategy:** [`../../docs/BORROW-THE-WAVE.md`](../../docs/BORROW-THE-WAVE.md)  
 **Compiles to:** [`../constitution/SPEC.md`](../constitution/SPEC.md)
 
