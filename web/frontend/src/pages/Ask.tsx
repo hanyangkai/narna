@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { askNarna, type AgentAskResponse } from "../api";
+import {
+  askNarna,
+  listAgentSkills,
+  recordAgentOutcome,
+  type AgentAskResponse,
+} from "../api";
 import { BRAND } from "../brand";
 
 type ChatItem = {
   role: "user" | "assistant";
   text: string;
   meta?: AgentAskResponse;
+  feedback?: "up" | "down";
 };
 
 function readFileAsText(file: File): Promise<{ name: string; text: string }> {
@@ -29,6 +35,8 @@ export default function Ask() {
   const [showModels, setShowModels] = useState(false);
   const [quota, setQuota] = useState<{ used?: number; hard?: number | null }>({});
   const [installHint, setInstallHint] = useState(false);
+  const [skills, setSkills] = useState<Array<{ skillId: string; name: string }>>([]);
+  const [showSkills, setShowSkills] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const deferredPrompt = useRef<{ prompt: () => Promise<void> } | null>(null);
 
@@ -46,11 +54,41 @@ export default function Ask() {
     return () => window.removeEventListener("beforeinstallprompt", onBip);
   }, []);
 
+  useEffect(() => {
+    const apiKey = localStorage.getItem("uap_api_key") || undefined;
+    listAgentSkills(apiKey)
+      .then(setSkills)
+      .catch(() => setSkills([]));
+  }, [items.length]);
+
   const onInstall = async () => {
     const p = deferredPrompt.current;
     if (!p) return;
     await p.prompt();
     setInstallHint(false);
+  };
+
+  const onFeedback = async (idx: number, status: "success" | "fail") => {
+    const item = items[idx];
+    if (!item?.meta?.decisionId || item.feedback) return;
+    try {
+      const apiKey = localStorage.getItem("uap_api_key") || undefined;
+      await recordAgentOutcome(item.meta.decisionId, {
+        apiKey,
+        status,
+        lesson:
+          status === "success"
+            ? "User marked outcome helpful"
+            : "User marked outcome not helpful — revise approach",
+      });
+      setItems((prev) =>
+        prev.map((row, i) =>
+          i === idx ? { ...row, feedback: status === "success" ? "up" : "down" } : row
+        )
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const onSend = async () => {
@@ -107,10 +145,27 @@ export default function Ask() {
             Ask in plain language. Tools, skills, and Decision Memory run under the hood — on
             desktop or as a phone app.
           </p>
-          {installHint && (
-            <button type="button" className="btn btn-secondary ask-install" onClick={onInstall}>
-              Install on phone
+          <div className="ask-header-actions">
+            {installHint && (
+              <button type="button" className="btn btn-secondary ask-install" onClick={onInstall}>
+                Install on phone
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowSkills((v) => !v)}
+            >
+              Skills ({skills.length})
             </button>
+          </div>
+          {showSkills && (
+            <ul className="ask-skills-list">
+              {skills.length === 0 && <li>No saved skills yet — strong answers auto-save.</li>}
+              {skills.slice(0, 12).map((s) => (
+                <li key={s.skillId}>{s.name}</li>
+              ))}
+            </ul>
           )}
         </header>
 
@@ -143,6 +198,24 @@ export default function Ask() {
                   {showModels && item.meta.modelsUsed?.length > 0 && (
                     <span className="ask-models mono">{item.meta.modelsUsed.join(" · ")}</span>
                   )}
+                  <div className="ask-feedback">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={!!item.feedback}
+                      onClick={() => onFeedback(idx, "success")}
+                    >
+                      {item.feedback === "up" ? "Helpful ✓" : "Helpful"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={!!item.feedback}
+                      onClick={() => onFeedback(idx, "fail")}
+                    >
+                      {item.feedback === "down" ? "Not helpful ✓" : "Not helpful"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

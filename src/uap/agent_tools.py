@@ -9,6 +9,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+import concurrent.futures
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -315,8 +316,17 @@ class AgentToolbelt:
         fn = self._handlers.get(name)
         if not fn:
             return {"ok": False, "error": f"unknown tool: {name}"}
+        timeout = 25
+        if name in {"web_search", "web_fetch"}:
+            timeout = 20
+        if name == "code_exec":
+            timeout = 5
         try:
-            return fn(dict(args or {}))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                fut = pool.submit(fn, dict(args or {}))
+                return fut.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            return {"ok": False, "error": f"tool timeout after {timeout}s", "tool": name}
         except Exception as e:
             return {"ok": False, "error": str(e), "tool": name}
 

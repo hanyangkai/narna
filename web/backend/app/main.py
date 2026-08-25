@@ -53,6 +53,7 @@ from .billing import (
     plan_usd_price,
 )
 from .crypto_bot import start_background_bot
+from .agent_jobs_ticker import start_jobs_ticker, tick_all_tenants
 from .crypto_chains import build_pay_uri, list_supported_networks, validate_crypto_payment
 from .invoice_utils import (
     allocate_unique_amount,
@@ -192,6 +193,19 @@ def on_startup() -> None:
     _seed_marketplace_packages()
     _seed_demo_registry_agent()
     start_background_bot()
+    start_jobs_ticker()
+
+
+@app.post("/v1/agent/jobs/tick-all")
+def agent_jobs_tick_all(request: Request) -> dict[str, Any]:
+    """Ops cron: tick all tenant job queues (requires UAP_JOBS_TICK_SECRET)."""
+    secret = os.environ.get("UAP_JOBS_TICK_SECRET", "").strip()
+    if not secret:
+        raise HTTPException(status_code=503, detail="UAP_JOBS_TICK_SECRET not set")
+    got = request.headers.get("X-Narna-Jobs-Secret", "")
+    if got != secret:
+        raise HTTPException(status_code=403, detail="invalid jobs secret")
+    return {"ok": True, **tick_all_tenants()}
 
 
 def _seed_dev_org() -> None:

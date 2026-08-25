@@ -360,6 +360,43 @@ export async function askNarna(
   return res.json();
 }
 
+export async function recordAgentOutcome(
+  decisionId: string,
+  opts: {
+    status?: string;
+    lesson?: string;
+    apiKey?: string;
+  }
+): Promise<{ ok: boolean }> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Narna-Device": deviceId(),
+  };
+  if (opts.apiKey) headers.Authorization = `Bearer ${opts.apiKey}`;
+  const res = await fetch(`${API_BASE}/v1/agent/outcome`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      decisionId,
+      status: opts.status ?? "success",
+      lesson: opts.lesson,
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function listAgentSkills(apiKey?: string): Promise<
+  Array<{ skillId: string; name: string; tags?: string[] }>
+> {
+  const headers: Record<string, string> = { "X-Narna-Device": deviceId() };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  const res = await fetch(`${API_BASE}/v1/agent/skills`, { headers });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.skills || [];
+}
+
 export type AgentModelsConfig = {
   ok: boolean;
   byoLlmAllowed: boolean;

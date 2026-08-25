@@ -1633,6 +1633,32 @@ table.data-table th {
   margin-top: 0.75rem;
 }
 
+.ask-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ask-skills-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ask-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.ask-feedback .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+}
+
 /* Mobile / PWA Ask */
 @media (max-width: 640px) {
   .ask-page {
