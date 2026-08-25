@@ -18,6 +18,7 @@ if [[ -z "${SSH_KEY:-}" ]]; then
 else
   KEY="$SSH_KEY"
 fi
+REMOTE_DIR="${REMOTE_DIR:-/opt/narna}"
 
 if [[ ! -f "$KEY" ]]; then
   echo "missing SSH key: $KEY" >&2
