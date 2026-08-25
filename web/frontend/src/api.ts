@@ -289,6 +289,7 @@ export async function askNarna(
     challenge?: boolean;
     files?: Array<{ name: string; text: string }>;
     showModels?: boolean;
+    stream?: boolean;
   }
 ): Promise<AgentAskResponse> {
   const headers: Record<string, string> = {
@@ -297,15 +298,63 @@ export async function askNarna(
   };
   if (opts?.apiKey) headers.Authorization = `Bearer ${opts.apiKey}`;
   if (opts?.showModels) headers["X-Narna-Show-Models"] = "1";
+  const payload = {
+    message,
+    sessionId: opts?.sessionId,
+    challenge: opts?.challenge ?? false,
+    files: opts?.files ?? [],
+  };
+
+  if (opts?.stream !== false && typeof EventSource === "undefined") {
+    // keep POST path below; EventSource can't POST — use fetch stream
+  }
+
+  if (opts?.stream !== false) {
+    try {
+      const res = await fetch(`${API_BASE}/v1/agent/ask/stream`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let result: AgentAskResponse | null = null;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split("\n\n");
+          buf = parts.pop() || "";
+          for (const block of parts) {
+            const lines = block.split("\n");
+            let event = "message";
+            let data = "";
+            for (const line of lines) {
+              if (line.startsWith("event:")) event = line.slice(6).trim();
+              if (line.startsWith("data:")) data += line.slice(5).trim();
+            }
+            if (event === "result" && data) {
+              result = JSON.parse(data) as AgentAskResponse;
+            }
+            if (event === "error" && data) {
+              const err = JSON.parse(data) as { error?: string };
+              throw new Error(err.error || "stream error");
+            }
+          }
+        }
+        if (result) return result;
+      }
+    } catch {
+      // fall through to non-stream Ask
+    }
+  }
+
   const res = await fetch(`${API_BASE}/v1/agent/ask`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      message,
-      sessionId: opts?.sessionId,
-      challenge: opts?.challenge ?? false,
-      files: opts?.files ?? [],
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
