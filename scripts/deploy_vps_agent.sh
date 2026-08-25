@@ -6,8 +6,18 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOST="${HOST:-root@46.62.163.209}"
-KEY="${SSH_KEY:-$ROOT/.deploy-secrets/hetzner_narna_deploy}"
-REMOTE_DIR="${REMOTE_DIR:-/opt/narna}"
+# Prefer working Hetzner key (963x); fall back to legacy name
+if [[ -z "${SSH_KEY:-}" ]]; then
+  if [[ -f "$ROOT/.deploy-secrets/hetzner_963x_nopass" ]]; then
+    KEY="$ROOT/.deploy-secrets/hetzner_963x_nopass"
+  elif [[ -f "$HOME/.ssh/hetzner_963x_nopass" ]]; then
+    KEY="$HOME/.ssh/hetzner_963x_nopass"
+  else
+    KEY="$ROOT/.deploy-secrets/hetzner_narna_deploy"
+  fi
+else
+  KEY="$SSH_KEY"
+fi
 
 if [[ ! -f "$KEY" ]]; then
   echo "missing SSH key: $KEY" >&2
