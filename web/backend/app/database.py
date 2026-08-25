@@ -37,12 +37,30 @@ def _migrate_schema() -> None:
             col_type = "DATETIME" if DATABASE_URL.startswith("sqlite") else "TIMESTAMP WITH TIME ZONE"
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE payment_invoices ADD COLUMN expires_at {col_type}"))
+        if "seat_count" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE payment_invoices ADD COLUMN seat_count INTEGER DEFAULT 1"))
 
     if "organizations" in tables:
         cols = {c["name"] for c in insp.get_columns("organizations")}
         alterations = []
         if "gu_in_period" not in cols:
             alterations.append("ADD COLUMN gu_in_period INTEGER DEFAULT 0")
+        if "adqa_checks_in_period" not in cols:
+            alterations.append("ADD COLUMN adqa_checks_in_period INTEGER DEFAULT 0")
+        if "agent_turns_in_period" not in cols:
+            alterations.append("ADD COLUMN agent_turns_in_period INTEGER DEFAULT 0")
+        if "seat_count" not in cols:
+            alterations.append("ADD COLUMN seat_count INTEGER DEFAULT 1")
+        if "plan_expires_at" not in cols:
+            col_type = (
+                "DATETIME"
+                if DATABASE_URL.startswith("sqlite")
+                else "TIMESTAMP WITH TIME ZONE"
+            )
+            alterations.append(f"ADD COLUMN plan_expires_at {col_type}")
+        if "llm_config_json" not in cols:
+            alterations.append("ADD COLUMN llm_config_json TEXT")
         if "telemetry_opt_in" not in cols:
             alterations.append("ADD COLUMN telemetry_opt_in INTEGER DEFAULT 0")
         if "train_opt_in" not in cols:

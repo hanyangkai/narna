@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import PaddleCheckout from "../components/PaddleCheckout";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -61,7 +60,6 @@ export default function PassportPage() {
 
   return (
     <div className="layout-wide">
-      <PaddleCheckout />
       <header className="page-header">
         <p className="pill-label">Passport</p>
         <h1>{data?.name || agentId}</h1>

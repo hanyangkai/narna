@@ -18,7 +18,14 @@ from .hashing import sha256_obj
 from .verify import verify_proof_bundle
 
 REPO_PACKAGES = Path(__file__).resolve().parents[2] / "specs" / "examples" / "packages"
+BUNDLED_PACKAGES = Path(__file__).resolve().parent / "_packages"
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "specs" / "schemas" / "governance-package.schema.json"
+DECISION_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[2] / "specs" / "schemas" / "decision-package.schema.json"
+)
+# Fallback schemas shipped inside the wheel / Docker image
+_BUNDLED_SCHEMA = Path(__file__).resolve().parent / "_spec_schemas" / "governance-package.schema.json"
+_BUNDLED_DECISION_SCHEMA = Path(__file__).resolve().parent / "_spec_schemas" / "decision-package.schema.json"
 
 
 def _now() -> str:
@@ -30,13 +37,23 @@ def _binding_path(workspace: Path) -> Path:
 
 
 def _validate_package(doc: dict[str, Any]) -> None:
-    if doc.get("kind") not in {"GovernancePackage", "Constitution"}:
-        raise ValueError("document must be kind GovernancePackage or Constitution")
-    if doc.get("kind") == "GovernancePackage" and SCHEMA_PATH.exists():
+    kind = doc.get("kind")
+    if kind not in {"GovernancePackage", "Constitution", "DecisionPackage"}:
+        raise ValueError(
+            "document must be kind GovernancePackage, Constitution, or DecisionPackage"
+        )
+    schema_path = None
+    if kind == "GovernancePackage":
+        schema_path = SCHEMA_PATH if SCHEMA_PATH.exists() else _BUNDLED_SCHEMA
+    elif kind == "DecisionPackage":
+        schema_path = (
+            DECISION_SCHEMA_PATH if DECISION_SCHEMA_PATH.exists() else _BUNDLED_DECISION_SCHEMA
+        )
+    if schema_path is not None and schema_path.exists():
         try:
             import jsonschema
 
-            schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
             jsonschema.validate(doc, schema)
         except ImportError:
             pass
@@ -68,11 +85,17 @@ def resolve_provider_package(
         for p in cache.glob("*.yaml"):
             candidates.append(p)
     # workspace packages/
-    for root in (ws / "packages", ws / "specs" / "examples" / "packages", REPO_PACKAGES):
+    for root in (
+        ws / "packages",
+        ws / "specs" / "examples" / "packages",
+        REPO_PACKAGES,
+        BUNDLED_PACKAGES,
+    ):
         if root.exists():
             candidates.extend(sorted(root.glob("*.yaml")))
     # also match by filename slug
     slug_hits = [
+        BUNDLED_PACKAGES / f"{provider}.yaml",
         REPO_PACKAGES / f"{provider}.yaml",
         REPO_PACKAGES / f"{provider}-constitution.yaml",
         cache / f"{provider}.yaml",
@@ -117,11 +140,11 @@ def resolve_provider_package(
 
 
 def extract_rules(doc: dict[str, Any]) -> list[dict[str, Any]]:
-    """Collect enforceable rules from GovernancePackage or Constitution."""
+    """Collect enforceable rules from GovernancePackage, DecisionPackage, or Constitution."""
     rules: list[dict[str, Any]] = []
     kind = doc.get("kind")
     spec = doc.get("spec") or {}
-    if kind == "GovernancePackage":
+    if kind in {"GovernancePackage", "DecisionPackage"}:
         rules.extend(spec.get("rules") or [])
         embedded = spec.get("constitution") or {}
         if isinstance(embedded, dict):

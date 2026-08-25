@@ -1,0 +1,87 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_hospital_decision_v1
+  name: Hospital Decision Package
+  version: "1.0.0"
+  provider: hospital-decision
+  industry: hospital
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for clinical / operational decisions.
+    NOT medical advice. Licensed clinicians remain responsible.
+  createdAt: "2026-07-31T00:00:00Z"
+  labels:
+    industry: hospital
+    flagship: decision-os
+spec:
+  composes:
+    - provider: hipaa
+      version: "2.0.0"
+  decision:
+    actions:
+      - order.medication
+      - discharge.approve
+      - phi.disclose
+      - schedule.procedure
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Proceed under clinical governance."
+      deny: "Do not proceed — patient safety / PHI control."
+      ask: "Hold for attending / privacy officer approval."
+      require: "Attach clinical indication + consent evidence."
+  riskLevel: critical
+  principles:
+    - "PHI disclose never silent — minimum necessary + audit."
+    - "High-risk medication orders require human cosign."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+      - clinical.indication
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+      - phi.access
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - order.medication
+      - discharge.approve
+      - phi.disclose
+    roles:
+      - attending.physician
+      - privacy.officer
+  constraints:
+    - "No automated PHI disclose outside treatment / ops roles."
+    - "Discharge requires attending sign-off."
+  rules:
+    - id: hosp-deny-unguarded-phi
+      effect: deny
+      action: phi.disclose
+      when: evidence.missing
+      description: "Block PHI disclose without required evidence"
+      riskWeight: 0.99
+    - id: hosp-ask-phi
+      effect: ask
+      action: phi.disclose
+      description: "PHI disclose requires privacy / clinical approval"
+      riskWeight: 0.95
+    - id: hosp-ask-med
+      effect: ask
+      action: order.medication
+      description: "Medication order requires clinician approval"
+      riskWeight: 0.9
+    - id: hosp-ask-discharge
+      effect: ask
+      action: discharge.approve
+      description: "Discharge requires attending approval"
+      riskWeight: 0.88
+    - id: hosp-allow-schedule
+      effect: allow
+      action: schedule.procedure
+      description: "Procedure scheduling allowed with audit"
+      riskWeight: 0.4

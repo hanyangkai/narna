@@ -1,0 +1,85 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_procurement_decision_v1
+  name: Procurement Decision Package
+  version: "1.0.0"
+  provider: procurement-decision
+  industry: logistics
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for purchase orders and vendor awards.
+    Controllers remain responsible for procurement policy.
+  createdAt: "2026-07-31T00:00:00Z"
+  labels:
+    industry: logistics
+    flagship: decision-os
+spec:
+  composes:
+    - provider: soc2-tsc
+      version: "2.0.0"
+  decision:
+    actions:
+      - po.approve
+      - po.create
+      - vendor.award
+      - vendor.onboard
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Proceed with procurement action under policy."
+      deny: "Do not award / approve — policy blocked."
+      ask: "Hold for procurement + finance approval."
+      require: "Attach competitive bids / vendor diligence first."
+  riskLevel: high
+  principles:
+    - "No single-bid award above threshold without waiver evidence."
+    - "Vendor onboarding requires sanctions / diligence check."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+      - vendor.diligence
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - po.approve
+      - vendor.award
+    roles:
+      - procurement.lead
+      - finance.controller
+  constraints:
+    - "No PO above org threshold without dual approval."
+    - "No vendor.award without documented competitive process or waiver."
+  rules:
+    - id: proc-deny-unguarded-award
+      effect: deny
+      action: vendor.award
+      when: evidence.missing
+      description: "Block vendor.award when diligence evidence missing"
+      riskWeight: 0.95
+    - id: proc-ask-po-approve
+      effect: ask
+      action: po.approve
+      description: "PO approval requires procurement + finance"
+      riskWeight: 0.82
+    - id: proc-ask-vendor-award
+      effect: ask
+      action: vendor.award
+      description: "Vendor award requires human approval"
+      riskWeight: 0.88
+    - id: proc-allow-po-create
+      effect: allow
+      action: po.create
+      description: "Draft PO creation is allowed"
+      riskWeight: 0.3
+    - id: proc-allow-vendor-onboard-review
+      effect: allow
+      action: vendor.onboard
+      description: "Start vendor onboarding review"
+      riskWeight: 0.4

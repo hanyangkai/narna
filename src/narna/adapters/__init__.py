@@ -5,23 +5,31 @@ from __future__ import annotations
 from typing import Any
 
 from .anthropic import AnthropicAdapter
+from .autogen import AutogenAdapter
 from .base import AdapterResult, BaseAdapter
+from .cmem import CmemAdapter
 from .crewai import CrewAIAdapter
 from .google import GoogleAdapter
 from .langgraph import LangGraphAdapter
+from .llamaindex import LlamaIndexAdapter
 from .mcp import McpAdapter
 from .moltbook import MoltbookAdapter
 from .openai_agents import OpenAIAdapter
 from .openshell import OpenShellAdapter
 from .otel import OpenTelemetryAdapter, export_run_as_otel_attributes
 from .otel_export import export_run_to_otlp
+from .semantic_kernel import SemanticKernelAdapter
 
 _ADAPTERS: list[BaseAdapter] = [
+    CmemAdapter(),  # before generic MCP so CMEM sessions match first
     LangGraphAdapter(),
     CrewAIAdapter(),
     OpenAIAdapter(),
     AnthropicAdapter(),
     GoogleAdapter(),
+    AutogenAdapter(),
+    SemanticKernelAdapter(),
+    LlamaIndexAdapter(),
     McpAdapter(),
     MoltbookAdapter(),
     OpenTelemetryAdapter(),
@@ -29,19 +37,20 @@ _ADAPTERS: list[BaseAdapter] = [
 ]
 
 _MARKERS: list[tuple[str, tuple[str, ...]]] = [
+    ("cmem", ("cmem", "claude_mem", "claude-mem")),
     ("langgraph", ("langgraph", "CompiledStateGraph", "StateGraph")),
     ("crewai", ("crewai",)),
     ("openai", ("openai", "agents.agent", "agents.run")),
     ("anthropic", ("anthropic", "claude")),
     ("google", ("google.genai", "generativeai", "vertexai", "gemini", "google.adk")),
+    ("autogen", ("autogen", "ConversableAgent", "ag2")),
+    ("semantic_kernel", ("semantic_kernel",)),
+    ("llamaindex", ("llama_index", "llamaindex")),
     ("mcp", ("mcp", "ClientSession", "FastMCP")),
     ("moltbook", ("moltbook", "MoltbookClient", "openclaw")),
     ("opentelemetry", ("opentelemetry",)),
     ("openshell", ("openshell", "open_shell")),
-    ("autogen", ("autogen", "ConversableAgent")),
-    ("llamaindex", ("llama_index",)),
     ("haystack", ("haystack",)),
-    ("semantic_kernel", ("semantic_kernel",)),
 ]
 
 
@@ -67,10 +76,12 @@ def detect_framework(obj: Any) -> str | None:
         "google": "google",
         "vertexai": "google",
         "mcp": "mcp",
+        "cmem": "cmem",
         "moltbook": "moltbook",
         "opentelemetry": "opentelemetry",
         "openshell": "openshell",
         "autogen": "autogen",
+        "ag2": "autogen",
         "llama_index": "llamaindex",
         "haystack": "haystack",
         "semantic_kernel": "semantic_kernel",
@@ -122,10 +133,14 @@ ADAPTER_CATALOG = [
     {"id": "anthropic", "package": "narna-anthropic", "status": "available", "works_with": "Anthropic / Claude"},
     {"id": "google", "package": "narna-google", "status": "available", "works_with": "Google ADK / Gemini"},
     {"id": "langgraph", "package": "narna-langgraph", "status": "available", "works_with": "LangGraph"},
+    {"id": "crewai", "package": "narna-crewai", "status": "available", "works_with": "CrewAI"},
+    {"id": "autogen", "package": "narna-autogen", "status": "available", "works_with": "AutoGen / AG2"},
+    {"id": "semantic_kernel", "package": "narna-semantic-kernel", "status": "available", "works_with": "Semantic Kernel"},
+    {"id": "llamaindex", "package": "narna-llamaindex", "status": "available", "works_with": "LlamaIndex"},
     {"id": "mcp", "package": "narna-mcp", "status": "available", "works_with": "MCP servers/clients"},
+    {"id": "cmem", "package": "narna-cmem", "status": "available", "works_with": "CMEM / claude-mem"},
     {"id": "moltbook", "package": "narna-moltbook", "status": "available", "works_with": "Moltbook / OpenClaw"},
     {"id": "opentelemetry", "package": "narna-opentelemetry", "status": "available", "works_with": "OpenTelemetry"},
-    {"id": "crewai", "package": "narna-crewai", "status": "available", "works_with": "CrewAI"},
     {"id": "openshell", "package": "narna-openshell", "status": "available", "works_with": "OpenShell"},
 ]
 
@@ -140,9 +155,13 @@ __all__ = [
     "AnthropicAdapter",
     "GoogleAdapter",
     "LangGraphAdapter",
+    "CrewAIAdapter",
+    "AutogenAdapter",
+    "SemanticKernelAdapter",
+    "LlamaIndexAdapter",
     "McpAdapter",
+    "CmemAdapter",
     "MoltbookAdapter",
     "OpenTelemetryAdapter",
-    "CrewAIAdapter",
     "OpenShellAdapter",
 ]

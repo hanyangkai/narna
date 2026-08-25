@@ -19,10 +19,19 @@ from uap.manifest import (
 )
 from uap.narna_score import compute_narna_score
 from uap.policy import PolicyEngine
+from uap.decision import DecisionEngine
+from uap.capability_gov import CapabilityGovernor
+from uap.kill import KillStore
+from uap.threat import ThreatEngine
 
 from narna.adapters import ADAPTER_CATALOG
 from narna.decorators import agent, audit, policy
 from narna.wrap import track, wrap
+from narna.integrations import integration_manifest
+from narna.mcp_tools import NarnaMcpTools, TOOL_DEFS as MCP_TOOL_DEFS
+
+from uap.adqa import ADQAEngine
+from uap.cmem_bridge import CmemBridge
 
 __version__ = "0.1.0"
 __all__ = [
@@ -36,6 +45,15 @@ __all__ = [
     "ADAPTER_CATALOG",
     "ConstitutionRuntime",
     "GovernanceRuntime",
+    "DecisionEngine",
+    "ADQAEngine",
+    "CmemBridge",
+    "NarnaMcpTools",
+    "MCP_TOOL_DEFS",
+    "integration_manifest",
+    "CapabilityGovernor",
+    "KillStore",
+    "ThreatEngine",
     "load_constitution",
     "write_constitution",
     "load_manifest",

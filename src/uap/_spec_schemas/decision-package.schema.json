@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/decision-package.schema.json",
+  "title": "NARNA Decision Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "narna.ai/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "DecisionPackage"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "provider"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 },
+        "industry": { "type": "string" },
+        "license": { "type": "string" },
+        "disclaimer": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["decision"],
+      "properties": {
+        "composes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["provider"],
+            "properties": {
+              "provider": { "type": "string" },
+              "version": { "type": "string" }
+            }
+          }
+        },
+        "decision": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["actions"],
+          "properties": {
+            "actions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "requireRiskScore": { "type": "boolean" },
+            "requireReasons": { "type": "boolean" },
+            "requireEvidence": { "type": "boolean" },
+            "requireApprovals": { "type": "boolean" },
+            "recommendationHints": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "effect"],
+            "properties": {
+              "id": { "type": "string" },
+              "effect": {
+                "type": "string",
+                "enum": ["allow", "deny", "ask", "require"]
+              },
+              "action": { "type": "string" },
+              "when": { "type": "string" },
+              "description": { "type": "string" },
+              "riskWeight": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "humanReview": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "principles": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

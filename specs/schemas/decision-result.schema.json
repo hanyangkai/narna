@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/decision-result.schema.json",
+  "title": "NARNA Decision Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["decision", "action", "evaluatedAt"],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "deny", "ask", "require"]
+    },
+    "recommendation": { "type": "string" },
+    "riskScore": { "type": "number", "minimum": 0, "maximum": 1 },
+    "riskBand": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requiredApprovals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "action": { "type": "string" },
+    "question": { "type": "string" },
+    "packageId": { "type": "string" },
+    "provider": { "type": "string" },
+    "version": { "type": "string" },
+    "evaluatedAt": { "type": "string" },
+    "auditRef": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

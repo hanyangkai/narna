@@ -1,0 +1,41 @@
+﻿title: "Ship log YYYY-MM-DD — "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Daily build-in-public entry. Canonical: also commit `docs/ship-log/YYYY-MM-DD.md`.
+        **Wedge:** UGS · Governance Packages · GU · enforce-before adapters
+  - type: textarea
+    id: shipped
+    attributes:
+      label: Shipped today
+      description: 1–3 bullets — what merged or went live
+      placeholder: "- pip install narna verified on clean venv"
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: Proof (command or URL)
+      description: Runnable proof — curl, test output, or live link
+      render: shell
+      placeholder: |
+        pip install narna==0.1.0
+        narna doctor
+    validations:
+      required: true
+  - type: textarea
+    id: oneliner
+    attributes:
+      label: One-liner (X / LinkedIn)
+      description: Copy-paste for social — lead with UGS + Packages, not passport-only
+    validations:
+      required: true
+  - type: textarea
+    id: tomorrow
+    attributes:
+      label: Tomorrow
+      placeholder: "Day N theme from docs/launch/days/"
+    validations:
+      required: false

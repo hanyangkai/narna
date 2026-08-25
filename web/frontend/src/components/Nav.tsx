@@ -3,12 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { BRAND } from "../brand";
 
 const links = [
-  { to: "/docs/what-is-narna", label: "Docs" },
-  { to: "/playground", label: "Playground" },
-  { to: "/specification", label: "Spec" },
-  { to: "/rfcs", label: "RFCs" },
-  { to: "/compatibility", label: "Compatibility" },
-  { to: "/enterprise", label: "Enterprise" },
+  { to: "/ask", label: "Ask" },
+  { to: "/compatibility", label: "Integrations" },
+  { to: "/docs/drop-in-saas", label: "Cloud" },
+  { to: "/console/decision", label: "Console" },
   { to: "/pricing", label: "Pricing" },
 ];
 
@@ -55,8 +53,8 @@ export default function Nav() {
               ))}
             </div>
             <div className="nav-actions">
-              <Link to="/docs/install" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Get Started
+              <Link to="/ask" className="btn btn-primary" onClick={() => setOpen(false)}>
+                Ask NARNA
               </Link>
               <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
                 GitHub
@@ -67,7 +65,9 @@ export default function Nav() {
         {isConsole && (
           <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
             <Link to="/docs" onClick={() => setOpen(false)}>Docs</Link>
-            <Link to="/console" onClick={() => setOpen(false)}>Console</Link>
+            <Link to="/console" onClick={() => setOpen(false)}>Sessions</Link>
+            <Link to="/console/decision" onClick={() => setOpen(false)}>Decision</Link>
+            <Link to="/console/guardian" onClick={() => setOpen(false)}>Guardian</Link>
             <Link to="/billing" onClick={() => setOpen(false)}>Billing</Link>
           </div>
         )}

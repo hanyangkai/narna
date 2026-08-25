@@ -1,0 +1,53 @@
+#narna-guardian-badge {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483646;
+  padding: 6px 12px;
+  font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+#narna-guardian-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  max-width: min(520px, 92vw);
+  padding: 12px 16px;
+  font: 500 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+  border-radius: 6px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+#narna-guardian-banner button {
+  border: 0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  background: #111;
+  color: #fff;
+}
+
+.narna-band-trusted {
+  background: #0f3d2e;
+  color: #b8f0d4;
+}
+
+.narna-band-caution {
+  background: #4a3b0a;
+  color: #ffe9a0;
+}
+
+.narna-band-dangerous {
+  background: #4a1212;
+  color: #ffc4c4;
+}

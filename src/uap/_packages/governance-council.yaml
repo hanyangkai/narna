@@ -1,0 +1,18 @@
+kind: GovernanceCouncil
+apiVersion: narna.org/v1
+metadata:
+  name: default-governance-council
+  version: "0.1.0"
+  description: Human council — sole authority to amend constitution / global kill
+spec:
+  quorum: 2
+  members:
+    - id: chair
+      role: chair
+      name: Council Chair
+    - id: security
+      role: member
+      name: Security Lead
+    - id: ethics
+      role: member
+      name: Ethics Lead

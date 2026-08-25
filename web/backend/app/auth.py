@@ -23,13 +23,30 @@ def get_org_from_api_key(
 ) -> Organization:
     if credentials is None or not credentials.credentials:
         raise HTTPException(status_code=401, detail="missing API key")
-    key = credentials.credentials
+    org = resolve_api_key(credentials.credentials, db)
+    if org is None:
+        raise HTTPException(status_code=401, detail="invalid API key")
+    return org
+
+
+def resolve_api_key(key: str | None, db: Session) -> Organization | None:
+    if not key:
+        return None
+    key = key.strip()
+    if key.lower().startswith("bearer "):
+        key = key.split(" ", 1)[1].strip()
     if not key.startswith("uap_live_"):
-        raise HTTPException(status_code=401, detail="invalid API key format")
+        return None
     record = db.query(ApiKey).filter(ApiKey.key_hash == hash_key(key)).first()
     if record is None:
-        raise HTTPException(status_code=401, detail="invalid API key")
-    org = db.query(Organization).filter(Organization.id == record.org_id).first()
-    if org is None:
-        raise HTTPException(status_code=401, detail="organization not found")
-    return org
+        return None
+    return db.query(Organization).filter(Organization.id == record.org_id).first()
+
+
+def get_org_optional(
+    credentials: HTTPAuthorizationCredentials | None = Security(security),
+    db: Session = Depends(get_db),
+) -> Organization | None:
+    if credentials is None or not credentials.credentials:
+        return None
+    return resolve_api_key(credentials.credentials, db)

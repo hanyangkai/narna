@@ -19,7 +19,7 @@ export default function Enterprise() {
         <h1>Self-host first. Cloud when you need it.</h1>
         <p>
           Banks, insurance, and government need portable identity, policy, and proof — not another
-          black-box agent runtime. NARNA is the Governance Infrastructure for Agentic AI your security team can audit.
+          black-box agent runtime. NARNA is the Trust Layer for AI Decisions — ADQA scores every consequential choice (DQS), Decision Guardian approves or escalates, and your security team gets evidence, risk, and audit.
         </p>
       </header>
 

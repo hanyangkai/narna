@@ -1,0 +1,88 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_crypto_decision_v1
+  name: Crypto Exchange Decision Package
+  version: "1.0.0"
+  provider: crypto-decision
+  industry: crypto
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for exchange / trading compliance decisions.
+    Not financial or legal advice. Controllers remain responsible.
+  createdAt: "2026-07-31T00:00:00Z"
+  labels:
+    industry: crypto
+    flagship: decision-os
+spec:
+  composes:
+    - provider: pci-dss
+      version: "2.0.0"
+  decision:
+    actions:
+      - withdrawal.release
+      - listing.approve
+      - trade.large
+      - kyc.override
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Proceed under exchange compliance controls."
+      deny: "Do not release / list — compliance blocked."
+      ask: "Hold for compliance + risk approval."
+      require: "Attach KYC/AML + travel-rule evidence."
+  riskLevel: critical
+  principles:
+    - "Large withdrawals always dual-control."
+    - "KYC override is exceptional and fully audited."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+      - aml.screen
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+      - withdrawal.attempt
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - withdrawal.release
+      - listing.approve
+      - kyc.override
+      - trade.large
+    roles:
+      - compliance.officer
+      - risk.officer
+  constraints:
+    - "No withdrawal to sanctioned destination."
+    - "No listing without market-manipulation risk review."
+  rules:
+    - id: crypto-deny-unguarded-withdraw
+      effect: deny
+      action: withdrawal.release
+      when: evidence.missing
+      description: "Block withdrawal without AML/authorization evidence"
+      riskWeight: 0.98
+    - id: crypto-ask-withdraw
+      effect: ask
+      action: withdrawal.release
+      description: "Withdrawal release requires compliance dual control"
+      riskWeight: 0.95
+    - id: crypto-ask-listing
+      effect: ask
+      action: listing.approve
+      description: "Token listing requires risk + compliance"
+      riskWeight: 0.9
+    - id: crypto-ask-kyc-override
+      effect: ask
+      action: kyc.override
+      description: "KYC override is exceptional — require approvals"
+      riskWeight: 0.97
+    - id: crypto-ask-large-trade
+      effect: ask
+      action: trade.large
+      description: "Large trade requires risk approval"
+      riskWeight: 0.85

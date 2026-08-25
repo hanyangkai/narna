@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from .billing import now_utc
+from .billing import add_plan_period, normalize_plan, now_utc
 from .crypto_chains import TRANSFER_TOPIC, get_rpc_url, get_token
 from .database import SessionLocal
 from .invoice_utils import expire_pending_invoices
@@ -26,7 +26,10 @@ def _rpc_call(rpc_url: str, method: str, params: list) -> dict:
     req = urllib.request.Request(
         rpc_url,
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "narna-crypto-bot/1.0",
+        },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
@@ -46,6 +49,23 @@ def _to_raw_amount(amount_str: str, decimals: int) -> int:
 def _mark_invoice_paid(
     db: Session, inv: PaymentInvoice, tx_hash: str, block_number: int
 ) -> None:
+    # One on-chain tx can only fulfill one invoice
+    clash = (
+        db.query(PaymentInvoice)
+        .filter(
+            PaymentInvoice.tx_hash == tx_hash,
+            PaymentInvoice.status == "paid",
+            PaymentInvoice.id != inv.id,
+        )
+        .first()
+    )
+    if clash is not None:
+        logger.warning(
+            "tx already used",
+            extra={"tx_hash": tx_hash, "invoice_id": inv.invoice_id},
+        )
+        return
+
     inv.status = "paid"
     inv.tx_hash = tx_hash
     inv.block_number = block_number
@@ -53,9 +73,19 @@ def _mark_invoice_paid(
 
     org = db.query(Organization).filter(Organization.id == inv.org_id).first()
     if org is not None:
-        org.plan = inv.plan
-        org.period_start_at = now_utc()
+        org.plan = normalize_plan(inv.plan)
+        now = now_utc()
+        org.period_start_at = now
+        org.plan_expires_at = add_plan_period(now)
         org.events_in_period = 0
+        org.gu_in_period = 0
+        if hasattr(org, "adqa_checks_in_period"):
+            org.adqa_checks_in_period = 0
+        seats = int(getattr(inv, "seat_count", 0) or 0)
+        if seats > 0:
+            org.seat_count = seats
+        elif org.plan == "team" and int(getattr(org, "seat_count", 1) or 1) < 3:
+            org.seat_count = 3
 
 
 def _scan_invoice(
@@ -89,7 +119,8 @@ def _scan_invoice(
     logs = logs_resp.get("result", [])
     for lg in logs:
         amount_raw = int(lg.get("data", "0x0"), 16)
-        if amount_raw < expected_raw:
+        # Exact amount match (unique cents per pending invoice)
+        if amount_raw != expected_raw:
             continue
         tx_hash = lg.get("transactionHash", "")
         block_number = int(lg.get("blockNumber", "0x0"), 16)

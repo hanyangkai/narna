@@ -61,6 +61,19 @@ class Governor:
         if session.state != "open":
             raise GovernorError(f"session {session.session_id} is {session.state}")
 
+        # Local Kill Token check
+        try:
+            from .kill import KillStore
+
+            store = KillStore(self.workspace)
+            if store.is_agent_killed(logical_agent_id) or store.is_session_killed(session.session_id):
+                self._terminate(session, reason="kill_token")
+                raise GovernorError("local kill token active — session terminated")
+        except GovernorError:
+            raise
+        except Exception:
+            pass
+
         session_dir = self.sessions.path(session.session_id)
         graph = ExecutionGraph(session_dir)
         parent = parent_unit_id or self._current_unit.get(session.session_id)
@@ -87,6 +100,33 @@ class Governor:
                 parent_unit_id=parent,
             )
         )
+
+        # Threat heuristic (best-effort; does not auto-kill unless env set)
+        try:
+            from .threat import ThreatEngine
+            import os
+
+            report = ThreatEngine(self.workspace).analyze_graph(
+                graph, session_id=session.session_id
+            )
+            auto = os.environ.get("NARNA_THREAT_AUTO_KILL", "").lower() in {"1", "true", "yes"}
+            if auto and float(report.get("riskScore") or 0) >= 0.9:
+                from .kill import KillStore
+
+                KillStore(self.workspace).issue_local(
+                    agent_id=logical_agent_id,
+                    session_id=session.session_id,
+                    reason=f"threat:{','.join(report.get('patterns') or [])}",
+                    issued_by="threat-engine",
+                )
+                self._terminate(session, reason="threat_auto_kill")
+                raise GovernorError(
+                    f"threat auto-kill risk={report.get('riskScore')} patterns={report.get('patterns')}"
+                )
+        except GovernorError:
+            raise
+        except Exception:
+            pass
 
         ancestry = graph.ancestry_kinds(unit.unit_id)
         same_kind_streak = 0

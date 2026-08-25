@@ -48,24 +48,26 @@ NARNA does **not** replace frameworks or models. It is the **governance infrastr
 | **Execution (others)** | How tokens/tools run | LangGraph, OpenAI Agents, CrewAI, MCP |
 | **Observability (others)** | What happened | OpenTelemetry |
 | **Proof (VAP)** | Whether it can be believed | Evidence, ProofBundle, Trust Score |
+| **Decision OS (Enterprise)** | Whether / why to act | Decision Package → Decision Result |
 
 ---
 
 ## Artifact flow
 
 ```text
-Governance Package
+Governance Package (+ Decision Package composition)
         ↓
 NARNA Runtime: Load → Validate → bind active package
         ↓
-Enforce (authorize) → host side effects
+Enforce / Decision.evaluate (authorize + risk + approvals)
         ↓
 Evidence → Verify / Audit (VAP)
         ↓
 Passport → Certification → Registry / Marketplace
 ```
 
-**Portable Governance:** changing model vendor **MUST NOT** alone invalidate identity or reset trust without package change.
+**Portable Governance:** changing model vendor **MUST NOT** alone invalidate identity or reset trust without package change.  
+**Decision OS:** customers install industry Decision Packages; they do not buy “an AI chatbot”.
 
 ---
 

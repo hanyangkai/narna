@@ -57,6 +57,10 @@ export default function Console() {
             {apiOk === null ? "…" : apiOk ? "online" : "offline"}
             {" · "}
             <Link to="/billing">Billing</Link>
+            {" · "}
+            <Link to="/console/decision">Decision</Link>
+            {" · "}
+            <Link to="/console/guardian">Guardian</Link>
           </p>
         </header>
         <div className="console-bar">

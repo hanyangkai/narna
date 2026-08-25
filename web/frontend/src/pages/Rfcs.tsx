@@ -19,6 +19,13 @@ const NGS_DERIVED = [
   { id: "NGS-0011", file: "NGS-0011-manifest.md", title: "Governance Manifest", status: "Draft" },
   { id: "NGS-0012", file: "NGS-0012-registry.md", title: "Governance Registry", status: "Accepted" },
   { id: "NGS-0013", file: "NGS-0013-governance-api.md", title: "Governance API", status: "Accepted" },
+  { id: "NGS-0014", file: "NGS-0014-decision-package.md", title: "Decision Package", status: "Draft" },
+  { id: "NGS-0015", file: "NGS-0015-capability-passport.md", title: "Capability Passport", status: "Draft" },
+  { id: "NGS-0016", file: "NGS-0016-agent-container.md", title: "Agent Container", status: "Draft" },
+  { id: "NGS-0017", file: "NGS-0017-behavioral-threat.md", title: "Behavioral Threat Engine", status: "Draft" },
+  { id: "NGS-0018", file: "NGS-0018-agent-reputation.md", title: "Agent Reputation", status: "Draft" },
+  { id: "NGS-0019", file: "NGS-0019-emergency-kill.md", title: "Emergency Kill", status: "Draft" },
+  { id: "NGS-0020", file: "NGS-0020-collective-defense.md", title: "Collective Defense", status: "Draft" },
 ];
 
 function Table({ rows }: { rows: typeof NGS_CORE }) {

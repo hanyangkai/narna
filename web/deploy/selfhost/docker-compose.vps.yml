@@ -11,6 +11,29 @@ services:
       UAP_DATABASE_URL: postgresql+psycopg2://uap:${POSTGRES_PASSWORD}@postgres:5432/uap_cloud
       UAP_REDIS_URL: redis://redis:6379/0
       UAP_CLOUD_CORS_ORIGIN: ${UAP_CLOUD_CORS_ORIGIN:-https://narna.org}
+      UAP_TENANT_ROOT: /data/tenants
+      UAP_ADQA_REQUIRE_AUTH: ${UAP_ADQA_REQUIRE_AUTH:-1}
+      UAP_RATE_LIMIT_PER_MIN: ${UAP_RATE_LIMIT_PER_MIN:-120}
+      UAP_BILLING_MODE: ${UAP_BILLING_MODE:-mock}
+      UAP_CRYPTO_MODE: ${UAP_CRYPTO_MODE:-live}
+      UAP_CRYPTO_RECEIVER_WALLET: ${UAP_CRYPTO_RECEIVER_WALLET:-0x24DAb37fd89222710ce1D5A4c4E81e26D51E34D5}
+      UAP_CRYPTO_BOT_ENABLED: ${UAP_CRYPTO_BOT_ENABLED:-1}
+      UAP_ETH_RPC_URL: ${UAP_ETH_RPC_URL:-}
+      UAP_POLYGON_RPC_URL: ${UAP_POLYGON_RPC_URL:-}
+      UAP_BASE_RPC_URL: ${UAP_BASE_RPC_URL:-}
+      UAP_ARBITRUM_RPC_URL: ${UAP_ARBITRUM_RPC_URL:-}
+      UAP_BSC_RPC_URL: ${UAP_BSC_RPC_URL:-}
+      UAP_ROUTER_PROVIDER: ${UAP_ROUTER_PROVIDER:-mock}
+      UAP_OPENROUTER_API_KEY: ${UAP_OPENROUTER_API_KEY:-}
+      UAP_OPENAI_API_KEY: ${UAP_OPENAI_API_KEY:-}
+      UAP_OLLAMA_BASE_URL: ${UAP_OLLAMA_BASE_URL:-}
+      UAP_ROUTER_MODEL_CHEAP: ${UAP_ROUTER_MODEL_CHEAP:-}
+      UAP_ROUTER_MODEL_REASON: ${UAP_ROUTER_MODEL_REASON:-}
+      UAP_ROUTER_MODEL_CHALLENGE: ${UAP_ROUTER_MODEL_CHALLENGE:-}
+      UAP_TELEGRAM_BOT_TOKEN: ${UAP_TELEGRAM_BOT_TOKEN:-}
+      UAP_TELEGRAM_WEBHOOK_SECRET: ${UAP_TELEGRAM_WEBHOOK_SECRET:-}
+    volumes:
+      - narna_tenants:/data/tenants
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,7 +54,6 @@ services:
       dockerfile: web/frontend/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-https://api.narna.org}
-        VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
     restart: unless-stopped
     depends_on:
       api:
@@ -72,3 +94,4 @@ services:
 volumes:
   narna_postgres_data:
   narna_redis_data:
+  narna_tenants:

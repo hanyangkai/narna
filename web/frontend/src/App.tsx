@@ -1,13 +1,17 @@
 import { Route, Routes } from "react-router-dom";
 import Footer from "./components/Footer";
 import Nav from "./components/Nav";
+import Ask from "./pages/Ask";
 import Benchmark from "./pages/Benchmark";
 import Billing from "./pages/Billing";
 import Compatibility from "./pages/Compatibility";
 import Console from "./pages/Console";
+import DecisionConsole from "./pages/DecisionConsole";
 import Docs from "./pages/Docs";
 import Enterprise from "./pages/Enterprise";
+import GuardianConsole from "./pages/GuardianConsole";
 import Landing from "./pages/Landing";
+import ModelsSettings from "./pages/ModelsSettings";
 import PackageDetail from "./pages/PackageDetail";
 import Packages from "./pages/Packages";
 import PassportPage from "./pages/PassportPage";
@@ -28,6 +32,8 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/ask" element={<Ask />} />
+          <Route path="/settings/models" element={<ModelsSettings />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/:slug" element={<Docs />} />
           <Route path="/specification" element={<Specification />} />
@@ -45,6 +51,8 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/console" element={<Console />} />
+          <Route path="/console/decision" element={<DecisionConsole />} />
+          <Route path="/console/guardian" element={<GuardianConsole />} />
           <Route path="/console/runs/:runId" element={<RunDetail />} />
           <Route path="/console/sessions/:sessionId" element={<SessionDetail />} />
         </Routes>

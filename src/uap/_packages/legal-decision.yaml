@@ -1,0 +1,80 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_legal_decision_v1
+  name: Legal Decision Package
+  version: "1.0.0"
+  provider: legal-decision
+  industry: law-firm
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for contract review. Not legal advice.
+    Controllers remain responsible for counsel review.
+  createdAt: "2026-07-29T00:00:00Z"
+  labels:
+    industry: law-firm
+    flagship: decision-os
+spec:
+  composes:
+    - provider: eu-ai-act
+      version: "2.0.0"
+  decision:
+    actions:
+      - contract.sign
+      - contract.review
+      - decision.consequential
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Proceed — package rules allow this action."
+      deny: "Do not proceed — package rules deny this action."
+      ask: "Hold — human approval required before irreversible action."
+      require: "Require additional evidence / oversight before proceed."
+  riskLevel: high
+  principles:
+    - "Never auto-sign without counsel when riskBand is high or critical."
+    - "Surface adverse clauses as explicit reasons, not narrative vibes."
+    - "Every consequential decision must leave an audit trail."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+      - contract.hash
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - contract.sign
+      - decision.consequential
+    roles:
+      - legal.counsel
+      - finance.controller
+  constraints:
+    - "No silent waiver of liability caps above org threshold."
+    - "No auto-accept of exclusive foreign venue without counsel."
+  rules:
+    - id: legal-deny-unguarded-sign
+      effect: deny
+      action: contract.sign
+      when: evidence.missing
+      description: "Block contract.sign when required evidence is missing"
+      riskWeight: 0.95
+    - id: legal-ask-sign
+      effect: ask
+      action: contract.sign
+      description: "Contract signature requires legal + finance approval"
+      riskWeight: 0.85
+    - id: legal-allow-review
+      effect: allow
+      action: contract.review
+      description: "Contract review / draft analysis is allowed"
+      riskWeight: 0.25
+    - id: legal-require-consequential
+      effect: require
+      action: decision.consequential
+      description: "Consequential legal decisions require oversight evidence"
+      riskWeight: 0.8

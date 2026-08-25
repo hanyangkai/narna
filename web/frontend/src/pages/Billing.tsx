@@ -1,10 +1,8 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import PaymentQr from "../components/PaymentQr";
-import PaddleCheckout from "../components/PaddleCheckout";
 import {
   DEFAULT_DEV_KEY,
   PLAN_PRICES,
-  checkoutCard,
   checkoutCrypto,
   fetchBillingStatus,
   fetchCryptoInvoices,
@@ -16,7 +14,7 @@ import {
   type BillingStatus,
 } from "../api";
 
-const payablePlans = ["pro", "team", "business"] as const;
+const payablePlans = ["cloud", "team", "business"] as const;
 
 function formatCountdown(expiresAt: string | null | undefined): string | null {
   if (!expiresAt) return null;
@@ -25,6 +23,10 @@ function formatCountdown(expiresAt: string | null | undefined): string | null {
   const min = Math.floor(ms / 60000);
   const sec = Math.floor((ms % 60000) / 1000);
   return `${min}m ${sec}s`;
+}
+
+function teamPriceLabel(seats: number): string {
+  return `$${seats * 99}`;
 }
 
 export default function Billing() {
@@ -38,6 +40,7 @@ export default function Billing() {
   const [loading, setLoading] = useState(false);
   const [asset, setAsset] = useState<"usdc" | "usdt">("usdc");
   const [network, setNetwork] = useState("ethereum");
+  const [seats, setSeats] = useState(3);
 
   const load = async () => {
     setLoading(true);
@@ -119,26 +122,18 @@ export default function Billing() {
   const onPayCrypto = async (plan: string) => {
     setError(null);
     try {
-      const resp = await checkoutCrypto(apiKey, plan, asset, network);
+      const resp = await checkoutCrypto(
+        apiKey,
+        plan,
+        asset,
+        network,
+        plan === "team" ? seats : undefined,
+      );
       setLastCheckout(resp);
       await load();
       if (resp.mode === "live" && resp.url.startsWith("ethereum:")) {
         window.open(resp.url, "_blank", "noopener,noreferrer");
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  const onPayCard = async (plan: string) => {
-    setError(null);
-    try {
-      const resp = await checkoutCard(apiKey, plan);
-      if (resp.mode === "mock") {
-        await load();
-        return;
-      }
-      if (resp.url) window.location.href = resp.url;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -156,14 +151,18 @@ export default function Billing() {
     lastCheckout &&
     (lastCheckout.mode === "live" || lastCheckout.mode === "mock-pending");
 
+  const mockAllowed = Boolean(status?.mockPlanAllowed);
+
   return (
     <div className="layout-wide">
-      <PaddleCheckout />
       <section>
         <header className="page-header" style={{ paddingTop: "1rem" }}>
           <p className="pill-label">Billing</p>
-          <h1>Subscribe to NARNA Cloud</h1>
-          <p>Card (Paddle) or stablecoin (USDC/USDT) on 5 chains. Bot confirms on-chain payments automatically.</p>
+          <h1>Subscribe with USDC / USDT</h1>
+          <p>
+            NARNA Cloud accepts stablecoins only — USDC or USDT on Ethereum, Polygon, Base, Arbitrum, or
+            BSC. On-chain bot confirms the exact amount and upgrades your plan for 30 days. No Stripe / card.
+          </p>
         </header>
 
         <div className="console-bar">
@@ -181,28 +180,27 @@ export default function Billing() {
         {status && (
           <div className="card">
             <p><strong>Plan:</strong> <span className="mono">{status.plan}</span></p>
-            <p><strong>Billing mode:</strong> <span className="mono">{status.billingMode}</span></p>
+            <p><strong>Payment rail:</strong> USDC / USDT (crypto · {status.cryptoMode ?? "—"})</p>
+            {status.planExpiresAt && (
+              <p>
+                <strong>Plan expires:</strong>{" "}
+                <span className="mono">{new Date(status.planExpiresAt).toLocaleString()}</span>
+              </p>
+            )}
             <p><strong>Usage:</strong> {status.guInPeriod ?? 0} / {status.guLimit ?? "unlimited"} GU</p>
+            <p>
+              <strong>ADQA checks:</strong>{" "}
+              {status.adqaChecksInPeriod ?? 0} / soft {status.adqaSoftCap ?? "—"}
+              {status.adqaHardCap != null ? ` (hard ${status.adqaHardCap})` : ""}
+            </p>
             <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-              Events (legacy): {status.eventsInPeriod} / {status.eventsLimit ?? "unlimited"}
+              Seats: {status.seatCount ?? 1} · Events (legacy): {status.eventsInPeriod} /{" "}
+              {status.eventsLimit ?? "unlimited"}
             </p>
           </div>
         )}
 
-        <h2 style={{ marginTop: "1.5rem" }}>Pay by card</h2>
-        <div className="pricing-grid">
-          {payablePlans.map((p) => (
-            <div key={`card-${p}`} className="card">
-              <h3 style={{ textTransform: "capitalize" }}>{p}</h3>
-              <p className="price">{PLAN_PRICES[p]}<span style={{ fontSize: "1rem" }}>/mo</span></p>
-              <button type="button" className="btn btn-primary" onClick={() => onPayCard(p)} disabled={loading}>
-                Pay with card
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <h2 style={{ marginTop: "1.5rem" }}>Pay by stablecoin</h2>
+        <h2 style={{ marginTop: "1.5rem" }}>Choose network & asset</h2>
         <div className="console-bar" style={{ marginTop: "0.75rem" }}>
           <label>
             Network
@@ -222,17 +220,36 @@ export default function Billing() {
               ))}
             </select>
           </label>
+          <label>
+            Team seats
+            <input
+              type="number"
+              min={3}
+              max={50}
+              value={seats}
+              onChange={(e) => setSeats(Math.max(3, Math.min(50, Number(e.target.value) || 3)))}
+              style={{ ...selectStyle, minWidth: 100 }}
+            />
+          </label>
         </div>
 
         <div className="pricing-grid">
           {payablePlans.map((p) => (
-            <div key={`crypto-${p}`} className={`card ${status?.plan === p ? "featured" : ""}`}>
-              <h3 style={{ textTransform: "capitalize" }}>{p}</h3>
-              <p className="price">{PLAN_PRICES[p]}<span style={{ fontSize: "1rem" }}>/mo</span></p>
+            <div key={p} className={`card ${status?.plan === p ? "featured" : ""}`}>
+              <h3 style={{ textTransform: "capitalize" }}>{p === "cloud" ? "Personal" : p}</h3>
+              <p className="price">
+                {p === "team" ? teamPriceLabel(seats) : PLAN_PRICES[p]}
+                <span style={{ fontSize: "1rem" }}>/mo</span>
+              </p>
+              {p === "team" && (
+                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+                  {seats} seats × $99
+                </p>
+              )}
               <button type="button" className="btn btn-primary" onClick={() => onPayCrypto(p)} disabled={loading}>
                 Pay {asset.toUpperCase()} on {selectedNetwork?.name ?? network}
               </button>
-              {status?.billingMode === "mock" && (
+              {mockAllowed && (
                 <button type="button" className="btn btn-secondary" style={{ marginLeft: "0.5rem" }} onClick={() => onSetPlan(p)}>
                   Set {p} (dev)
                 </button>
@@ -247,8 +264,16 @@ export default function Billing() {
               <div>
                 <h3>Payment invoice</h3>
                 <p><strong>Invoice:</strong> <span className="mono">{lastCheckout.invoiceId}</span></p>
-                <p><strong>Amount:</strong> {lastCheckout.expectedAmount} {lastCheckout.asset.toUpperCase()}</p>
+                <p>
+                  <strong>Amount:</strong>{" "}
+                  <span className="mono">{lastCheckout.expectedAmount}</span>{" "}
+                  {lastCheckout.asset.toUpperCase()}
+                  {" "}(send this exact amount)
+                </p>
                 <p><strong>Network:</strong> {lastCheckout.network}</p>
+                {lastCheckout.seatCount != null && lastCheckout.plan === "team" && (
+                  <p><strong>Seats:</strong> {lastCheckout.seatCount}</p>
+                )}
                 {lastCheckout.expiresAt && (
                   <p>
                     <strong>Expires:</strong>{" "}
@@ -265,7 +290,7 @@ export default function Billing() {
                   </button>
                 </p>
                 <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-                  Send the exact amount on the selected chain. Unpaid invoices expire automatically.
+                  Unique cents identify your invoice on-chain. Unpaid invoices expire automatically; paid plans last 30 days.
                 </p>
               </div>
               {showQr && (
@@ -291,7 +316,6 @@ export default function Billing() {
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Expires</th>
-                    <th>Tx</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -309,7 +333,6 @@ export default function Billing() {
                       <td className="mono" style={{ fontSize: "0.8rem" }}>
                         {inv.expiresAt ? inv.expiresAt.slice(0, 19) : "—"}
                       </td>
-                      <td className="mono" style={{ fontSize: "0.8rem" }}>{inv.txHash ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>

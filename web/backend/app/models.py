@@ -25,7 +25,15 @@ class Organization(Base):
     )
     events_in_period: Mapped[int] = mapped_column(Integer, default=0)
     gu_in_period: Mapped[int] = mapped_column(Integer, default=0)
-    # Stripe optional (for P6 integration)
+    adqa_checks_in_period: Mapped[int] = mapped_column(Integer, default=0)
+    agent_turns_in_period: Mapped[int] = mapped_column(Integer, default=0)
+    seat_count: Mapped[int] = mapped_column(Integer, default=1)
+    plan_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # BYO LLM (Personal+) — JSON: provider, apiKey, baseUrl, models
+    llm_config_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Stripe optional (legacy; card rails removed)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     stripe_subscription_status: Mapped[str | None] = mapped_column(
@@ -105,6 +113,7 @@ class PaymentInvoice(Base):
     invoice_id: Mapped[str] = mapped_column(String(64), index=True)
     kind: Mapped[str] = mapped_column(String(16), default="crypto")  # crypto|card
     plan: Mapped[str] = mapped_column(String(32), default="free")
+    seat_count: Mapped[int] = mapped_column(Integer, default=1)
     asset: Mapped[str] = mapped_column(String(16), default="usdc")
     network: Mapped[str] = mapped_column(String(32), default="ethereum")
     recipient_wallet: Mapped[str] = mapped_column(String(64), default="")

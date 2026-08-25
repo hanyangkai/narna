@@ -1,0 +1,19 @@
+kind: JurisdictionTemplate
+apiVersion: narna.org/v1
+metadata:
+  id: us-enterprise
+  name: US enterprise / SOC2-oriented binding overlay
+  jurisdiction: US
+  disclaimer: Not legal advice. Example template only.
+spec:
+  retentionYears: 7
+  requiredRoles:
+    - security.officer
+    - legal.counsel
+  clauses:
+    - "Security-relevant AI decisions should leave an immutable audit trail."
+    - "Access to kill / capability revoke actions is limited to authorized roles."
+    - "Customer data used in decisions is retained per contractual schedule."
+  disclaimer: >-
+    This overlay supports SOC2-style control narratives for US enterprises.
+    Counsel must validate against specific contracts and state law.

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BRAND } from "../brand";
+import { ADAPTERS, BRAND, COMPATIBILITY } from "../brand";
 
 const BADGES = [
   {
@@ -38,15 +38,49 @@ export default function Compatibility() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Compatibility Program</p>
+        <p className="pill-label">Integrations</p>
         <h1>Works with your stack. Earn the badge.</h1>
         <p>
-          Like “Works with Kubernetes” — signal that an agent ships portable identity, policy, and trust.
-          Never Replace. Always Extend.
+          {BRAND.name} extends hot AI runtimes — never replaces them. CMEM remembers; NARNA scores
+          decisions (ADQA).
         </p>
       </header>
 
       <section className="section" style={{ paddingTop: 0, borderTop: "none" }}>
+        <h2>Hot stacks</h2>
+        <p className="section-desc">
+          Memory partner:{" "}
+          <a href="https://cmem.ai/" target="_blank" rel="noreferrer">
+            CMEM / claude-mem
+          </a>
+          . Orchestrators & models below ship with thin adapters (`narna wrap`).
+        </p>
+        <div className="feature-grid">
+          {COMPATIBILITY.map((name) => (
+            <div key={name} className="card feature-card">
+              <h3>{name}</h3>
+              <p>
+                {name === "CMEM"
+                  ? "Continuity memory feedstock → ADQA memory attribute + lessons."
+                  : `Extend via adapter · ADQA optional (NARNA_ADQA=1).`}
+              </p>
+            </div>
+          ))}
+        </div>
+        <pre className="code-block mono" style={{ marginTop: "1rem", fontSize: "0.8rem" }}>
+          {ADAPTERS.join(" · ")}
+        </pre>
+        <p style={{ marginTop: "0.75rem" }}>
+          <Link to="/docs/integrations">Integration guide →</Link>
+          {" · "}
+          <a href="https://api.narna.org/v1/integrations" target="_blank" rel="noreferrer">
+            GET /v1/integrations
+          </a>
+        </p>
+      </section>
+
+      <section className="section">
+        <h2>Compatibility badges</h2>
         <div className="feature-grid">
           {BADGES.map((b) => (
             <div key={b.id} className="card feature-card">
@@ -76,8 +110,8 @@ narna publish --vap`}</pre>
           <Link to="/docs/certification" className="btn btn-primary">
             Certification guide
           </Link>
-          <Link to="/docs/borrow-the-wave" className="btn btn-secondary">
-            Borrow the Wave
+          <Link to="/docs/cmem-bridge" className="btn btn-secondary">
+            CMEM bridge
           </Link>
         </div>
       </section>

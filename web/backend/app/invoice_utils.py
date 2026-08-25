@@ -50,3 +50,37 @@ def build_qr_payload(
         f"&amount={expected_amount}&asset={asset.upper()}"
         f"&network={network}&invoice={invoice_id}"
     )
+
+
+def allocate_unique_amount(
+    db: Session,
+    *,
+    network: str,
+    asset: str,
+    base_usd: float,
+) -> str:
+    """Pick base + unique cents (01–99) among pending invoices on same rail.
+
+    Avoids two open invoices sharing the same expected amount so on-chain
+    Transfer matching can be exact.
+    """
+    pending = (
+        db.query(PaymentInvoice)
+        .filter(
+            PaymentInvoice.status == "pending",
+            PaymentInvoice.kind == "crypto",
+            PaymentInvoice.network == network.lower(),
+            PaymentInvoice.asset == asset.lower(),
+        )
+        .all()
+    )
+    used = {str(inv.expected_amount) for inv in pending}
+    base = round(float(base_usd), 2)
+    # Prefer exact base if free, else base + 0.01 … 0.99
+    candidates = [f"{base:.2f}"] + [f"{base + i / 100:.2f}" for i in range(1, 100)]
+    for amt in candidates:
+        if amt not in used:
+            return amt
+    # Extremely unlikely — fall back to micro-unique via timestamp cents
+    stamp = int(datetime.now(timezone.utc).timestamp()) % 100
+    return f"{base + stamp / 100:.2f}"

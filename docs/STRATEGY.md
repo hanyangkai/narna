@@ -16,11 +16,20 @@ Implementation follows the specs, not the other way around.
 
 > **NARNA governs AI. Others execute it.**
 
+> **Guardian north star:** NARNA decides which AI may exist, act, and be stopped.
+
 Passport, NARNA Score, Registry, and Governance Packages are **consequences** of these three pillars — not separate product concepts.
 
-**Standards series:** [NGS — NARNA Governance Standards](../rfcs/ngs/README.md) (NGS-0001…0013). Core six = Identity, Capability, Permission, Policy, Evidence, Trust.
+**Near-term product:** **ADQA** — Autonomous Decision Quality Assurance ([`ADQA.md`](./ADQA.md)) on a **Decision Intelligence OS** ([`DECISION-INTELLIGENCE.md`](./DECISION-INTELLIGENCE.md)).  
+**Consumer acquisition:** **Ask NARNA** — free web agent ([`NARNA-AGENT.md`](./NARNA-AGENT.md)); Model Router is LLM-agnostic (NGS-0028).  
+**Two products, one core:** NARNA Agent (users) + NARNA ADQA Cloud (agents/devs).  
+**Memory complement:** CMEM / DurableMemory = remember; NARNA = decide better + learn from outcomes.  
+**Delivery surface:** Decision OS / Decision Packages ([`DECISION-OS.md`](./DECISION-OS.md)).  
+**North-star network:** Guardian Network ([`GUARDIAN-NETWORK.md`](./GUARDIAN-NETWORK.md)).
 
-**Category:** Governance Infrastructure for **Agentic AI** — first users are teams building multi-agent, long-running, tool-calling workflows.
+**Category (public):** Decision Intelligence OS · Decision Quality Infrastructure  
+**Primary slogan:** The Trust Layer for AI Decisions.  
+**Cognitive line:** Remember better inputs. Decide better. Learn continuously.
 
 ---
 
@@ -42,14 +51,16 @@ Not by replacing LangGraph, CrewAI, OpenAI SDK, or OpenTelemetry — by making t
 
 | Use | Text |
 |-----|------|
-| **Primary slogan** | Govern Once. Run Anywhere. |
-| **Product line** | The Governance Infrastructure for Agentic AI. |
-| **Alt product line** | The Universal Governance Layer for Agentic AI. |
-| **Hero** | Build Agentic AI that Enterprises Can Trust. |
-| **Enterprise** | Trust Every Agentic Decision. |
-| **Technical** | Identity. Governance. Evidence. Trust. |
-| **Community** | Open Governance for the Agentic AI Era. |
-| **Contrast** | OpenTelemetry records what AI did. NARNA proves what AI was allowed to do. |
+| **Primary slogan** | The Trust Layer for AI Decisions. |
+| **Product line** | ADQA — Autonomous Decision Quality Assurance |
+| **Category** | Decision Quality Infrastructure for AI Agents |
+| **Alt product line** | Decision OS / Governance Infrastructure (UGS) |
+| **Hero** | NARNA does not create decisions — it assures their quality. |
+| **Enterprise** | Trust Every Agentic Decision. · DQS as the KPI of AI. |
+| **Technical** | Evidence · Policy · Context · Memory · Risk · Alignment · Capability · Compliance · Confidence · Explanation |
+| **Community** | Open quality standard for autonomous decisions. |
+| **Contrast** | Models generate. Workflows execute. NARNA assures decision quality. |
+| **Infra** | Govern Once. Run Anywhere. |
 
 ---
 
@@ -68,7 +79,7 @@ Not by replacing LangGraph, CrewAI, OpenAI SDK, or OpenTelemetry — by making t
 | Kubernetes | Orchestration |
 | OpenTelemetry | Observability |
 | MCP | Tool protocol |
-| **NARNA** | **Agentic AI Governance** |
+| **NARNA** | **Agentic AI Governance + Guardian path** |
 
 ---
 
@@ -120,6 +131,24 @@ NARNA sits **between** frameworks/protocols and the OS/cloud — governing entit
  OpenAI · Claude · Gemini · MCP · LangGraph
  CrewAI · OpenTelemetry · Docker · OpenShell
 ```
+
+---
+
+## Enterprise module: Decision OS
+
+Infrastructure lock **does not change**. Decision OS is the **enterprise product surface** on top of UGS:
+
+```text
+Connect · Knowledge · Memory · Decision ★ · Governance · Automation
+```
+
+- **Decision Package** = industry app (Legal, Procurement, Finance…) composed of Governance Packages  
+- **Decision Result** = riskScore + reasons + requiredApprovals + evidence + auditRef  
+- Normative: [`../specs/decision-package/SPEC.md`](../specs/decision-package/SPEC.md) · Product: [`DECISION-OS.md`](./DECISION-OS.md)
+
+Enterprise slogan: **NARNA is the Decision Layer for Enterprise AI.**
+
+**Beyond Decision OS:** see [`GUARDIAN.md`](./GUARDIAN.md) — Capability Passport, sandbox, threat, kill, collective defense. Decision Layer is Layer 1 of Defense in Depth, not the whole Guardian stack.
 
 ---
 

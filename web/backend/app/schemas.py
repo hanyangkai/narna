@@ -91,12 +91,62 @@ class BillingStatusResponse(BaseModel):
     guInPeriod: int = 0
     guLimit: int | None = None
     billingMode: str
+    cryptoMode: str = "mock"
+    mockPlanAllowed: bool = False
+    planExpiresAt: str | None = None
+    adqaChecksInPeriod: int = 0
+    adqaSoftCap: int | None = None
+    adqaHardCap: int | None = None
+    agentTurnsInPeriod: int = 0
+    agentTurnsHardCap: int | None = None
+    seatCount: int = 1
+    byoLlmAllowed: bool = False
+
+
+class AgentAskRequest(BaseModel):
+    message: str
+    sessionId: str | None = None
+    challenge: bool = False
+    files: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AgentOutcomeRequest(BaseModel):
+    decisionId: str
+    status: str = "success"
+    detail: str | None = None
+    successScore: float | None = None
+    lesson: str | None = None
+    skillId: str | None = None
+
+
+class AgentJobCreateRequest(BaseModel):
+    prompt: str
+    everyMinutes: int | None = None
+    runAt: str | None = None
+    enabled: bool = True
+
+
+class AgentModelsPutRequest(BaseModel):
+    provider: str = "openrouter"  # openrouter|openai|ollama|mock
+    apiKey: str | None = None
+    baseUrl: str | None = None
+    modelCheap: str | None = None
+    modelReason: str | None = None
+    modelChallenge: str | None = None
+
+
+class RouterCompleteRequest(BaseModel):
+    messages: list[dict[str, str]]
+    task: str = "reason"
+    temperature: float = 0.2
+    maxTokens: int = 1024
 
 
 class BillingCryptoCheckoutRequest(BaseModel):
     plan: str
     asset: str = "usdc"  # expected: usdc | usdt
     network: str = "ethereum"
+    seats: int | None = None  # team: 3–50
 
 
 class BillingCryptoCheckoutResponse(BaseModel):
@@ -111,6 +161,7 @@ class BillingCryptoCheckoutResponse(BaseModel):
     expectedAmount: str
     expiresAt: str
     qrPayload: str
+    seatCount: int = 1
 
 
 class BillingInvoiceResponse(BaseModel):
@@ -126,6 +177,7 @@ class BillingInvoiceResponse(BaseModel):
     createdAt: str
     expiresAt: str | None = None
     paidAt: str | None = None
+    seatCount: int = 1
 
 
 class BillingCryptoNetworkResponse(BaseModel):

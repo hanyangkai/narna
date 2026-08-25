@@ -1,0 +1,86 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_finance_decision_v1
+  name: Finance Decision Package
+  version: "1.0.0"
+  provider: finance-decision
+  industry: finance
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for payments and journal entries.
+    Not financial advice. Controllers remain responsible.
+  createdAt: "2026-07-31T00:00:00Z"
+  labels:
+    industry: finance
+    flagship: decision-os
+spec:
+  composes:
+    - provider: soc2-tsc
+      version: "2.0.0"
+  decision:
+    actions:
+      - payment.release
+      - wire.transfer
+      - journal.post
+      - invoice.approve
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Release / post under finance controls."
+      deny: "Do not move funds — control failure."
+      ask: "Hold for controller / treasury approval."
+      require: "Attach invoice match + dual control evidence."
+  riskLevel: critical
+  principles:
+    - "No wire without dual control."
+    - "Three-way match before invoice.approve when PO exists."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+      - payment.authorization
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+      - payment.attempt
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - payment.release
+      - wire.transfer
+    roles:
+      - finance.controller
+      - treasury.officer
+  constraints:
+    - "No payment to new beneficiary without KYC/vendor check."
+    - "No wire above threshold without dual authorization."
+  rules:
+    - id: fin-deny-unguarded-wire
+      effect: deny
+      action: wire.transfer
+      when: evidence.missing
+      description: "Block wire.transfer when authorization evidence missing"
+      riskWeight: 0.98
+    - id: fin-ask-wire
+      effect: ask
+      action: wire.transfer
+      description: "Wire transfer requires dual finance approval"
+      riskWeight: 0.95
+    - id: fin-ask-payment-release
+      effect: ask
+      action: payment.release
+      description: "Payment release requires controller approval"
+      riskWeight: 0.9
+    - id: fin-ask-invoice
+      effect: ask
+      action: invoice.approve
+      description: "Invoice approval requires finance review"
+      riskWeight: 0.75
+    - id: fin-allow-journal-draft
+      effect: allow
+      action: journal.post
+      description: "Journal post allowed when within policy (still audited)"
+      riskWeight: 0.45

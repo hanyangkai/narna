@@ -1,0 +1,19 @@
+kind: JurisdictionTemplate
+apiVersion: narna.org/v1
+metadata:
+  id: vn-pdpa
+  name: Vietnam PDPA-oriented binding overlay
+  jurisdiction: VN
+  disclaimer: Not legal advice. Example template only.
+spec:
+  retentionYears: 5
+  requiredRoles:
+    - compliance.officer
+    - legal.counsel
+  clauses:
+    - "Personal data processing by AI systems should map to declared purposes."
+    - "Sensitive data decisions require heightened human oversight."
+    - "Cross-border transfers follow applicable Vietnamese data protection rules."
+  disclaimer: >-
+    Example overlay aligned with Vietnam personal data protection themes.
+    Controllers must obtain qualified local counsel.

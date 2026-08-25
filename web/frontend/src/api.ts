@@ -52,6 +52,13 @@ export type BillingStatus = {
   guInPeriod?: number;
   guLimit?: number | null;
   billingMode: string;
+  cryptoMode?: string;
+  mockPlanAllowed?: boolean;
+  planExpiresAt?: string | null;
+  adqaChecksInPeriod?: number;
+  adqaSoftCap?: number | null;
+  adqaHardCap?: number | null;
+  seatCount?: number;
 };
 
 export type BillingCryptoNetwork = {
@@ -74,6 +81,7 @@ export type BillingCryptoCheckoutResponse = {
   expectedAmount: string;
   expiresAt: string;
   qrPayload: string;
+  seatCount?: number;
 };
 
 export type BillingInvoice = {
@@ -219,25 +227,124 @@ export async function checkoutCrypto(
   apiKey: string,
   plan: string,
   asset: "usdc" | "usdt",
-  network: string
+  network: string,
+  seats?: number
 ): Promise<BillingCryptoCheckoutResponse> {
   const res = await fetch(`${API_BASE}/v1/billing/crypto/checkout-session`, {
     method: "POST",
     headers: authHeaders(apiKey),
-    body: JSON.stringify({ plan, asset, network }),
+    body: JSON.stringify({
+      plan,
+      asset,
+      network,
+      ...(seats != null ? { seats } : {}),
+    }),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function checkoutCard(
-  apiKey: string,
-  plan: string
+  _apiKey: string,
+  _plan: string
 ): Promise<BillingCheckoutResponse> {
-  const res = await fetch(`${API_BASE}/v1/billing/checkout-session`, {
+  throw new Error(
+    "Card / Stripe / Paddle checkout removed. Pay with USDC or USDT via /billing.",
+  );
+}
+
+export type AgentAskResponse = {
+  answer: string;
+  dqs: number | null;
+  guardian: string | null;
+  decisionId: string;
+  modelsUsed: string[];
+  sources: Array<{ type: string; name: string }>;
+  sessionId: string;
+  plan?: string;
+  agentTurnsInPeriod?: number;
+  agentTurnsHardCap?: number | null;
+  quota?: { message?: string };
+  standard?: string;
+  toolsUsed?: Array<{ tool: string; args?: Record<string, unknown>; result?: unknown }>;
+  skillSaved?: { skillId?: string; name?: string } | null;
+  challenge?: string | null;
+};
+
+function deviceId(): string {
+  const key = "narna_device_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = "dev_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+export async function askNarna(
+  message: string,
+  opts?: {
+    apiKey?: string;
+    sessionId?: string;
+    challenge?: boolean;
+    files?: Array<{ name: string; text: string }>;
+    showModels?: boolean;
+  }
+): Promise<AgentAskResponse> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Narna-Device": deviceId(),
+  };
+  if (opts?.apiKey) headers.Authorization = `Bearer ${opts.apiKey}`;
+  if (opts?.showModels) headers["X-Narna-Show-Models"] = "1";
+  const res = await fetch(`${API_BASE}/v1/agent/ask`, {
     method: "POST",
+    headers,
+    body: JSON.stringify({
+      message,
+      sessionId: opts?.sessionId,
+      challenge: opts?.challenge ?? false,
+      files: opts?.files ?? [],
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export type AgentModelsConfig = {
+  ok: boolean;
+  byoLlmAllowed: boolean;
+  provider: string;
+  baseUrl?: string | null;
+  apiKeySet: boolean;
+  apiKeyPreview?: string | null;
+  modelCheap?: string | null;
+  modelReason?: string | null;
+  modelChallenge?: string | null;
+  plan: string;
+};
+
+export async function fetchAgentModels(apiKey: string): Promise<AgentModelsConfig> {
+  const res = await fetch(`${API_BASE}/v1/agent/models`, { headers: authHeaders(apiKey) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function saveAgentModels(
+  apiKey: string,
+  body: {
+    provider: string;
+    apiKey?: string;
+    baseUrl?: string;
+    modelCheap?: string;
+    modelReason?: string;
+    modelChallenge?: string;
+  }
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/v1/agent/models`, {
+    method: "PUT",
     headers: authHeaders(apiKey),
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -252,11 +359,144 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
+export type DecisionPackageListing = {
+  name: string;
+  provider: string;
+  version: string;
+  kind: string;
+  industry?: string | null;
+  actions?: string[];
+};
+
+export type AdqaResult = {
+  dqs?: number;
+  attributes?: Record<string, number>;
+  guardian?: string;
+  constitution?: Record<string, string>;
+  lessonsUsed?: unknown[];
+  learningPrior?: Record<string, unknown> | null;
+  decisionMemoryId?: string;
+  standard?: string;
+};
+
+export type DecisionResult = {
+  decision: string;
+  recommendation?: string;
+  action: string;
+  riskScore?: number;
+  riskBand?: string;
+  reasons?: string[];
+  requiredApprovals?: string[];
+  evidence?: string[];
+  context?: Record<string, unknown>;
+  adqa?: AdqaResult;
+  packageId?: string;
+  provider?: string;
+  evaluatedAt?: string;
+};
+
+export async function fetchDecisionPackages(
+  industry?: string
+): Promise<DecisionPackageListing[]> {
+  const q = industry ? `?industry=${encodeURIComponent(industry)}` : "";
+  const res = await fetch(`${API_BASE}/v1/dmarket/packages${q}`);
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.packages || [];
+}
+
+export async function evaluateDecision(body: {
+  action: string;
+  provider?: string;
+  evidencePresent?: string[];
+  context?: Record<string, unknown>;
+  question?: string;
+}): Promise<{ ok: boolean; result: DecisionResult }> {
+  const res = await fetch(`${API_BASE}/v1/decision/evaluate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function checkAdqa(body: {
+  action: string;
+  provider?: string;
+  evidencePresent?: string[];
+  context?: Record<string, unknown>;
+}): Promise<{ ok: boolean; adqa: AdqaResult; decisionResult: DecisionResult }> {
+  const res = await fetch(`${API_BASE}/v1/adqa/check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchGuardianStatus(): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_BASE}/v1/guardian/status`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function evaluateCapability(capability: string, agentId?: string) {
+  const res = await fetch(`${API_BASE}/v1/capability/evaluate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ capability, agentId, profile: "guardian" }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function evaluateConstitution(action: string) {
+  const res = await fetch(`${API_BASE}/v1/guardian/constitution/evaluate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchJurisdictions(): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_BASE}/v1/guardian/jurisdictions`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchIsolationPartners(): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_BASE}/v1/guardian/isolation/partners`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function certifyIsolationPartner(partner: string, attested = false) {
+  const res = await fetch(`${API_BASE}/v1/guardian/isolation/certify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ partner, attested }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchPartnerCerts(): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_BASE}/v1/guardian/isolation/certs`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export const DEFAULT_DEV_KEY = "uap_live_dev_local_key_change_in_prod";
 
 export const PLAN_PRICES: Record<string, string> = {
   free: "$0",
-  pro: "$19",
-  team: "$49",
+  cloud: "$20",
+  personal: "$20",
+  pro: "$20",
+  team: "$99/seat",
   business: "$199",
 };

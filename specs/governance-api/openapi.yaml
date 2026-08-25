@@ -1,17 +1,17 @@
 openapi: 3.0.3
 info:
-  title: NARNA Governance API
+  title: NARNA Governance + Decision Intelligence API
   description: |
-    NGS-0013 — OTel-shaped Governance API for Agentic AI.
-    Identity · Trust · Policy · Evidence · Passport · Certification · Registry.
-  version: 0.1.0
+    NGS-0013 plus ADQA (0024), Decision Memory (0025), Outcome Learning (0026),
+    Citizen Gateway (0021). Identity · Trust · Policy · Evidence · Decision Quality.
+  version: 0.2.0
   contact:
     name: NARNA
-    url: https://github.com/hanyangkai/narna
+    url: https://narna.org
 servers:
-  - url: https://api.narna.dev
-    description: Production (when deployed)
-  - url: http://localhost:8000
+  - url: https://api.narna.org
+    description: Production
+  - url: http://localhost:8100
     description: Local cloud
 paths:
   /v1/health:
@@ -76,6 +76,209 @@ paths:
       responses:
         "200":
           description: PolicyDecision (NGS-0004)
+  /v1/decision/evaluate:
+    post:
+      summary: Decision OS — evaluate action against Decision Package
+      operationId: evaluateDecision
+      tags: [Decision]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string }
+                question: { type: string }
+                provider: { type: string, description: "Decision Package provider slug" }
+                version: { type: string }
+                evidencePresent:
+                  type: array
+                  items: { type: string }
+                context: { type: object }
+                sessionId: { type: string }
+      responses:
+        "200":
+          description: DecisionResult (NGS-0014)
+  /v1/capability/evaluate:
+    post:
+      summary: Guardian — evaluate Capability Passport mode
+      operationId: evaluateCapability
+      tags: [Guardian]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [capability]
+              properties:
+                capability: { type: string }
+                agentId: { type: string }
+                target: { type: string }
+                profile: { type: string, enum: [guardian, enterprise] }
+                path: { type: string }
+      responses:
+        "200":
+          description: Capability decision (NGS-0015)
+  /v1/guardian/kill:
+    post:
+      summary: Issue Local Kill Token
+      operationId: issueLocalKill
+      tags: [Guardian]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentId: { type: string }
+                sessionId: { type: string }
+                reason: { type: string }
+                issuedBy: { type: string }
+      responses:
+        "200":
+          description: Kill token (NGS-0019 local)
+  /v1/guardian/kill/status:
+    get:
+      summary: Kill status for agent/session
+      operationId: killStatus
+      tags: [Guardian]
+      parameters:
+        - name: agent_id
+          in: query
+          schema: { type: string }
+        - name: session_id
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Kill status
+  /v1/guardian/threat/analyze:
+    post:
+      summary: Analyze session graph for threat patterns
+      operationId: analyzeThreat
+      tags: [Guardian]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId: { type: string }
+                autoKill: { type: boolean }
+      responses:
+        "200":
+          description: Threat report (NGS-0017)
+  /v1/guardian/kill/domain:
+    post:
+      summary: Issue Domain Kill (org-wide)
+      operationId: issueDomainKill
+      tags: [Guardian]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domainId: { type: string }
+                reason: { type: string }
+                issuedBy: { type: string }
+      responses:
+        "200":
+          description: Domain kill token (NGS-0019)
+  /v1/guardian/collective/opt-in:
+    post:
+      summary: Opt in/out of collective signature sharing
+      operationId: collectiveOptIn
+      tags: [Guardian]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                optIn: { type: boolean }
+      responses:
+        "200":
+          description: Opt-in status (NGS-0020)
+  /v1/guardian/collective/publish:
+    post:
+      summary: Publish privacy-preserving threat signature
+      operationId: collectivePublish
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Signature object
+  /v1/guardian/collective/import:
+    post:
+      summary: Import peer threat signature
+      operationId: collectiveImport
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Imported signature
+  /v1/guardian/collective/signatures:
+    get:
+      summary: List inbox/outbox signatures
+      operationId: collectiveList
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Signature list
+  /v1/guardian/collective/apply:
+    post:
+      summary: Apply signature (restrict capabilities / kill)
+      operationId: collectiveApply
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Apply record
+  /v1/guardian/constitution/evaluate:
+    post:
+      summary: Evaluate action against GuardianConstitution
+      operationId: constitutionEvaluate
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Constitutional decision (L4)
+  /v1/guardian/constitution/install:
+    post:
+      summary: Install default GuardianConstitution
+      operationId: constitutionInstall
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Installed path
+  /v1/guardian/council/install:
+    post:
+      summary: Install default GovernanceCouncil
+      operationId: councilInstall
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Installed path
+  /v1/guardian/council/propose:
+    post:
+      summary: Council propose (amend / domain_kill / global_kill)
+      operationId: councilPropose
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Proposal
+  /v1/guardian/council/approve:
+    post:
+      summary: Council approve (quorum executes)
+      operationId: councilApprove
+      tags: [Guardian]
+      responses:
+        "200":
+          description: Proposal status
   /v1/ingest:
     post:
       summary: Ingest run events + optional ProofBundle (OTLP-like)
@@ -242,6 +445,245 @@ paths:
       responses:
         "200":
           description: Purchase recorded
+  /v1/adqa/check:
+    post:
+      summary: ADQA — Decision Quality Score + Guardian (NGS-0024)
+      operationId: adqaCheck
+      tags: [ADQA]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string }
+                provider: { type: string }
+                evidencePresent:
+                  type: array
+                  items: { type: string }
+                context: { type: object }
+                agentId: { type: string }
+      responses:
+        "200":
+          description: decisionResult + adqa (dqs, attributes, guardian)
+  /v1/router/complete:
+    post:
+      summary: Model Router complete (NGS-0028)
+      operationId: routerComplete
+      tags: [Agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                task: { type: string, enum: [cheap, reason, challenge, decide, analyze, plan] }
+                messages:
+                  type: array
+                  items:
+                    type: object
+                temperature: { type: number }
+                maxTokens: { type: integer }
+      responses:
+        "200":
+          description: content + model + provider
+  /v1/agent/ask:
+    post:
+      summary: Ask NARNA Agent (NGS-0029)
+      operationId: agentAsk
+      tags: [Agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string }
+                sessionId: { type: string }
+                challenge: { type: boolean }
+                files:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: answer + dqs + guardian + decisionId + toolsUsed
+  /v1/agent/skills:
+    get:
+      summary: List agent skills for tenant
+      operationId: agentSkillsList
+      tags: [Agent]
+      responses:
+        "200":
+          description: skills index
+  /v1/agent/sessions/{sessionId}:
+    get:
+      summary: Get multi-turn session transcript
+      operationId: agentSessionGet
+      tags: [Agent]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: session messages
+  /v1/agent/telegram/webhook:
+    post:
+      summary: Telegram bot webhook (phone Ask channel)
+      operationId: agentTelegramWebhook
+      tags: [Agent]
+      responses:
+        "200":
+          description: processed update
+  /v1/agent/outcome:
+    post:
+      summary: Record outcome for an Ask decision
+      operationId: agentOutcome
+      tags: [Agent]
+      responses:
+        "200":
+          description: updated decision memory
+  /v1/agent/models:
+    get:
+      summary: List BYO / router model settings for org
+      operationId: agentModelsGet
+      tags: [Agent]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: provider config (keys redacted)
+    put:
+      summary: Set BYO LLM credentials (Personal+)
+      operationId: agentModelsPut
+      tags: [Agent]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: saved
+  /v1/adqa/score:
+    post:
+      summary: Score an existing DecisionResult
+      operationId: adqaScore
+      tags: [ADQA]
+      responses:
+        "200":
+          description: adqa object
+  /v1/dmemory/record:
+    post:
+      summary: Record Decision Memory entry (NGS-0025)
+      operationId: dmemoryRecord
+      tags: [DecisionMemory]
+      responses:
+        "200":
+          description: Decision Memory record
+  /v1/dmemory/{decisionId}/outcome:
+    post:
+      summary: Attach outcome (via Outcome Learning)
+      operationId: dmemoryOutcome
+      tags: [DecisionMemory]
+      parameters:
+        - name: decisionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Updated record + prior
+  /v1/dmemory/query:
+    get:
+      summary: Query Decision Memory
+      operationId: dmemoryQuery
+      tags: [DecisionMemory]
+      responses:
+        "200":
+          description: records[]
+  /v1/learning/evaluate:
+    post:
+      summary: Outcome Learning evaluate (NGS-0026)
+      operationId: learningEvaluate
+      tags: [Learning]
+      responses:
+        "200":
+          description: decision + prior
+  /v1/learning/prior/{action}:
+    get:
+      summary: Get learning prior for action
+      operationId: learningPrior
+      tags: [Learning]
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: prior
+  /v1/gateway/check:
+    post:
+      summary: Citizen AI Gateway check (NGS-0021)
+      operationId: gatewayCheck
+      tags: [Gateway]
+      responses:
+        "200":
+          description: allow|warn|ask|deny
+  /v1/citizen/register:
+    post:
+      summary: Register free citizen device
+      operationId: citizenRegister
+      tags: [Citizen]
+      responses:
+        "200":
+          description: deviceId + apiKey
+  /v1/integrations:
+    get:
+      summary: Hot AI stacks + CMEM bridge catalog
+      operationId: listIntegrations
+      tags: [Integrations]
+      responses:
+        "200":
+          description: adapters, memoryPartners, mcpTools
+  /v1/cmem/status:
+    get:
+      summary: CMEM bridge status
+      operationId: cmemStatus
+      tags: [Integrations]
+      responses:
+        "200":
+          description: mode + urlConfigured
+  /v1/cmem/enrich:
+    post:
+      summary: Enrich Decision/ADQA context from CMEM
+      operationId: cmemEnrich
+      tags: [Integrations]
+      responses:
+        "200":
+          description: context with _cmem hits
+  /v1/mcp/tools:
+    get:
+      summary: List NARNA MCP tools (ADQA + memory)
+      operationId: mcpToolsList
+      tags: [Integrations]
+      responses:
+        "200":
+          description: tool defs
+  /v1/mcp/call:
+    post:
+      summary: Call a NARNA MCP tool
+      operationId: mcpToolsCall
+      tags: [Integrations]
+      responses:
+        "200":
+          description: tool result
 components:
   securitySchemes:
     bearerAuth:
@@ -265,3 +707,9 @@ tags:
   - name: Registry
   - name: Audit
   - name: Session
+  - name: ADQA
+  - name: DecisionMemory
+  - name: Learning
+  - name: Gateway
+  - name: Citizen
+  - name: Integrations

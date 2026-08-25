@@ -40,6 +40,8 @@
 | Manifest | [`manifest/SPEC.md`](manifest/SPEC.md) |
 | Registry | [`registry/SPEC.md`](registry/SPEC.md) |
 | Governance API | [`governance-api/SPEC.md`](governance-api/SPEC.md) · [`openapi.yaml`](governance-api/openapi.yaml) |
+| Decision Package (Decision OS) | [`decision-package/SPEC.md`](decision-package/SPEC.md) · `decision-package.schema.json` · `decision-result.schema.json` |
+| Capability Passport (Guardian) | [`capability-passport/SPEC.md`](capability-passport/SPEC.md) · `capability-passport.schema.json` |
 
 ---
 

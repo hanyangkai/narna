@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import PaddleCheckout from "../components/PaddleCheckout";
-import { DEFAULT_DEV_KEY, purchasePackage, verifyPackageSession } from "../api";
+import { DEFAULT_DEV_KEY, purchasePackage } from "../api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -52,24 +51,12 @@ export default function Packages() {
   }, []);
 
   useEffect(() => {
-    // Paddle returns ?_ptxn=txn_… ; Stripe returns ?session_id=cs_…
-    const sessionId =
-      searchParams.get("session_id") ||
-      searchParams.get("_ptxn") ||
-      searchParams.get("txn");
-    if (searchParams.get("paid") === "1" && sessionId) {
-      verifyPackageSession(apiKey, sessionId)
-        .then((out) => {
-          setMsg(`${out.message} · status: ${out.status} · mode: ${out.mode}`);
-          load();
-        })
-        .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-    } else if (searchParams.get("paid") === "1") {
-      setMsg("Payment return — if pack not unlocked, wait for Paddle webhook or open with ?_ptxn=");
+    if (searchParams.get("paid") === "1") {
+      setMsg("Card checkout retired — Cloud plans pay with USDC/USDT at /billing. Free packs activate immediately.");
     } else if (searchParams.get("canceled") === "1") {
       setError("Checkout canceled — no charge.");
     }
-  }, [searchParams, apiKey]);
+  }, [searchParams]);
 
   async function onBuy(packageId: string) {
     setMsg(null);
@@ -77,20 +64,24 @@ export default function Packages() {
     try {
       const out = await purchasePackage(apiKey, packageId);
       if (out.checkoutUrl) {
-        setMsg("Redirecting to Paddle Checkout…");
+        setMsg("Redirecting…");
         window.location.href = out.checkoutUrl;
         return;
       }
       setMsg(`${out.message} · status: ${out.status} · mode: ${out.mode} · GU: ${out.guCharged}`);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const text = e instanceof Error ? e.message : String(e);
+      if (text.includes("410") || text.toLowerCase().includes("removed")) {
+        setError("Paid packages: use USDC/USDT Cloud billing or contact enterprise. Free packs still unlock here.");
+      } else {
+        setError(text);
+      }
     }
   }
 
   return (
     <div className="layout-wide">
-      <PaddleCheckout />
       <header className="page-header">
         <p className="pill-label">Constitution Marketplace</p>
         <h1>Governance Packages</h1>

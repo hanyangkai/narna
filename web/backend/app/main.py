@@ -32,23 +32,39 @@ _load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
-from .auth import get_org_from_api_key
+from .auth import get_org_from_api_key, get_org_optional
 from .billing import (
+    add_plan_period,
+    checkout_usd_amount,
     count_governance_units,
+    normalize_plan,
     now_utc,
+    plan_adqa_hard_cap,
+    plan_adqa_soft_cap,
+    plan_agent_turns_hard_cap,
+    plan_allows_byo_llm,
     plan_event_limit,
     plan_gu_limit,
+    plan_price_cents,
+    plan_seats,
     plan_usd_price,
-    reset_if_new_period,
 )
 from .crypto_bot import start_background_bot
 from .crypto_chains import build_pay_uri, list_supported_networks, validate_crypto_payment
-from .invoice_utils import build_qr_payload, expire_pending_invoices, invoice_expires_at
+from .invoice_utils import (
+    allocate_unique_amount,
+    build_qr_payload,
+    expire_pending_invoices,
+    invoice_expires_at,
+)
 from .database import get_db, init_db
 from .metrics import METRICS
+from .mcp_http import router as mcp_router
+from .quota import bump_adqa_usage, bump_agent_turns, enforce_plan_limit
+from .tenants import tenant_id_for_org, tenant_workspace
 from .models import (
     ApiKey,
     GovernanceSessionRow,
@@ -64,9 +80,13 @@ from .models import (
     generate_api_key,
 )
 from .observability import configure_logging, init_sentry_if_configured
-from .rate_limit import InMemoryRateLimiter
+from .rate_limit import build_rate_limiter
 from .schemas import (
     ApiKeyResponse,
+    AgentAskRequest,
+    AgentJobCreateRequest,
+    AgentModelsPutRequest,
+    AgentOutcomeRequest,
     BillingCheckoutRequest,
     BillingCheckoutResponse,
     BillingCryptoCheckoutRequest,
@@ -90,6 +110,7 @@ from .schemas import (
     RegistryAgentSummary,
     RegistryPublishRequest,
     RegistryPublishResponse,
+    RouterCompleteRequest,
     RunDetail,
     RunSummary,
     SessionDetail,
@@ -105,7 +126,8 @@ from .schemas import (
 logger = logging.getLogger("uap-cloud")
 configure_logging()
 
-app = FastAPI(title="UAP Cloud API", version="0.1.0")
+app = FastAPI(title="NARNA Cloud API", version="0.2.0")
+app.include_router(mcp_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -116,7 +138,7 @@ app.add_middleware(
 )
 
 RATE_LIMIT_PER_MIN = int(os.environ.get("UAP_RATE_LIMIT_PER_MIN", "120"))
-limiter = InMemoryRateLimiter(limit_per_min=RATE_LIMIT_PER_MIN)
+limiter = build_rate_limiter(limit_per_min=RATE_LIMIT_PER_MIN)
 
 
 def _rate_key(req: Request) -> str:
@@ -128,8 +150,11 @@ def _rate_key(req: Request) -> str:
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    if request.url.path.startswith("/v1/health"):
-        return await call_next(request)
+    if request.url.path.startswith("/v1/health") or request.url.path in {"/v1/ready", "/mcp"}:
+        if request.method == "GET" and request.url.path.startswith("/v1/health"):
+            return await call_next(request)
+        if request.url.path == "/v1/ready":
+            return await call_next(request)
     METRICS.inc_request()
     key = _rate_key(request)
     allowed, retry_after = limiter.allow(key)
@@ -143,6 +168,9 @@ async def rate_limit_middleware(request: Request, call_next):
     started = datetime.now(timezone.utc)
     response = await call_next(request)
     elapsed_ms = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
+    METRICS.observe_latency(elapsed_ms)
+    if response.status_code >= 500:
+        METRICS.inc_error()
     logger.info(
         "request",
         extra={
@@ -384,76 +412,77 @@ def _seed_marketplace_packages() -> None:
 
 
 @app.get("/v1/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "service": "narna-cloud", "version": "0.1.0", "api": "https://api.narna.org"}
+def health() -> dict[str, Any]:
+    checks: dict[str, Any] = {"api": "ok"}
+    status = "ok"
+    # DB probe
+    try:
+        from sqlalchemy import text
+
+        from .database import SessionLocal
+
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            checks["db"] = "ok"
+        finally:
+            db.close()
+    except Exception as e:
+        checks["db"] = f"down:{e}"
+        status = "degraded"
+    # Redis optional
+    redis_url = os.environ.get("UAP_REDIS_URL") or ""
+    if not redis_url:
+        checks["redis"] = "not_configured"
+    else:
+        try:
+            import socket
+            from urllib.parse import urlparse
+
+            u = urlparse(redis_url)
+            host = u.hostname or "127.0.0.1"
+            port = int(u.port or 6379)
+            with socket.create_connection((host, port), timeout=1.5):
+                checks["redis"] = "ok"
+        except Exception as e:
+            checks["redis"] = f"down:{e}"
+            if status == "ok":
+                status = "degraded"
+    return {
+        "status": status,
+        "service": "narna-cloud",
+        "version": "0.2.0",
+        "api": "https://api.narna.org",
+        "mcp": "https://api.narna.org/mcp",
+        "checks": checks,
+    }
+
+
+@app.get("/v1/ready")
+def ready() -> dict[str, Any]:
+    h = health()
+    if h.get("checks", {}).get("db") != "ok":
+        raise HTTPException(status_code=503, detail=h)
+    return {"ready": True, **h}
+
+
+@app.get("/v1/metrics/slo")
+def metrics_slo() -> dict[str, Any]:
+    return {"ok": True, "slo": METRICS.to_slo(), "service": "narna-cloud"}
 
 
 @app.get("/v1/billing/paddle/status")
 def paddle_billing_status(live_probe: bool = False) -> dict[str, Any]:
-    """Paddle checkout readiness (config only; optional live_probe=1 creates a $1 test txn)."""
-    from .paddle_billing import paddle_api_key, paddle_api_base, paddle_product_id, paddle_request
-    from .paddle_urls import narna_public_url, paddle_success_url
-
-    key = paddle_api_key()
-    product_id = paddle_product_id()
-    mode = get_billing_mode()
-    out: dict[str, Any] = {
-        "billingMode": mode,
-        "paddleConfigured": bool(key and product_id),
-        "paddleApiBase": paddle_api_base() if key else None,
-        "productId": product_id or None,
-        "publicUrl": narna_public_url(),
-        "successUrlBilling": paddle_success_url("billing"),
-        "successUrlPackage": paddle_success_url("package"),
-        "webhookPath": "/v1/billing/paddle/webhook",
-        "checkoutEnabled": None,
-        "checkoutError": None,
-        "setupDoc": "/docs/PADDLE-SETUP.md",
+    """Paddle retired — NARNA Cloud is USDC/USDT only."""
+    return {
+        "billingMode": get_billing_mode(),
+        "paddleConfigured": False,
+        "retired": True,
+        "paymentRail": "usdc_usdt",
+        "checkoutError": "Paddle/card checkout removed. Use POST /v1/billing/crypto/checkout-session",
+        "cryptoCheckout": "/v1/billing/crypto/checkout-session",
+        "billingUi": "https://narna.org/billing",
     }
-    if mode != "paddle" or not key or not product_id:
-        out["checkoutError"] = "Set UAP_BILLING_MODE=paddle, PADDLE_API_KEY, PADDLE_PRODUCT_ID"
-        return out
-    if not live_probe:
-        out["hint"] = "Add ?live_probe=1 to test transaction creation (creates $1 probe txn)"
-        return out
-    try:
-        probe = paddle_request(
-            "POST",
-            "/transactions",
-            {
-                "items": [
-                    {
-                        "quantity": 1,
-                        "price": {
-                            "description": "NARNA checkout probe",
-                            "name": "Probe",
-                            "product_id": product_id,
-                            "unit_price": {"amount": "100", "currency_code": "USD"},
-                            "tax_mode": "account_setting",
-                        },
-                    }
-                ],
-                "currency_code": "USD",
-                "collection_mode": "automatic",
-                "custom_data": {"kind": "probe"},
-            },
-        )
-        data = probe.get("data") or {}
-        checkout_url = (data.get("checkout") or {}).get("url")
-        out["checkoutEnabled"] = bool(checkout_url)
-        out["probeTransactionId"] = data.get("id")
-        if not checkout_url:
-            out["checkoutError"] = "Transaction created but checkout URL missing"
-    except Exception as e:
-        msg = str(e)
-        out["checkoutEnabled"] = False
-        out["checkoutError"] = msg
-        if "transaction_checkout_not_enabled" in msg:
-            out["onboardingHint"] = (
-                "Complete Paddle seller onboarding, default payment link, website approval. "
-                "Email sellers@paddle.com if stuck."
-            )
-    return out
 
 
 def get_billing_mode() -> str:
@@ -461,47 +490,11 @@ def get_billing_mode() -> str:
 
 
 def _plan_price_cents(plan: str) -> int:
-    """USD cents for Cloud plans (fallback if Paddle catalog price not set)."""
-    table = {
-        "pro": 1900,
-        "team": 4900,
-        "business": 9900,
-        "enterprise": 0,
-    }
-    return int(table.get(plan.lower(), 0))
+    """USD cents for Cloud plans."""
+    return plan_price_cents(plan)
 
 
-def enforce_plan_limit(
-    *,
-    org: Organization,
-    projected_events: int,
-    projected_gu: int = 0,
-) -> None:
-    now = now_utc()
-    if org.period_start_at is None or reset_if_new_period(
-        period_start_at=org.period_start_at, now=now
-    ):
-        org.period_start_at = now
-        org.events_in_period = 0
-        org.gu_in_period = 0
-
-    gu_limit = plan_gu_limit(org.plan)
-    if gu_limit is not None and projected_gu > 0:
-        if (int(org.gu_in_period) + projected_gu) > gu_limit:
-            raise HTTPException(
-                status_code=402,
-                detail=f"plan GU limit exceeded: plan={org.plan}, limit={gu_limit} GU/mo",
-            )
-
-    limit = plan_event_limit(org.plan)
-    if limit is None:
-        return
-
-    if (int(org.events_in_period) + projected_events) > limit:
-        raise HTTPException(
-            status_code=402,
-            detail=f"plan limit exceeded: plan={org.plan}, limit={limit} events/mo",
-        )
+# enforce_plan_limit + bump_adqa_usage imported from .quota
 
 
 @app.post("/v1/ingest", response_model=IngestResponse)
@@ -836,7 +829,7 @@ def get_run(
 def metrics(org: Organization = Depends(get_org_from_api_key)) -> dict[str, Any]:
     limit = plan_event_limit(org.plan)
     return {
-        "plan": org.plan,
+        "plan": normalize_plan(org.plan),
         "periodStartAt": org.period_start_at.isoformat()
         if org.period_start_at
         else "",
@@ -844,7 +837,13 @@ def metrics(org: Organization = Depends(get_org_from_api_key)) -> dict[str, Any]
         "eventsLimit": limit,
         "guInPeriod": org.gu_in_period,
         "guLimit": plan_gu_limit(org.plan),
+        "adqaChecksInPeriod": int(getattr(org, "adqa_checks_in_period", 0) or 0),
+        "adqaSoftCap": plan_adqa_soft_cap(org.plan),
+        "adqaHardCap": plan_adqa_hard_cap(org.plan),
+        "seatCount": int(getattr(org, "seat_count", 1) or 1),
+        "seatDefault": plan_seats(org.plan),
         "metrics": METRICS.__dict__,
+        "slo": METRICS.to_slo(),
     }
 
 
@@ -854,11 +853,23 @@ def mock_set_plan(
     org: Organization = Depends(get_org_from_api_key),
     db: Session = Depends(get_db),
 ) -> BillingCheckoutResponse:
-    org.plan = body.plan
+    if not _mock_plan_allowed():
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "mock set-plan disabled in production. "
+                "Pay with USDC/USDT via /v1/billing/crypto/checkout-session"
+            ),
+        )
+    org.plan = normalize_plan(body.plan)
     now = now_utc()
     org.period_start_at = now
+    org.plan_expires_at = add_plan_period(now) if org.plan != "free" else None
     org.events_in_period = 0
     org.gu_in_period = 0
+    org.adqa_checks_in_period = 0
+    if org.plan == "team" and int(getattr(org, "seat_count", 1) or 1) < 3:
+        org.seat_count = 3
     db.commit()
     return BillingCheckoutResponse(ok=True, url="mock://plan-changed", mode="mock")
 
@@ -866,15 +877,33 @@ def mock_set_plan(
 @app.get("/v1/billing/status", response_model=BillingStatusResponse)
 def billing_status(
     org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
 ) -> BillingStatusResponse:
+    from .quota import reset_period_if_needed
+
+    reset_period_if_needed(org)
+    db.add(org)
+    db.commit()
+    db.refresh(org)
+    expires = getattr(org, "plan_expires_at", None)
     return BillingStatusResponse(
-        plan=org.plan,
+        plan=normalize_plan(org.plan),
         periodStartAt=org.period_start_at.isoformat() if org.period_start_at else "",
         eventsInPeriod=int(org.events_in_period),
         eventsLimit=plan_event_limit(org.plan),
         guInPeriod=int(org.gu_in_period),
         guLimit=plan_gu_limit(org.plan),
         billingMode=get_billing_mode(),
+        cryptoMode=get_crypto_mode(),
+        mockPlanAllowed=_mock_plan_allowed(),
+        planExpiresAt=expires.isoformat() if expires else None,
+        adqaChecksInPeriod=int(getattr(org, "adqa_checks_in_period", 0) or 0),
+        adqaSoftCap=plan_adqa_soft_cap(org.plan),
+        adqaHardCap=plan_adqa_hard_cap(org.plan),
+        agentTurnsInPeriod=int(getattr(org, "agent_turns_in_period", 0) or 0),
+        agentTurnsHardCap=plan_agent_turns_hard_cap(org.plan),
+        seatCount=int(getattr(org, "seat_count", 1) or 1),
+        byoLlmAllowed=plan_allows_byo_llm(org.plan),
     )
 
 
@@ -884,79 +913,43 @@ def checkout_session(
     org: Organization = Depends(get_org_from_api_key),
     db: Session = Depends(get_db),
 ) -> BillingCheckoutResponse:
-    mode = get_billing_mode()
-    if mode == "mock":
-        org.plan = body.plan
+    """Card / Stripe / Paddle checkout disabled — pay with USDC/USDT only."""
+    # Dev-only instant plan flip (blocked when live crypto)
+    if _mock_plan_allowed() and get_billing_mode() == "mock":
+        org.plan = normalize_plan(body.plan)
         now = now_utc()
         org.period_start_at = now
+        org.plan_expires_at = add_plan_period(now) if org.plan != "free" else None
         org.events_in_period = 0
         org.gu_in_period = 0
+        org.adqa_checks_in_period = 0
         db.commit()
         return BillingCheckoutResponse(
             ok=True, url="mock://checkout/success", mode="mock"
         )
 
-    if mode == "paddle":
-        try:
-            from .paddle_billing import create_plan_checkout
-            from .paddle_urls import paddle_success_url
-
-            cents = _plan_price_cents(body.plan)
-            if cents <= 0:
-                raise HTTPException(status_code=400, detail=f"plan {body.plan} not purchasable via checkout")
-            success = paddle_success_url("billing")
-            out = create_plan_checkout(
-                plan=body.plan,
-                org_id=org.id,
-                price_cents=cents,
-                success_url=success,
-            )
-            url = out.get("checkoutUrl")
-            if not url:
-                raise HTTPException(
-                    status_code=503,
-                    detail=(
-                        "Paddle Checkout not enabled yet. Finish onboarding at "
-                        "https://vendors.paddle.com/authentication-v2 then enable Checkout."
-                    ),
-                )
-            return BillingCheckoutResponse(ok=True, url=url, mode="paddle")
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=str(e)) from e
-
-    if mode != "stripe":
-        raise HTTPException(status_code=503, detail="billing mode not configured")
-
-    # Stripe scaffold (optional): for local dev keep UAP_BILLING_MODE=mock
-    try:
-        import stripe  # type: ignore
-    except Exception:
-        raise HTTPException(status_code=503, detail="stripe dependency not available")
-
-    stripe.api_key = os.environ.get("STRIPE_API_KEY", "")
-    if not stripe.api_key:
-        raise HTTPException(status_code=503, detail="STRIPE_API_KEY missing")
-
-    price_env = f"STRIPE_PRICE_ID_{body.plan.upper()}"
-    price_id = os.environ.get(price_env, "")
-    if not price_id:
-        raise HTTPException(status_code=503, detail=f"missing env {price_env}")
-
-    session = stripe.checkout.Session.create(
-        mode="payment",
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=os.environ.get("STRIPE_SUCCESS_URL", "http://localhost:5173/console"),
-        cancel_url=os.environ.get("STRIPE_CANCEL_URL", "http://localhost:5173/pricing"),
-        metadata={"org_id": str(org.id), "plan": body.plan},
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Card / Stripe / Paddle checkout removed. "
+            "Pay with USDC or USDT via POST /v1/billing/crypto/checkout-session "
+            "(networks: ethereum, polygon, base, arbitrum, bsc)."
+        ),
     )
-    return BillingCheckoutResponse(ok=True, url=session.url, mode="stripe")
 
 
 def get_crypto_mode() -> str:
     return os.environ.get("UAP_CRYPTO_MODE", "mock").lower()
+
+
+def _mock_plan_allowed() -> bool:
+    """Allow free plan flips only in local/demo — never when live crypto is on."""
+    flag = os.environ.get("UAP_ALLOW_MOCK_PLAN", "").lower()
+    if flag in {"1", "true", "yes"}:
+        return True
+    if flag in {"0", "false", "no"}:
+        return False
+    return get_crypto_mode() != "live"
 
 
 def get_crypto_receiver_wallet() -> str:
@@ -980,6 +973,7 @@ def _invoice_response(inv: PaymentInvoice) -> BillingInvoiceResponse:
         createdAt=inv.created_at.isoformat() if inv.created_at else "",
         expiresAt=inv.expires_at.isoformat() if inv.expires_at else None,
         paidAt=inv.paid_at.isoformat() if inv.paid_at else None,
+        seatCount=int(getattr(inv, "seat_count", 1) or 1),
     )
 
 
@@ -1002,6 +996,7 @@ def _checkout_crypto_response(
         expectedAmount=invoice.expected_amount,
         expiresAt=invoice.expires_at.isoformat() if invoice.expires_at else "",
         qrPayload=qr_payload,
+        seatCount=int(getattr(invoice, "seat_count", 1) or 1),
     )
 
 
@@ -1020,17 +1015,23 @@ def crypto_checkout_session(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    plan_price = plan_usd_price(body.plan)
-    if plan_price <= 0:
+    plan = normalize_plan(body.plan)
+    base_usd, seat_count = checkout_usd_amount(plan, seats=body.seats)
+    if base_usd <= 0:
         raise HTTPException(status_code=400, detail="plan is not payable by crypto")
     receiver_wallet = get_crypto_receiver_wallet()
 
     import hashlib
 
-    invoice_src = f"{org.id}:{body.plan}:{asset}:{network}:{datetime.now(timezone.utc).timestamp()}"
+    invoice_src = (
+        f"{org.id}:{plan}:{seat_count}:{asset}:{network}:"
+        f"{datetime.now(timezone.utc).timestamp()}"
+    )
     invoice_id = "inv_" + hashlib.sha256(invoice_src.encode()).hexdigest()[:16]
     expires = invoice_expires_at()
-    amount_str = f"{plan_price:.2f}"
+    amount_str = allocate_unique_amount(
+        db, network=network, asset=asset, base_usd=base_usd
+    )
     qr_payload = build_qr_payload(
         recipient_wallet=receiver_wallet,
         expected_amount=amount_str,
@@ -1043,7 +1044,8 @@ def crypto_checkout_session(
         org_id=org.id,
         invoice_id=invoice_id,
         kind="crypto",
-        plan=body.plan,
+        plan=plan,
+        seat_count=seat_count,
         asset=asset,
         network=network,
         recipient_wallet=receiver_wallet,
@@ -1057,12 +1059,17 @@ def crypto_checkout_session(
 
     if mode == "mock" and not mock_pending:
         # In mock mode we simulate an on-chain payment: switch plan immediately.
-        org.plan = body.plan
-        org.period_start_at = now_utc()
+        now = now_utc()
+        org.plan = plan
+        org.period_start_at = now
+        org.plan_expires_at = add_plan_period(now)
+        org.seat_count = seat_count
         org.events_in_period = 0
+        org.gu_in_period = 0
+        org.adqa_checks_in_period = 0
         invoice.status = "paid"
         invoice.tx_hash = "0xmock"
-        invoice.paid_at = now_utc()
+        invoice.paid_at = now
         db.commit()
         return _checkout_crypto_response(
             invoice=invoice,
@@ -1125,54 +1132,10 @@ def list_crypto_invoices(
 
 @app.post("/v1/billing/stripe/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
-    mode = get_billing_mode()
-    if mode != "stripe":
-        raise HTTPException(status_code=404, detail="stripe billing not enabled")
-
-    try:
-        import stripe  # type: ignore
-    except Exception:
-        raise HTTPException(status_code=503, detail="stripe dependency not available")
-
-    secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-    if not secret:
-        raise HTTPException(status_code=503, detail="STRIPE_WEBHOOK_SECRET missing")
-
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature", "")
-
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, secret)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"invalid webhook signature: {e}")
-
-    if event["type"] == "checkout.session.completed":
-        session_obj = event["data"]["object"]
-        session_data = session_obj.to_dict() if hasattr(session_obj, "to_dict") else dict(session_obj)
-        metadata = dict(session_data.get("metadata") or {})
-        kind = str(metadata.get("kind") or "subscription")
-        org_id = metadata.get("org_id")
-        session_id = session_data.get("id")
-
-        if kind == "package" and org_id and metadata.get("package_id"):
-            _fulfill_stripe_package_purchase(
-                db=db,
-                org_id=int(org_id),
-                package_id=str(metadata["package_id"]),
-                stripe_session_id=str(session_id) if session_id else None,
-            )
-        else:
-            plan = metadata.get("plan")
-            if org_id and plan:
-                org = db.query(Organization).filter(Organization.id == int(org_id)).first()
-                if org is not None:
-                    org.plan = str(plan)
-                    org.period_start_at = now_utc()
-                    org.events_in_period = 0
-                    org.gu_in_period = 0
-                    db.commit()
-
-    return {"ok": True}
+    raise HTTPException(
+        status_code=410,
+        detail="Stripe billing removed. Pay with USDC/USDT via /v1/billing/crypto/checkout-session",
+    )
 
 
 def _registry_summary(row: RegistryAgent, request: Request | None = None) -> RegistryAgentSummary:
@@ -1606,6 +1569,1846 @@ def policy_evaluate(body: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+@app.post("/v1/decision/evaluate")
+def decision_evaluate(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0014 — Decision OS evaluate (risk + reasons + approvals + evidence)."""
+    action = str(body.get("action") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    question = body.get("question")
+    provider = str(body.get("provider") or body.get("decisionPackage") or "legal-decision")
+    version = body.get("version")
+    path = body.get("path")
+    evidence = body.get("evidencePresent") or body.get("evidence") or []
+    if isinstance(evidence, str):
+        evidence = [x.strip() for x in evidence.split(",") if x.strip()]
+    if not isinstance(evidence, list):
+        evidence = []
+    try:
+        from pathlib import Path
+
+        from uap.decision import DecisionEngine
+
+        engine = DecisionEngine(Path.cwd())
+        result = engine.evaluate(
+            action=action,
+            question=str(question) if question else None,
+            provider=provider,
+            version=str(version) if version else None,
+            path=path,
+            context=body.get("context") if isinstance(body.get("context"), dict) else None,
+            session_id=str(body.get("sessionId") or "") or None,
+            evidence_present=[str(x) for x in evidence],
+        )
+        return {"ok": True, "result": result, "standard": "NGS-0014"}
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e),
+            "result": {
+                "decision": "deny",
+                "action": action,
+                "reasons": [f"decision evaluate fallback: {e}"],
+                "riskScore": 1.0,
+                "riskBand": "critical",
+                "evaluatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            },
+            "standard": "NGS-0014",
+        }
+
+
+@app.post("/v1/adqa/check")
+def adqa_check(
+    body: dict[str, Any],
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """NGS-0024 — Autonomous Decision Quality Assurance (DQS + Decision Guardian).
+
+    Cloud SaaS: send Authorization: Bearer uap_live_… for tenant Decision Memory + metering.
+    Anonymous allowed when UAP_ADQA_REQUIRE_AUTH!=1 (demo); free hard-capped via soft public budget.
+    """
+    require = os.environ.get("UAP_ADQA_REQUIRE_AUTH", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if require and org is None:
+        raise HTTPException(status_code=401, detail="API key required for ADQA Cloud")
+    action = str(body.get("action") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    evidence = body.get("evidencePresent") or body.get("evidence") or []
+    if isinstance(evidence, str):
+        evidence = [x.strip() for x in evidence.split(",") if x.strip()]
+    if not isinstance(evidence, list):
+        evidence = []
+
+    from uap.adqa import ADQAEngine
+
+    warn = None
+    ws = tenant_workspace(org.id) if org is not None else tenant_workspace(tenant_id="anon")
+    if org is not None:
+        warn = enforce_plan_limit(org=org, projected_events=0, projected_gu=0, projected_adqa=1)
+
+    out = ADQAEngine(ws).check_proposed(
+        action=action,
+        provider=str(body.get("provider") or body.get("decisionPackage") or "legal-decision"),
+        evidence_present=[str(x) for x in evidence],
+        context=body.get("context") if isinstance(body.get("context"), dict) else None,
+        agent_id=str(body.get("agentId") or "") or None,
+        question=str(body.get("question") or "") or None,
+    )
+    if org is not None:
+        bump_adqa_usage(org=org, db=db)
+        out["tenantId"] = tenant_id_for_org(org.id)
+        out["plan"] = normalize_plan(org.plan)
+    if warn:
+        out["quota"] = warn
+    return {"ok": True, **out}
+
+
+def _anon_org_name(request: Request) -> str:
+    import hashlib
+
+    ip = (request.client.host if request.client else "0.0.0.0") or "0.0.0.0"
+    device = (request.headers.get("x-narna-device") or "").strip()
+    raw = f"{ip}:{device}"
+    return "anon_" + hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def _resolve_ask_org(
+    *,
+    request: Request,
+    org: Organization | None,
+    db: Session,
+) -> Organization:
+    if org is not None:
+        return org
+    name = _anon_org_name(request)
+    row = db.query(Organization).filter(Organization.name == name).first()
+    if row is None:
+        row = Organization(name=name, plan="free")
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+def _router_for_org(org: Organization):
+    import json as _json
+
+    from uap.model_router import ModelRouter
+
+    cfg: dict[str, Any] = {}
+    raw = getattr(org, "llm_config_json", None)
+    if raw and plan_allows_byo_llm(org.plan):
+        try:
+            cfg = _json.loads(raw)
+        except Exception:
+            cfg = {}
+    provider = str(cfg.get("provider") or os.environ.get("UAP_ROUTER_PROVIDER") or "mock")
+    models = {}
+    if cfg.get("modelCheap"):
+        models["cheap"] = str(cfg["modelCheap"])
+    if cfg.get("modelReason"):
+        models["reason"] = str(cfg["modelReason"])
+    if cfg.get("modelChallenge"):
+        models["challenge"] = str(cfg["modelChallenge"])
+    return ModelRouter(
+        provider=provider,
+        api_key=str(cfg.get("apiKey") or "") or None,
+        base_url=str(cfg.get("baseUrl") or "") or None,
+        models=models or None,
+    )
+
+
+@app.post("/v1/router/complete")
+def router_complete(
+    body: RouterCompleteRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """NGS-0028 — Model Router chat completion."""
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    router = _router_for_org(resolved)
+    try:
+        result = router.complete(
+            messages=body.messages,
+            task=body.task,
+            temperature=body.temperature,
+            max_tokens=body.maxTokens,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    bump_agent_turns(org=resolved, db=db)
+    out = result.to_dict()
+    out["plan"] = normalize_plan(resolved.plan)
+    return out
+
+
+@app.post("/v1/agent/ask")
+def agent_ask(
+    body: AgentAskRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """NGS-0029 — Ask NARNA (Memory → Reason → ADQA → Answer)."""
+    from uap.narna_agent import NarnaAgent
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    # Paid/team may enable challenge; free can opt-in but still billed as 1 turn
+    challenge = bool(body.challenge) and normalize_plan(resolved.plan) != "free"
+    if body.challenge and normalize_plan(resolved.plan) == "free":
+        # Allow challenge on free for product demo but still one turn; soft note
+        challenge = True
+
+    ws = tenant_workspace(resolved.id)
+    agent = NarnaAgent(
+        workspace=ws,
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.ask(
+            body.message,
+            session_id=body.sessionId,
+            files=body.files,
+            challenge=challenge,
+            channel="web",
+            use_tools=True,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    bump_agent_turns(org=resolved, db=db)
+    out["plan"] = normalize_plan(resolved.plan)
+    out["agentTurnsInPeriod"] = int(getattr(resolved, "agent_turns_in_period", 0) or 0)
+    out["agentTurnsHardCap"] = plan_agent_turns_hard_cap(resolved.plan)
+    if warn:
+        out["quota"] = warn
+    # Hide model ids for free UX unless power header set
+    if request.headers.get("x-narna-show-models", "").lower() not in {"1", "true", "yes"}:
+        if normalize_plan(resolved.plan) == "free":
+            out["modelsUsed"] = []
+    return out
+
+
+@app.get("/v1/agent/skills")
+def agent_skills_list(
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.agent_skills import SkillStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    skills = SkillStore(ws).list_skills()
+    return {"ok": True, "skills": skills, "count": len(skills), "standard": "NGS-0029-skills"}
+
+
+@app.get("/v1/agent/sessions/{session_id}")
+def agent_session_get(
+    session_id: str,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.agent_session import AgentSessionStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    row = AgentSessionStore(ws).get(session_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="session not found")
+    return {"ok": True, "session": row, "standard": "NGS-0029"}
+
+
+def _org_for_device_key(db: Session, device_key: str) -> Organization:
+    import hashlib
+
+    name = "anon_" + hashlib.sha256(device_key.encode()).hexdigest()[:16]
+    row = db.query(Organization).filter(Organization.name == name).first()
+    if row is None:
+        row = Organization(name=name, plan="free")
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+@app.post("/v1/agent/telegram/webhook")
+async def agent_telegram_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Phone channel: Telegram → Ask NARNA (set webhook to this URL)."""
+    from uap.narna_agent import NarnaAgent
+    from uap.telegram_gateway import (
+        extract_telegram_text,
+        format_agent_reply,
+        send_telegram_message,
+        telegram_enabled,
+    )
+
+    if not telegram_enabled():
+        raise HTTPException(status_code=503, detail="Telegram bot not configured")
+
+    secret = os.environ.get("UAP_TELEGRAM_WEBHOOK_SECRET", "").strip()
+    if secret:
+        got = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+        if got != secret:
+            raise HTTPException(status_code=403, detail="invalid webhook secret")
+
+    try:
+        update = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    chat_id, text, _username = extract_telegram_text(update if isinstance(update, dict) else {})
+    if not chat_id or not text:
+        return {"ok": True, "ignored": True}
+
+    resolved = _org_for_device_key(db, f"telegram:{chat_id}")
+    try:
+        enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    except HTTPException as e:
+        if e.status_code == 402:
+            try:
+                send_telegram_message(
+                    chat_id,
+                    "Free Ask quota reached. Upgrade with USDC/USDT at https://narna.org/billing",
+                )
+            except Exception:
+                pass
+            return {"ok": True, "quota": True}
+        raise
+
+    ws = tenant_workspace(resolved.id)
+    agent = NarnaAgent(
+        workspace=ws,
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.ask(
+            text,
+            channel="telegram",
+            external_id=str(chat_id),
+            use_tools=True,
+        )
+    except Exception as e:
+        try:
+            send_telegram_message(chat_id, f"NARNA error: {e}")
+        except Exception:
+            pass
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    bump_agent_turns(org=resolved, db=db)
+    try:
+        send_telegram_message(chat_id, format_agent_reply(out))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"telegram send failed: {e}") from e
+    return {"ok": True, "decisionId": out.get("decisionId"), "sessionId": out.get("sessionId")}
+
+
+@app.post("/v1/agent/ask/stream")
+def agent_ask_stream(
+    body: AgentAskRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+):
+    """SSE progress events then final Ask result (mobile-friendly)."""
+    import json as _json
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    challenge = bool(body.challenge)
+    ws = tenant_workspace(resolved.id)
+
+    def gen():
+        yield f"event: status\ndata: {_json.dumps({'phase': 'start'})}\n\n"
+        from uap.narna_agent import NarnaAgent
+
+        agent = NarnaAgent(
+            workspace=ws,
+            tenant_id=tenant_id_for_org(resolved.id),
+            router=_router_for_org(resolved),
+        )
+        yield f"event: status\ndata: {_json.dumps({'phase': 'reason'})}\n\n"
+        try:
+            out = agent.ask(
+                body.message,
+                session_id=body.sessionId,
+                files=body.files,
+                challenge=challenge,
+                channel="web",
+                use_tools=True,
+            )
+        except Exception as e:
+            yield f"event: error\ndata: {_json.dumps({'error': str(e)})}\n\n"
+            return
+        bump_agent_turns(org=resolved, db=db)
+        out["plan"] = normalize_plan(resolved.plan)
+        out["agentTurnsInPeriod"] = int(getattr(resolved, "agent_turns_in_period", 0) or 0)
+        out["agentTurnsHardCap"] = plan_agent_turns_hard_cap(resolved.plan)
+        if warn:
+            out["quota"] = warn
+        if request.headers.get("x-narna-show-models", "").lower() not in {"1", "true", "yes"}:
+            if normalize_plan(resolved.plan) == "free":
+                out["modelsUsed"] = []
+        yield f"event: result\ndata: {_json.dumps(out)}\n\n"
+        yield f"event: done\ndata: {_json.dumps({'ok': True})}\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.get("/v1/agent/jobs")
+def agent_jobs_list(
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.agent_jobs import AgentJobStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    jobs = AgentJobStore(tenant_workspace(resolved.id)).list_jobs()
+    return {"ok": True, "jobs": jobs, "count": len(jobs)}
+
+
+@app.post("/v1/agent/jobs")
+def agent_jobs_create(
+    body: AgentJobCreateRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.agent_jobs import AgentJobStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    if normalize_plan(resolved.plan) == "free" and body.everyMinutes:
+        raise HTTPException(
+            status_code=403,
+            detail="Recurring jobs require Personal or Team — upgrade at /billing",
+        )
+    try:
+        row = AgentJobStore(tenant_workspace(resolved.id)).create(
+            prompt=body.prompt,
+            every_minutes=body.everyMinutes,
+            run_at=body.runAt,
+            enabled=body.enabled,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return {"ok": True, "job": row}
+
+
+@app.post("/v1/agent/jobs/tick")
+def agent_jobs_tick(
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Run due jobs (call from cron / health worker)."""
+    from uap.narna_agent import NarnaAgent
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    due = agent.jobs.due_jobs()
+    if not due:
+        return {"ok": True, "ran": [], "count": 0}
+    enforce_plan_limit(org=resolved, projected_agent_turns=min(len(due), 5))
+    ran = agent.run_due_jobs(limit=5)
+    bump_agent_turns(org=resolved, db=db, n=len(ran))
+    return {
+        "ok": True,
+        "count": len(ran),
+        "ran": [
+            {
+                "jobId": r["jobId"],
+                "decisionId": (r.get("ask") or {}).get("decisionId"),
+                "dqs": (r.get("ask") or {}).get("dqs"),
+            }
+            for r in ran
+        ],
+    }
+
+
+@app.post("/v1/agent/outcome")
+def agent_outcome(
+    body: AgentOutcomeRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.narna_agent import NarnaAgent
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    agent = NarnaAgent(workspace=ws, tenant_id=tenant_id_for_org(resolved.id))
+    try:
+        row = agent.record_outcome(
+            body.decisionId,
+            status=body.status,
+            detail=body.detail or "",
+            success_score=body.successScore,
+            lesson=body.lesson,
+            skill_id=body.skillId,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return {"ok": True, "record": row, "standard": "NGS-0029"}
+
+
+@app.get("/v1/agent/models")
+def agent_models_get(
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    import json as _json
+
+    raw = getattr(org, "llm_config_json", None)
+    cfg: dict[str, Any] = {}
+    if raw:
+        try:
+            cfg = _json.loads(raw)
+        except Exception:
+            cfg = {}
+    key = str(cfg.get("apiKey") or "")
+    redacted = (key[:4] + "…" + key[-4:]) if len(key) > 8 else ("set" if key else None)
+    return {
+        "ok": True,
+        "byoLlmAllowed": plan_allows_byo_llm(org.plan),
+        "provider": cfg.get("provider") or os.environ.get("UAP_ROUTER_PROVIDER") or "mock",
+        "baseUrl": cfg.get("baseUrl"),
+        "apiKeySet": bool(key),
+        "apiKeyPreview": redacted,
+        "modelCheap": cfg.get("modelCheap"),
+        "modelReason": cfg.get("modelReason"),
+        "modelChallenge": cfg.get("modelChallenge"),
+        "plan": normalize_plan(org.plan),
+    }
+
+
+@app.put("/v1/agent/models")
+def agent_models_put(
+    body: AgentModelsPutRequest,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    import json as _json
+
+    if not plan_allows_byo_llm(org.plan):
+        raise HTTPException(
+            status_code=403,
+            detail="BYO LLM requires Personal (cloud) or Team — upgrade at /billing",
+        )
+    provider = str(body.provider or "openrouter").lower()
+    if provider not in {"openrouter", "openai", "ollama", "mock"}:
+        raise HTTPException(status_code=400, detail="unsupported provider")
+    existing: dict[str, Any] = {}
+    if org.llm_config_json:
+        try:
+            existing = _json.loads(org.llm_config_json)
+        except Exception:
+            existing = {}
+    cfg = {
+        "provider": provider,
+        "apiKey": body.apiKey if body.apiKey is not None else existing.get("apiKey"),
+        "baseUrl": body.baseUrl if body.baseUrl is not None else existing.get("baseUrl"),
+        "modelCheap": body.modelCheap or existing.get("modelCheap"),
+        "modelReason": body.modelReason or existing.get("modelReason"),
+        "modelChallenge": body.modelChallenge or existing.get("modelChallenge"),
+    }
+    org.llm_config_json = _json.dumps(cfg)
+    db.add(org)
+    db.commit()
+    return {"ok": True, "provider": provider, "byoLlmAllowed": True}
+
+
+@app.get("/v1/integrations")
+def list_integrations() -> dict[str, Any]:
+    """Hot AI stacks + CMEM bridge catalog (Borrow the Wave)."""
+    from narna.integrations import integration_manifest
+
+    return integration_manifest()
+
+
+@app.get("/v1/cmem/status")
+def cmem_status() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.cmem_bridge import CmemBridge
+
+    return CmemBridge(Path.cwd()).status()
+
+
+@app.post("/v1/cmem/enrich")
+def cmem_enrich(body: dict[str, Any]) -> dict[str, Any]:
+    action = str(body.get("action") or body.get("query") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    from pathlib import Path
+
+    from uap.cmem_bridge import CmemBridge
+
+    ctx = CmemBridge(Path.cwd()).enrich_context(
+        action,
+        body.get("context") if isinstance(body.get("context"), dict) else None,
+        limit=int(body.get("limit") or 8),
+    )
+    return {"ok": True, "context": ctx, "cmem": ctx.get("_cmem")}
+
+
+@app.post("/v1/cmem/ingest")
+def cmem_ingest_local(body: dict[str, Any]) -> dict[str, Any]:
+    """Offline observation stub for demos (not a CMEM Cloud write)."""
+    from pathlib import Path
+
+    from uap.cmem_bridge import CmemBridge
+
+    return CmemBridge(Path.cwd()).ingest_local(body if isinstance(body, dict) else {})
+
+
+@app.get("/v1/mcp/tools")
+def mcp_tools_list() -> dict[str, Any]:
+    from narna.mcp_tools import NarnaMcpTools
+
+    return {"ok": True, "tools": NarnaMcpTools(tenant_workspace(tenant_id="local")).list_tools()}
+
+
+@app.post("/v1/mcp/call")
+def mcp_tools_call(
+    body: dict[str, Any],
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    name = str(body.get("name") or body.get("tool") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name required")
+    from narna.mcp_tools import NarnaMcpTools
+
+    ws = tenant_workspace(org.id) if org is not None else tenant_workspace(tenant_id="anon")
+    args = body.get("arguments") if isinstance(body.get("arguments"), dict) else body
+    if name == "narna_adqa_check" and org is not None:
+        enforce_plan_limit(org=org, projected_events=0, projected_gu=0, projected_adqa=1)
+        bump_adqa_usage(org=org, db=db)
+    return NarnaMcpTools(ws).call_tool(name, args)
+
+
+@app.post("/v1/adqa/score")
+def adqa_score(body: dict[str, Any]) -> dict[str, Any]:
+    """Score an existing DecisionResult without re-running packages."""
+    result = body.get("decisionResult") or body.get("result")
+    if not isinstance(result, dict):
+        raise HTTPException(status_code=400, detail="decisionResult required")
+    from uap.adqa import ADQAEngine
+
+    evidence = body.get("evidencePresent") or []
+    if isinstance(evidence, str):
+        evidence = [x.strip() for x in evidence.split(",") if x.strip()]
+    return {
+        "ok": True,
+        "adqa": ADQAEngine(tenant_workspace(tenant_id="local")).score(
+            result,
+            evidence_present=[str(x) for x in evidence],
+            agent_id=str(body.get("agentId") or "") or None,
+            capability=str(body.get("capability") or result.get("action") or "") or None,
+        ),
+    }
+
+
+@app.post("/v1/dmemory/record")
+def dmemory_record(
+    body: dict[str, Any],
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.decision_memory import DecisionMemory
+
+    action = str(body.get("action") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    tid = tenant_id_for_org(org.id)
+    return DecisionMemory(tenant_workspace(org.id)).record(
+        action=action,
+        context=body.get("context") if isinstance(body.get("context"), dict) else None,
+        reasoning=body.get("reasoning") if isinstance(body.get("reasoning"), list) else None,
+        guardian=str(body.get("guardian") or "") or None,
+        dqs=int(body["dqs"]) if body.get("dqs") is not None else None,
+        confidence=float(body["confidence"]) if body.get("confidence") is not None else None,
+        provider=str(body.get("provider") or "") or None,
+        decision=str(body.get("decision") or "") or None,
+        adqa=body.get("adqa") if isinstance(body.get("adqa"), dict) else None,
+        tenant_id=tid,
+    )
+
+
+@app.post("/v1/dmemory/{decision_id}/outcome")
+def dmemory_outcome(
+    decision_id: str,
+    body: dict[str, Any],
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.outcome_learning import OutcomeLearningEngine
+
+    status = str(body.get("status") or "").strip()
+    if not status:
+        raise HTTPException(status_code=400, detail="status required")
+    try:
+        return OutcomeLearningEngine(tenant_workspace(org.id)).evaluate(
+            decision_id,
+            status=status,
+            detail=str(body.get("detail") or "") or None,
+            success_score=float(body["successScore"]) if body.get("successScore") is not None else None,
+            lesson=str(body.get("lesson") or "") or None,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.get("/v1/dmemory/query")
+def dmemory_query(
+    action: str | None = None,
+    customer: str | None = None,
+    limit: int = 20,
+    with_outcome: bool = False,
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.decision_memory import DecisionMemory
+
+    tid = tenant_id_for_org(org.id)
+    return {
+        "ok": True,
+        "tenantId": tid,
+        "records": DecisionMemory(tenant_workspace(org.id)).query(
+            action=action,
+            customer=customer,
+            tenant_id=tid,
+            limit=limit,
+            with_outcome_only=with_outcome,
+        ),
+    }
+
+
+@app.get("/v1/dmemory/lessons")
+def dmemory_lessons(
+    action: str | None = None,
+    limit: int = 5,
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.decision_memory import DecisionMemory
+
+    tid = tenant_id_for_org(org.id)
+    return {
+        "ok": True,
+        "tenantId": tid,
+        "lessons": DecisionMemory(tenant_workspace(org.id)).lessons_for(
+            action=action, limit=limit
+        ),
+    }
+
+
+@app.post("/v1/learning/evaluate")
+def learning_evaluate(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.outcome_learning import OutcomeLearningEngine
+
+    did = str(body.get("decisionId") or "").strip()
+    status = str(body.get("status") or "").strip()
+    if not did or not status:
+        raise HTTPException(status_code=400, detail="decisionId and status required")
+    try:
+        return OutcomeLearningEngine(Path.cwd()).evaluate(
+            did,
+            status=status,
+            detail=str(body.get("detail") or "") or None,
+            success_score=float(body["successScore"]) if body.get("successScore") is not None else None,
+            lesson=str(body.get("lesson") or "") or None,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.get("/v1/learning/prior/{action}")
+def learning_prior(action: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.outcome_learning import OutcomeLearningEngine
+
+    prior = OutcomeLearningEngine(Path.cwd()).prior_for(action)
+    return {"ok": True, "action": action, "prior": prior}
+
+
+@app.get("/v1/dqs/status")
+def dqs_network_status(
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.dqs_network import DqsNetwork
+
+    return DqsNetwork(tenant_workspace(org.id)).status()
+
+
+@app.post("/v1/dqs/opt-in")
+def dqs_network_opt_in(
+    body: dict[str, Any],
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.dqs_network import DqsNetwork
+
+    enabled = bool(body.get("enabled") if body.get("enabled") is not None else body.get("optIn", True))
+    return DqsNetwork(tenant_workspace(org.id)).set_opt_in(enabled)
+
+
+@app.post("/v1/dqs/export")
+def dqs_network_export(
+    body: dict[str, Any] | None = None,
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.dqs_network import DqsNetwork
+
+    body = body or {}
+    return DqsNetwork(tenant_workspace(org.id)).export_digest(
+        org_id=org.id,
+        min_count=int(body.get("minCount") or 3),
+    )
+
+
+@app.post("/v1/dqs/import")
+def dqs_network_import(
+    body: dict[str, Any],
+    org: Organization = Depends(get_org_from_api_key),
+) -> dict[str, Any]:
+    from uap.dqs_network import DqsNetwork
+
+    digest = body.get("digest") if isinstance(body.get("digest"), dict) else body
+    return DqsNetwork(tenant_workspace(org.id)).import_digest(digest)
+
+
+@app.get("/v1/connect/catalog")
+def connect_catalog() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.connect import ConnectRegistry
+
+    return ConnectRegistry(Path.cwd()).catalog()
+
+
+@app.post("/v1/connect/register")
+def connect_register(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.connect import ConnectRegistry
+
+    return {
+        "ok": True,
+        "connector": ConnectRegistry(Path.cwd()).register(
+            type=str(body.get("type") or "api"),
+            name=str(body.get("name") or "unnamed"),
+            endpoint=str(body.get("endpoint") or "") or None,
+            config=body.get("config") if isinstance(body.get("config"), dict) else None,
+        ),
+    }
+
+
+@app.post("/v1/connect/probe/{connector_id}")
+def connect_probe(connector_id: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.connect import ConnectRegistry
+
+    try:
+        return {"ok": True, **ConnectRegistry(Path.cwd()).probe(connector_id)}
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.post("/v1/knowledge/entities")
+def knowledge_upsert(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.knowledge import KnowledgeGraph
+
+    return {
+        "ok": True,
+        "entity": KnowledgeGraph(Path.cwd()).upsert_entity(
+            kind=str(body.get("kind") or "entity"),
+            name=str(body.get("name") or ""),
+            props=body.get("props") if isinstance(body.get("props"), dict) else None,
+            entity_id=str(body.get("entityId") or "") or None,
+        ),
+    }
+
+
+@app.get("/v1/knowledge/entities")
+def knowledge_query(
+    kind: str | None = None, q: str | None = None, limit: int = 50
+) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.knowledge import KnowledgeGraph
+
+    return {
+        "ok": True,
+        "entities": KnowledgeGraph(Path.cwd()).query(kind=kind, name_contains=q, limit=limit),
+    }
+
+
+@app.post("/v1/knowledge/relations")
+def knowledge_relate(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.knowledge import KnowledgeGraph
+
+    try:
+        return {
+            "ok": True,
+            "relation": KnowledgeGraph(Path.cwd()).relate(
+                from_id=str(body.get("from") or ""),
+                to_id=str(body.get("to") or ""),
+                rel_type=str(body.get("type") or "related"),
+            ),
+        }
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/memory/{scope}/{scope_id}")
+def memory_put(scope: str, scope_id: str, body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.durable_memory import DurableMemory
+
+    records = body.get("records") if isinstance(body.get("records"), dict) else body
+    if "_meta" in records:
+        records = {k: v for k, v in records.items() if k != "_meta"}
+    return {
+        "ok": True,
+        **DurableMemory(Path.cwd()).put(scope=scope, scope_id=scope_id, records=records),
+    }
+
+
+@app.get("/v1/memory/{scope}/{scope_id}")
+def memory_get(scope: str, scope_id: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.durable_memory import DurableMemory
+
+    return {"ok": True, **DurableMemory(Path.cwd()).get(scope=scope, scope_id=scope_id)}
+
+
+@app.post("/v1/automate/run")
+def automate_run(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.automation import AutomationEngine
+
+    trigger = str(body.get("trigger") or "").strip()
+    action = str(body.get("action") or "").strip()
+    if not trigger or not action:
+        raise HTTPException(status_code=400, detail="trigger and action required")
+    return AutomationEngine(Path.cwd()).run(
+        trigger=trigger,
+        action=action,
+        provider=str(body.get("provider") or "legal-decision"),
+        path=body.get("path"),
+        context=body.get("context") if isinstance(body.get("context"), dict) else None,
+    )
+
+
+@app.get("/v1/dmarket/packages")
+def dmarket_list(industry: str | None = None, all_packages: bool = False) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.decision_market import DecisionMarketplace
+
+    return {
+        "ok": True,
+        "packages": DecisionMarketplace(Path.cwd()).list_packages(
+            industry=industry,
+            decisions_only=not all_packages,
+        ),
+    }
+
+
+@app.post("/v1/dmarket/install")
+def dmarket_install(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.decision_market import DecisionMarketplace
+
+    provider = str(body.get("provider") or "").strip()
+    if not provider:
+        raise HTTPException(status_code=400, detail="provider required")
+    try:
+        return DecisionMarketplace(Path.cwd()).install(provider)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.post("/v1/capability/evaluate")
+def capability_evaluate(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0015 — Capability Passport evaluate (Guardian Layer 2)."""
+    capability = str(body.get("capability") or "").strip()
+    if not capability:
+        raise HTTPException(status_code=400, detail="capability required")
+    try:
+        from pathlib import Path
+
+        from uap.capability_gov import CapabilityGovernor
+
+        gov = CapabilityGovernor(Path.cwd())
+        result = gov.evaluate(
+            capability=capability,
+            agent_id=str(body.get("agentId") or "") or None,
+            path=body.get("path"),
+            target=str(body.get("target") or "") or None,
+            profile=str(body.get("profile") or "guardian"),
+        )
+        return {"ok": True, "result": result, "standard": "NGS-0015"}
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e),
+            "result": {
+                "decision": "deny",
+                "capability": capability,
+                "reasons": [f"capability evaluate fallback: {e}"],
+            },
+            "standard": "NGS-0015",
+        }
+
+
+# --- Guardian Network v1: Citizen / AI Gateway (NGS-0021/0022/0023) ---
+
+
+@app.post("/v1/citizen/register")
+def citizen_register(body: dict[str, Any] | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.citizen_registry import CitizenRegistry
+
+    body = body or {}
+    return CitizenRegistry(Path.cwd()).register(
+        label=str(body.get("label") or "") or None,
+        profile=str(body.get("profile") or "citizen"),
+    )
+
+
+@app.get("/v1/citizen/audit")
+def citizen_audit(limit: int = 50, device_id: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.citizen_registry import CitizenRegistry
+
+    return {
+        "ok": True,
+        "audit": CitizenRegistry(Path.cwd()).list_audit(limit=limit, device_id=device_id),
+    }
+
+@app.post("/v1/citizen/approve")
+def citizen_approve(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.citizen_registry import CitizenRegistry
+
+    device_id = str(body.get("deviceId") or "").strip()
+    capability = str(body.get("capability") or "").strip()
+    if not device_id or not capability:
+        raise HTTPException(status_code=400, detail="deviceId and capability required")
+    return CitizenRegistry(Path.cwd()).issue_approval(
+        device_id=device_id, capability=capability
+    )
+
+
+@app.get("/v1/gateway/providers")
+def gateway_providers() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.ai_gateway import AIGateway
+
+    return {"ok": True, "providers": AIGateway(Path.cwd()).providers(), "standard": "NGS-0021"}
+
+
+@app.post("/v1/gateway/check")
+def gateway_check(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.ai_gateway import AIGateway
+    from uap.citizen_registry import CitizenRegistry
+
+    reg = CitizenRegistry(Path.cwd())
+    device = None
+    key = str(body.get("apiKey") or body.get("citizenKey") or "").strip() or None
+    if key:
+        device = reg.resolve_key(key)
+    profile = str(
+        (device or {}).get("profile")
+        or body.get("profile")
+        or "citizen"
+    )
+    device_id = str((device or {}).get("deviceId") or body.get("deviceId") or "") or None
+    return AIGateway(Path.cwd()).check(
+        provider=str(body.get("provider") or "") or None,
+        url=str(body.get("url") or "") or None,
+        action=str(body.get("action") or "message.send"),
+        text=str(body.get("text") or "") or None,
+        agent_hint=str(body.get("agentHint") or body.get("agentId") or "") or None,
+        capability=str(body.get("capability") or "") or None,
+        approval_token=str(body.get("approvalToken") or "") or None,
+        device_id=device_id,
+        profile=profile,
+    )
+
+
+@app.get("/v1/cti/citizen/feed")
+def cti_citizen_feed(limit: int = 50, since: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.ai_gateway import AIGateway
+
+    return AIGateway(Path.cwd()).citizen_cti_feed(limit=limit, since=since)
+
+
+@app.post("/v1/guardian/emergency/broadcast")
+def emergency_broadcast(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.emergency import EmergencyBroadcast
+
+    msg = str(body.get("message") or "").strip()
+    if not msg:
+        raise HTTPException(status_code=400, detail="message required")
+    return EmergencyBroadcast(Path.cwd()).broadcast(
+        message=msg,
+        severity=str(body.get("severity") or "high"),
+        action=str(body.get("action") or "refresh_cti"),
+        issued_by=str(body.get("issuedBy") or "operator"),
+    )
+
+
+@app.get("/v1/guardian/emergency/feed")
+def emergency_feed(limit: int = 20, since: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.emergency import EmergencyBroadcast
+
+    return {
+        "ok": True,
+        "broadcasts": EmergencyBroadcast(Path.cwd()).list(limit=limit, since=since),
+    }
+
+
+@app.get("/v1/gateway/passport")
+def gateway_passport(provider: str | None = None, agentHint: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.universal_ai_passport import UniversalAIPassport
+
+    return {
+        "ok": True,
+        **UniversalAIPassport(Path.cwd()).resolve(provider=provider, agent_hint=agentHint),
+    }
+
+
+@app.post("/v1/guardian/kill")
+def guardian_kill_issue(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0019 — issue Local Kill Token."""
+    agent_id = str(body.get("agentId") or "").strip() or None
+    session_id = str(body.get("sessionId") or "").strip() or None
+    if not agent_id and not session_id:
+        raise HTTPException(status_code=400, detail="agentId or sessionId required")
+    try:
+        from pathlib import Path
+
+        from uap.kill import KillStore
+
+        entry = KillStore(Path.cwd()).issue_local(
+            agent_id=agent_id,
+            session_id=session_id,
+            reason=str(body.get("reason") or "api"),
+            issued_by=str(body.get("issuedBy") or "api"),
+        )
+        return {"ok": True, "kill": entry, "standard": "NGS-0019"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.get("/v1/guardian/kill/status")
+def guardian_kill_status(
+    agent_id: str | None = None,
+    session_id: str | None = None,
+) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.kill import KillStore
+
+    return {
+        "ok": True,
+        **KillStore(Path.cwd()).status(agent_id=agent_id, session_id=session_id),
+    }
+
+
+@app.post("/v1/guardian/threat/analyze")
+def guardian_threat_analyze(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0017 — analyze session execution graph for threat patterns."""
+    session_id = str(body.get("sessionId") or "").strip()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="sessionId required")
+    try:
+        from pathlib import Path
+
+        from uap.threat import ThreatEngine
+
+        engine = ThreatEngine(Path.cwd())
+        if body.get("autoKill"):
+            result = engine.analyze_and_maybe_kill(session_id, auto_kill=True)
+        else:
+            result = engine.analyze_session(session_id)
+        return {"ok": True, "result": result, "standard": "NGS-0017"}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/collective/opt-in")
+def guardian_collective_opt_in(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0020 — opt in/out of collective threat signature sharing."""
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    return {
+        "ok": True,
+        **CollectiveDefense(Path.cwd()).set_opt_in(bool(body.get("optIn", True))),
+        "standard": "NGS-0020",
+    }
+
+
+@app.post("/v1/guardian/collective/publish")
+def guardian_collective_publish(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0020 — publish privacy-preserving signature from threat report/session."""
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+    from uap.threat import ThreatEngine
+
+    session_id = str(body.get("sessionId") or "").strip()
+    report = body.get("report")
+    try:
+        if report is None:
+            if not session_id:
+                raise HTTPException(status_code=400, detail="sessionId or report required")
+            report = ThreatEngine(Path.cwd()).analyze_session(session_id)
+        sig = CollectiveDefense(Path.cwd()).publish_from_threat(
+            report, org_id=str(body.get("orgId") or "") or None
+        )
+        return {"ok": True, "signature": sig, "standard": "NGS-0020"}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/collective/import")
+def guardian_collective_import(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    sig = body.get("signature")
+    if not isinstance(sig, dict):
+        raise HTTPException(status_code=400, detail="signature object required")
+    return {
+        "ok": True,
+        "signature": CollectiveDefense(Path.cwd()).import_signature(sig),
+        "standard": "NGS-0020",
+    }
+
+
+@app.get("/v1/guardian/collective/signatures")
+def guardian_collective_list(source: str = "inbox") -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    return {
+        "ok": True,
+        "signatures": CollectiveDefense(Path.cwd()).list_signatures(source=source),
+        "standard": "NGS-0020",
+    }
+
+
+@app.post("/v1/guardian/collective/apply")
+def guardian_collective_apply(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    sid = str(body.get("signatureId") or "").strip()
+    if not sid:
+        raise HTTPException(status_code=400, detail="signatureId required")
+    try:
+        return CollectiveDefense(Path.cwd()).apply(
+            sid,
+            agent_id=str(body.get("agentId") or "") or None,
+            auto_kill=bool(body.get("autoKill")),
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/constitution/evaluate")
+def guardian_constitution_evaluate(body: dict[str, Any]) -> dict[str, Any]:
+    """Guardian L4 — evaluate action against AI Constitution."""
+    action = str(body.get("action") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    try:
+        from pathlib import Path
+
+        from uap.council import GuardianConstitution
+
+        result = GuardianConstitution(Path.cwd()).evaluate(
+            action=action,
+            agent_id=str(body.get("agentId") or "") or None,
+        )
+        return {"ok": True, "result": result, "standard": "NGS-L4"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/constitution/install")
+def guardian_constitution_install() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.council import GuardianConstitution
+
+    return {"ok": True, **GuardianConstitution(Path.cwd()).install_default(), "standard": "NGS-L4"}
+
+
+@app.post("/v1/guardian/council/install")
+def guardian_council_install() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.council import GovernanceCouncil
+
+    return {"ok": True, **GovernanceCouncil(Path.cwd()).install_default(), "standard": "NGS-L4"}
+
+
+@app.post("/v1/guardian/council/propose")
+def guardian_council_propose(body: dict[str, Any]) -> dict[str, Any]:
+    kind = str(body.get("kind") or "").strip()
+    member = str(body.get("proposedBy") or body.get("memberId") or "").strip()
+    if not kind or not member:
+        raise HTTPException(status_code=400, detail="kind and proposedBy required")
+    try:
+        from pathlib import Path
+
+        from uap.council import GovernanceCouncil
+
+        prop = GovernanceCouncil(Path.cwd()).propose(
+            kind=kind,
+            payload=dict(body.get("payload") or {}),
+            proposed_by=member,
+        )
+        return {"ok": True, "proposal": prop, "standard": "NGS-L4"}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/council/approve")
+def guardian_council_approve(body: dict[str, Any]) -> dict[str, Any]:
+    proposal_id = str(body.get("proposalId") or "").strip()
+    member = str(body.get("memberId") or "").strip()
+    if not proposal_id or not member:
+        raise HTTPException(status_code=400, detail="proposalId and memberId required")
+    try:
+        from pathlib import Path
+
+        from uap.council import GovernanceCouncil
+
+        prop = GovernanceCouncil(Path.cwd()).approve(proposal_id, member_id=member)
+        return {"ok": True, "proposal": prop, "standard": "NGS-L4"}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/kill/domain")
+def guardian_kill_domain(body: dict[str, Any]) -> dict[str, Any]:
+    """NGS-0019 domain tier — stop all agents in org/domain."""
+    from pathlib import Path
+
+    from uap.kill import KillStore
+
+    entry = KillStore(Path.cwd()).issue_domain(
+        domain_id=str(body.get("domainId") or "") or None,
+        reason=str(body.get("reason") or "api-domain"),
+        issued_by=str(body.get("issuedBy") or "api"),
+    )
+    return {"ok": True, "kill": entry, "standard": "NGS-0019"}
+
+
+@app.get("/v1/guardian/reputation/{agent_id}")
+def guardian_reputation_get(agent_id: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.reputation import ReputationStore
+
+    return {"ok": True, "reputation": ReputationStore(Path.cwd()).get(agent_id), "standard": "NGS-0018"}
+
+
+@app.post("/v1/guardian/reputation/{agent_id}")
+def guardian_reputation_update(agent_id: str, body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.reputation import ReputationStore
+
+    store = ReputationStore(Path.cwd())
+    if body.get("violation"):
+        v = body["violation"] if isinstance(body["violation"], dict) else {}
+        rep = store.add_violation(
+            agent_id,
+            kind=str(v.get("kind") or body.get("kind") or "manual"),
+            severity=float(v.get("severity") or body.get("severity") or 0.5),
+            detail=str(v.get("detail") or ""),
+        )
+    elif body.get("feedback") is not None:
+        fb = body["feedback"] if isinstance(body["feedback"], dict) else {"score": body["feedback"]}
+        rep = store.add_feedback(
+            agent_id,
+            score=float(fb.get("score") if isinstance(fb, dict) else fb),
+            by=str((fb.get("by") if isinstance(fb, dict) else None) or body.get("by") or "peer"),
+            note=str((fb.get("note") if isinstance(fb, dict) else None) or ""),
+        )
+    else:
+        rep = store.record(
+            agent_id,
+            origin=str(body.get("origin") or "") or None,
+            creator=str(body.get("creator") or "") or None,
+            model=str(body.get("model") or "") or None,
+            attested=bool(body.get("attested")),
+            attestation_ref=str(body.get("attestationRef") or "") or None,
+        )
+    return {"ok": True, "reputation": rep, "standard": "NGS-0018"}
+
+
+@app.post("/v1/guardian/container/install")
+def guardian_container_install() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.container import AgentContainer
+
+    return {"ok": True, **AgentContainer(Path.cwd()).install_default(), "standard": "NGS-0016"}
+
+
+@app.get("/v1/guardian/container/profile")
+def guardian_container_profile(agent_id: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.container import AgentContainer
+
+    try:
+        return AgentContainer(Path.cwd()).profile(agent_id)
+    except FileNotFoundError:
+        AgentContainer(Path.cwd()).install_default()
+        return AgentContainer(Path.cwd()).profile(agent_id)
+
+
+@app.post("/v1/guardian/container/check")
+def guardian_container_check(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.container import AgentContainer
+
+    try:
+        AgentContainer(Path.cwd()).load()
+    except FileNotFoundError:
+        AgentContainer(Path.cwd()).install_default()
+    return AgentContainer(Path.cwd()).check(
+        agent_id=str(body.get("agentId") or "anonymous"),
+        action=str(body.get("action") or ""),
+        tool=str(body.get("tool") or "") or None,
+        network=bool(body.get("network")),
+        spawn_depth=body.get("spawnDepth"),
+    )
+
+
+@app.post("/v1/guardian/collective/peers")
+def guardian_collective_peers(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    peers = body.get("peers") or []
+    if not isinstance(peers, list):
+        raise HTTPException(status_code=400, detail="peers must be a list of URLs")
+    return {"ok": True, **CollectiveDefense(Path.cwd()).set_peers([str(p) for p in peers])}
+
+
+@app.post("/v1/guardian/collective/push")
+def guardian_collective_push() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    try:
+        return CollectiveDefense(Path.cwd()).push_to_peers()
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/collective/pull")
+def guardian_collective_pull() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+
+    try:
+        return CollectiveDefense(Path.cwd()).pull_from_peers()
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+
+
+@app.post("/v1/guardian/cti/submit")
+def guardian_cti_submit(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.cti_hub import CTIHub
+
+    sig = body.get("signature")
+    if not isinstance(sig, dict):
+        raise HTTPException(status_code=400, detail="signature object required")
+    try:
+        # Cloud hub accepts when NARNA_CTI_HUB=1 or opt-in
+        import os
+
+        os.environ.setdefault("NARNA_CTI_HUB", "1")
+        return CTIHub(Path.cwd()).submit(
+            sig, org_id=str(body.get("orgId") or "") or None, require_opt_in=False
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.get("/v1/guardian/cti/feed")
+def guardian_cti_feed(limit: int = 100, since: str | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.cti_hub import CTIHub
+
+    return {
+        "ok": True,
+        "feed": CTIHub(Path.cwd()).feed_list(limit=limit, since=since),
+        "standard": "NGS-0020-hub",
+    }
+
+
+@app.post("/v1/guardian/cti/pull")
+def guardian_cti_pull(body: dict[str, Any] | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+    from uap.cti_hub import CTIHub
+
+    body = body or {}
+    # ensure opt-in for pull into workspace
+    CollectiveDefense(Path.cwd()).set_opt_in(True)
+    return CTIHub(Path.cwd()).pull_into_workspace(limit=int(body.get("limit") or 50))
+
+
+@app.post("/v1/guardian/cti/subscribe")
+def guardian_cti_subscribe(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.cti_hub import CTIHub
+
+    org_hash = str(body.get("orgHash") or "").strip()
+    if not org_hash:
+        raise HTTPException(status_code=400, detail="orgHash required")
+    return CTIHub(Path.cwd()).subscribe(
+        org_hash=org_hash, callback_url=str(body.get("callbackUrl") or "") or None
+    )
+
+
+@app.post("/v1/guardian/cti/mesh/hubs")
+def guardian_cti_mesh_hubs(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.cti_mesh import CTIMesh
+
+    hubs = body.get("hubs") or []
+    if not isinstance(hubs, list):
+        raise HTTPException(status_code=400, detail="hubs must be a list")
+    return {"ok": True, **CTIMesh(Path.cwd()).set_hubs([str(h) for h in hubs])}
+
+
+@app.post("/v1/guardian/cti/mesh/sync")
+def guardian_cti_mesh_sync(body: dict[str, Any] | None = None) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+    from uap.cti_mesh import CTIMesh
+
+    body = body or {}
+    CollectiveDefense(Path.cwd()).set_opt_in(True)
+    mesh = CTIMesh(Path.cwd())
+    hubs = body.get("hubs")
+    if isinstance(hubs, list) and hubs:
+        mesh.set_hubs([str(h) for h in hubs])
+    if body.get("pullOnly"):
+        return mesh.pull()
+    if body.get("pushOnly"):
+        return mesh.push()
+    return mesh.sync()
+
+
+@app.get("/v1/guardian/jurisdictions")
+def guardian_jurisdictions() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.jurisdiction import JurisdictionTemplates
+
+    return {"ok": True, "jurisdictions": JurisdictionTemplates(Path.cwd()).list()}
+
+
+@app.post("/v1/guardian/bindings/{binding_id}/jurisdiction")
+def guardian_binding_jurisdiction(binding_id: str, body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.council_binding import CouncilBinding
+    from uap.jurisdiction import JurisdictionTemplates
+
+    jid = str(body.get("jurisdictionId") or body.get("jurisdiction") or "").strip()
+    if not jid:
+        raise HTTPException(status_code=400, detail="jurisdictionId required")
+    try:
+        binding = CouncilBinding(Path.cwd()).get(binding_id)
+        return {
+            "ok": True,
+            "binding": JurisdictionTemplates(Path.cwd()).apply_to_binding(
+                binding, jurisdiction_id=jid
+            ),
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.get("/v1/guardian/isolation/partners")
+def guardian_isolation_partners() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.isolation_partner import IsolationRegistry
+
+    return {"ok": True, "partners": IsolationRegistry(Path.cwd()).list()}
+
+
+@app.post("/v1/guardian/isolation/certify")
+def guardian_isolation_certify(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.partner_cert import PartnerRuntimeCertifier
+
+    partner = str(body.get("partner") or "").strip()
+    if not partner:
+        raise HTTPException(status_code=400, detail="partner required")
+    return PartnerRuntimeCertifier(Path.cwd()).certify(
+        partner,
+        agent_id=str(body.get("agentId") or "cert-probe"),
+        attested=bool(body.get("attested")),
+        issuer=str(body.get("issuer") or "narna-api"),
+    )
+
+
+@app.get("/v1/guardian/isolation/certs")
+def guardian_isolation_certs() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.partner_cert import PartnerRuntimeCertifier
+
+    return {"ok": True, "certificates": PartnerRuntimeCertifier(Path.cwd()).list()}
+
+
+@app.get("/v1/guardian/isolation/certs/{partner}/verify")
+def guardian_isolation_cert_verify(partner: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.partner_cert import PartnerRuntimeCertifier
+
+    return PartnerRuntimeCertifier(Path.cwd()).verify(partner)
+
+
+@app.post("/v1/guardian/isolation/plan")
+def guardian_isolation_plan(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.isolation_partner import IsolationRegistry
+
+    partner = str(body.get("partner") or "docker")
+    agent_id = str(body.get("agentId") or "agent")
+    try:
+        return IsolationRegistry(Path.cwd()).plan(partner, agent_id=agent_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.get("/v1/guardian/bindings")
+def guardian_bindings_list() -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.council_binding import CouncilBinding
+
+    return {"ok": True, "bindings": CouncilBinding(Path.cwd()).list()}
+
+
+@app.get("/v1/guardian/bindings/{binding_id}/verify")
+def guardian_binding_verify(binding_id: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.council_binding import CouncilBinding
+
+    try:
+        return CouncilBinding(Path.cwd()).verify(binding_id)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.get("/v1/guardian/reputation/{agent_id}/digest")
+def guardian_reputation_digest(agent_id: str) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.reputation import ReputationStore
+
+    return ReputationStore(Path.cwd()).export_digest(agent_id)
+
+
+@app.post("/v1/guardian/reputation/import")
+def guardian_reputation_import(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.reputation import ReputationStore
+
+    return ReputationStore(Path.cwd()).import_digest(
+        body if body.get("digests") else {"digests": body.get("digest") and [body["digest"]] or []},
+        map_to_agent=str(body.get("mapToAgent") or "") or None,
+    )
+
+
+@app.get("/v1/guardian/status")
+def guardian_status() -> dict[str, Any]:
+    """Aggregate Guardian surface status for console."""
+    from pathlib import Path
+
+    from uap.collective import CollectiveDefense
+    from uap.container import AgentContainer
+    from uap.council import GovernanceCouncil, GuardianConstitution
+    from uap.decision_market import DecisionMarketplace
+    from uap.kill import KillStore
+
+    ws = Path.cwd()
+    out: dict[str, Any] = {"ok": True, "standard": "Guardian", "layers": ["L1", "L2", "L3", "L4"]}
+    try:
+        out["kill"] = KillStore(ws).status()
+    except Exception as e:
+        out["kill"] = {"error": str(e)}
+    try:
+        cd = CollectiveDefense(ws)
+        out["collective"] = {
+            "optIn": cd._opt_in(),  # noqa: SLF001
+            "peers": cd.list_peers(),
+            "inbox": len(cd.list_signatures(source="inbox")),
+            "outbox": len(cd.list_signatures(source="outbox")),
+        }
+    except Exception as e:
+        out["collective"] = {"error": str(e)}
+    try:
+        GuardianConstitution(ws).load()
+        out["constitution"] = {"installed": True}
+    except FileNotFoundError:
+        try:
+            GuardianConstitution(ws).install_default()
+            out["constitution"] = {"installed": True, "justInstalled": True}
+        except Exception as e:
+            out["constitution"] = {"installed": False, "error": str(e)}
+    try:
+        GovernanceCouncil(ws).load()
+        out["council"] = {"installed": True, "quorum": GovernanceCouncil(ws).quorum()}
+    except FileNotFoundError:
+        try:
+            GovernanceCouncil(ws).install_default()
+            out["council"] = {"installed": True, "justInstalled": True}
+        except Exception as e:
+            out["council"] = {"installed": False, "error": str(e)}
+    try:
+        AgentContainer(ws).load()
+        out["container"] = AgentContainer(ws).profile()
+    except FileNotFoundError:
+        AgentContainer(ws).install_default()
+        out["container"] = AgentContainer(ws).profile()
+    except Exception as e:
+        out["container"] = {"error": str(e)}
+    try:
+        out["decisionPackages"] = len(
+            DecisionMarketplace(ws).list_packages(decisions_only=True)
+        )
+    except Exception as e:
+        out["decisionPackages"] = {"error": str(e)}
+    try:
+        from uap.cti_hub import CTIHub
+        from uap.council_binding import CouncilBinding
+        from uap.cti_mesh import CTIMesh
+        from uap.isolation_partner import IsolationRegistry
+        from uap.jurisdiction import JurisdictionTemplates
+        from uap.partner_cert import PartnerRuntimeCertifier
+
+        hub = CTIHub(ws)
+        out["ctiHub"] = {"feedSize": len(hub.feed_list(limit=1000)), "standard": "NGS-0020-hub"}
+        out["ctiMesh"] = {"hubs": CTIMesh(ws).list_hubs()}
+        out["bindings"] = {"count": len(CouncilBinding(ws).list())}
+        out["jurisdictions"] = {"count": len(JurisdictionTemplates(ws).list())}
+        out["isolation"] = {"partners": IsolationRegistry(ws).list()}
+        out["partnerCerts"] = {
+            "count": len(PartnerRuntimeCertifier(ws).list()),
+            "standard": "NGS-0016-partner-cert",
+        }
+    except Exception as e:
+        out["tierD"] = {"error": str(e)}
+    return out
+
+
+@app.post("/v1/guardian/container/docker-run")
+def guardian_container_docker(body: dict[str, Any]) -> dict[str, Any]:
+    from pathlib import Path
+
+    from uap.container_runner import DockerContainerRunner
+
+    return DockerContainerRunner(Path.cwd()).run(
+        dry_run=not bool(body.get("execute")),
+        agent_id=str(body.get("agentId") or "agent"),
+        image=str(body.get("image") or "narna/agent-container:0.1"),
+        network=str(body.get("network") or "none"),
+    )
+
+
 @app.get("/v1/telemetry/consent", response_model=TelemetryConsentResponse)
 def telemetry_get_consent(
     org: Organization = Depends(get_org_from_api_key),
@@ -2008,7 +3811,7 @@ def packages_purchase(
 
     - Free → activate immediately
     - Paid + UAP_BILLING_MODE=mock → simulate payment (local demo)
-    - Paid + stripe → Stripe Checkout; fulfill on webhook checkout.session.completed
+    - Paid otherwise → 410 (use USDC/USDT Cloud billing; card/Stripe/Paddle removed)
     """
     row = (
         db.query(RegistryGovernancePackage)
@@ -2080,155 +3883,23 @@ def packages_purchase(
             message=f"Purchased {row.name} — platform take {bps / 100:.0f}%",
         )
 
-    # Free packages: no card needed
+    # Free packages: no payment needed
     if price == 0:
         return _fulfill(status="free", mode_label="free")
 
-    # Local / demo: simulate payment without card processor
+    # Local / demo: simulate payment
     if mode == "mock":
         return _fulfill(status="mock", mode_label="mock")
 
-    # ── Paddle Billing (preferred) ──
-    if mode == "paddle":
-        try:
-            from .paddle_billing import create_package_checkout
-
-            from .paddle_urls import paddle_success_url
-
-            success = paddle_success_url("package")
-            out = create_package_checkout(
-                package_id=row.package_id,
-                package_name=row.name,
-                price_cents=price,
-                org_id=org.id,
-                take_rate_bps=bps,
-                gu_charged=gu_charged,
-                success_url=success,
-            )
-        except Exception as e:
-            msg = str(e)
-            if "transaction_checkout_not_enabled" in msg or "Checkout has not yet been enabled" in msg:
-                raise HTTPException(
-                    status_code=503,
-                    detail=(
-                        "Paddle Checkout chưa bật trên account. Hoàn tất onboarding tại "
-                        "https://vendors.paddle.com/authentication-v2 rồi bật Checkout "
-                        "(Paddle Support nếu cần)."
-                    ),
-                ) from e
-            raise HTTPException(status_code=503, detail=msg) from e
-
-        txn_id = str(out.get("transactionId") or "")
-        checkout_url = out.get("checkoutUrl")
-        db.add(
-            MarketplacePurchase(
-                org_id=org.id,
-                package_id=row.package_id,
-                price_usd=price,
-                take_rate_bps=bps,
-                platform_cut_usd=platform_cut,
-                author_cut_usd=author_cut,
-                gu_charged=0,
-                status="pending",
-                stripe_session_id=txn_id,  # stores Paddle txn id (external payment ref)
-            )
-        )
-        db.commit()
-        if not checkout_url:
-            raise HTTPException(
-                status_code=503,
-                detail=(
-                    "Paddle transaction created but checkout URL missing. "
-                    "Enable Checkout in Paddle Dashboard / finish vendor onboarding."
-                ),
-            )
-        return PackagePurchaseResponse(
-            packageId=row.package_id,
-            priceUsd=price,
-            takeRateBps=bps,
-            platformCutUsd=platform_cut,
-            authorCutUsd=author_cut,
-            guCharged=0,
-            status="pending",
-            mode="paddle",
-            checkoutUrl=checkout_url,
-            message=f"Redirect to Paddle Checkout for {row.name}",
-        )
-
-    if mode != "stripe":
-        raise HTTPException(status_code=503, detail="billing mode not configured")
-
-    try:
-        import stripe  # type: ignore
-    except Exception:
-        raise HTTPException(status_code=503, detail="stripe dependency not available")
-
-    stripe.api_key = os.environ.get("STRIPE_API_KEY", "")
-    if not stripe.api_key:
-        raise HTTPException(status_code=503, detail="STRIPE_API_KEY missing")
-
-    success = os.environ.get(
-        "STRIPE_PACKAGE_SUCCESS_URL",
-        os.environ.get("STRIPE_SUCCESS_URL", "http://localhost:5173/packages?paid=1"),
-    )
-    cancel = os.environ.get(
-        "STRIPE_PACKAGE_CANCEL_URL",
-        os.environ.get("STRIPE_CANCEL_URL", "http://localhost:5173/packages?canceled=1"),
-    )
-    session = stripe.checkout.Session.create(
-        mode="payment",
-        payment_method_types=["card"],
-        line_items=[
-            {
-                "price_data": {
-                    "currency": "usd",
-                    "unit_amount": price,
-                    "product_data": {
-                        "name": row.name,
-                        "description": f"NARNA Governance Package · {row.package_id} · take {bps / 100:.0f}%",
-                    },
-                },
-                "quantity": 1,
-            }
-        ],
-        success_url=f"{success}&packageId={row.package_id}&session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{cancel}&packageId={row.package_id}",
-        metadata={
-            "kind": "package",
-            "org_id": str(org.id),
-            "package_id": row.package_id,
-            "price_usd": str(price),
-            "take_rate_bps": str(bps),
-            "gu_charged": str(gu_charged),
-        },
-    )
-
-    db.add(
-        MarketplacePurchase(
-            org_id=org.id,
-            package_id=row.package_id,
-            price_usd=price,
-            take_rate_bps=bps,
-            platform_cut_usd=platform_cut,
-            author_cut_usd=author_cut,
-            gu_charged=0,
-            status="pending",
-            stripe_session_id=session.id,
-        )
-    )
-    db.commit()
-
-    return PackagePurchaseResponse(
-        packageId=row.package_id,
-        priceUsd=price,
-        takeRateBps=bps,
-        platformCutUsd=platform_cut,
-        authorCutUsd=author_cut,
-        guCharged=0,
-        status="pending",
-        mode="stripe",
-        checkoutUrl=session.url,
-        message=f"Redirect to Stripe Checkout for {row.name}",
+    # Card / Stripe / Paddle removed — stablecoins only
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Card / Stripe / Paddle checkout removed. "
+            "Pay NARNA Cloud seats with USDC/USDT via POST /v1/billing/crypto/checkout-session "
+            "or /billing. For paid marketplace packages, contact enterprise@narna.ai "
+            "or use mock mode for local demos."
+        ),
     )
 
 
@@ -2238,209 +3909,22 @@ def packages_verify_session(
     org: Organization = Depends(get_org_from_api_key),
     db: Session = Depends(get_db),
 ) -> PackagePurchaseResponse:
-    """Confirm payment and fulfill package (Paddle txn id or Stripe session id)."""
-    session_id = str(
-        body.get("sessionId") or body.get("transactionId") or body.get("_ptxn") or ""
-    ).strip()
-    if not session_id:
-        raise HTTPException(status_code=400, detail="sessionId required")
-
-    mode = get_billing_mode()
-
-    if mode == "paddle" or session_id.startswith("txn_"):
-        try:
-            from .paddle_billing import get_transaction
-
-            txn = get_transaction(session_id)
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"cannot retrieve paddle transaction: {e}"
-            ) from e
-
-        custom = dict(txn.get("custom_data") or {})
-        if str(custom.get("kind")) != "package":
-            raise HTTPException(status_code=400, detail="transaction is not a package purchase")
-        if str(custom.get("org_id")) != str(org.id):
-            raise HTTPException(status_code=403, detail="transaction does not belong to this org")
-
-        package_id = str(custom.get("package_id") or "")
-        status = str(txn.get("status") or "")
-        paid = status in {"paid", "completed", "billed"}
-        if not paid:
-            return PackagePurchaseResponse(
-                packageId=package_id,
-                priceUsd=int(custom.get("price_usd") or 0),
-                takeRateBps=int(custom.get("take_rate_bps") or 2000),
-                platformCutUsd=0,
-                authorCutUsd=0,
-                guCharged=0,
-                status="pending",
-                mode="paddle",
-                message=f"Payment not completed yet (paddle status={status})",
-            )
-
-        _fulfill_stripe_package_purchase(
-            db=db,
-            org_id=org.id,
-            package_id=package_id,
-            stripe_session_id=session_id,
-        )
-        purchase = (
-            db.query(MarketplacePurchase)
-            .filter(
-                MarketplacePurchase.org_id == org.id,
-                MarketplacePurchase.package_id == package_id,
-                MarketplacePurchase.status == "paid",
-            )
-            .order_by(MarketplacePurchase.id.desc())
-            .first()
-        )
-        row = (
-            db.query(RegistryGovernancePackage)
-            .filter(RegistryGovernancePackage.package_id == package_id)
-            .first()
-        )
-        name = row.name if row is not None else package_id
-        return PackagePurchaseResponse(
-            packageId=package_id,
-            priceUsd=int(purchase.price_usd) if purchase else 0,
-            takeRateBps=int(purchase.take_rate_bps) if purchase else 2000,
-            platformCutUsd=int(purchase.platform_cut_usd) if purchase else 0,
-            authorCutUsd=int(purchase.author_cut_usd) if purchase else 0,
-            guCharged=int(purchase.gu_charged) if purchase else 0,
-            status="paid",
-            mode="paddle",
-            message=f"Payment confirmed — {name} unlocked",
-        )
-
-    if mode != "stripe":
-        raise HTTPException(
-            status_code=400,
-            detail=f"billing mode {mode} does not support verify-session",
-        )
-
-    try:
-        import stripe  # type: ignore
-    except Exception:
-        raise HTTPException(status_code=503, detail="stripe dependency not available")
-
-    stripe.api_key = os.environ.get("STRIPE_API_KEY", "")
-    if not stripe.api_key:
-        raise HTTPException(status_code=503, detail="STRIPE_API_KEY missing")
-
-    try:
-        session_obj = stripe.checkout.Session.retrieve(session_id)
-        session_data = session_obj.to_dict() if hasattr(session_obj, "to_dict") else dict(session_obj)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"cannot retrieve session: {e}") from e
-
-    metadata = dict(session_data.get("metadata") or {})
-    if str(metadata.get("kind")) != "package":
-        raise HTTPException(status_code=400, detail="session is not a package purchase")
-    if str(metadata.get("org_id")) != str(org.id):
-        raise HTTPException(status_code=403, detail="session does not belong to this org")
-
-    package_id = str(metadata.get("package_id") or "")
-    paid = session_data.get("payment_status") == "paid"
-    if not paid:
-        return PackagePurchaseResponse(
-            packageId=package_id,
-            priceUsd=int(metadata.get("price_usd") or 0),
-            takeRateBps=int(metadata.get("take_rate_bps") or 2000),
-            platformCutUsd=0,
-            authorCutUsd=0,
-            guCharged=0,
-            status="pending",
-            mode="stripe",
-            message="Payment not completed yet",
-        )
-
-    _fulfill_stripe_package_purchase(
-        db=db,
-        org_id=org.id,
-        package_id=package_id,
-        stripe_session_id=session_id,
-    )
-
-    row = (
-        db.query(RegistryGovernancePackage)
-        .filter(RegistryGovernancePackage.package_id == package_id)
-        .first()
-    )
-    purchase = (
-        db.query(MarketplacePurchase)
-        .filter(
-            MarketplacePurchase.org_id == org.id,
-            MarketplacePurchase.package_id == package_id,
-            MarketplacePurchase.status == "paid",
-        )
-        .order_by(MarketplacePurchase.id.desc())
-        .first()
-    )
-    name = row.name if row is not None else package_id
-    return PackagePurchaseResponse(
-        packageId=package_id,
-        priceUsd=int(purchase.price_usd) if purchase else 0,
-        takeRateBps=int(purchase.take_rate_bps) if purchase else 2000,
-        platformCutUsd=int(purchase.platform_cut_usd) if purchase else 0,
-        authorCutUsd=int(purchase.author_cut_usd) if purchase else 0,
-        guCharged=int(purchase.gu_charged) if purchase else 0,
-        status="paid",
-        mode="stripe",
-        message=f"Payment confirmed — {name} unlocked",
+    """Card session verify retired — use USDC/USDT billing."""
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Stripe / Paddle package verify removed. "
+            "Pay with USDC/USDT via /billing or contact enterprise@narna.ai."
+        ),
     )
 
 
 @app.post("/v1/billing/paddle/webhook")
 async def paddle_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """Paddle Billing webhook — fulfill package / plan on transaction.completed."""
-    if get_billing_mode() != "paddle":
-        raise HTTPException(status_code=404, detail="paddle billing not enabled")
-
-    # Optional shared-secret header check (set PADDLE_WEBHOOK_SECRET in Dashboard notification)
-    expected = os.environ.get("PADDLE_WEBHOOK_SECRET", "").strip()
-    if expected:
-        got = request.headers.get("paddle-signature") or request.headers.get("Paddle-Signature") or ""
-        # Paddle uses signed payloads; for MVP accept a static shared token header if configured.
-        if expected not in got and request.headers.get("X-Paddle-Secret") != expected:
-            # Still parse — production should verify HMAC; log soft warning
-            logger.warning("paddle webhook secret mismatch (continuing for MVP)")
-
-    payload = await request.json()
-    event_type = str(payload.get("event_type") or payload.get("eventType") or "")
-    data = payload.get("data") or {}
-
-    if event_type in {
-        "transaction.completed",
-        "transaction.paid",
-        "transaction.updated",
-    }:
-        custom = dict(data.get("custom_data") or {})
-        status = str(data.get("status") or "")
-        if status not in {"paid", "completed", "billed"} and event_type == "transaction.updated":
-            return {"ok": True, "skipped": True}
-
-        kind = str(custom.get("kind") or "")
-        org_id = custom.get("org_id")
-        txn_id = data.get("id")
-
-        if kind == "package" and org_id and custom.get("package_id"):
-            _fulfill_stripe_package_purchase(
-                db=db,
-                org_id=int(org_id),
-                package_id=str(custom["package_id"]),
-                stripe_session_id=str(txn_id) if txn_id else None,
-            )
-        elif kind == "subscription" and org_id and custom.get("plan"):
-            org = db.query(Organization).filter(Organization.id == int(org_id)).first()
-            if org is not None:
-                org.plan = str(custom["plan"])
-                org.period_start_at = now_utc()
-                org.events_in_period = 0
-                org.gu_in_period = 0
-                db.commit()
-
-    return {"ok": True, "event": event_type}
+    raise HTTPException(
+        status_code=410,
+        detail="Paddle billing removed. Pay with USDC/USDT via /v1/billing/crypto/checkout-session",
+    )
 
 
 def _fulfill_stripe_package_purchase(
@@ -2450,7 +3934,7 @@ def _fulfill_stripe_package_purchase(
     package_id: str,
     stripe_session_id: str | None,
 ) -> bool:
-    """Mark pending package purchase as paid after Stripe webhook. Returns True if fulfilled."""
+    """Legacy helper retained for idempotent DB repairs — card rail is retired."""
     pending = (
         db.query(MarketplacePurchase)
         .filter(
@@ -2462,7 +3946,6 @@ def _fulfill_stripe_package_purchase(
         .first()
     )
     if pending is None:
-        # Idempotent: already paid
         paid = (
             db.query(MarketplacePurchase)
             .filter(
@@ -2483,20 +3966,18 @@ def _fulfill_stripe_package_purchase(
     if org is None or row is None:
         return False
 
-    gu = max(1, int(pending.price_usd or 0) // 100) if int(pending.price_usd or 0) > 0 else 1
-    try:
-        enforce_plan_limit(org=org, projected_events=0, projected_gu=gu)
-    except HTTPException:
-        # Still fulfill purchase (money taken); GU overage recorded as soft
-        pass
-    org.gu_in_period = int(org.gu_in_period) + gu
-    pending.gu_charged = gu
-    pending.status = "paid"
-    if stripe_session_id:
-        pending.stripe_session_id = stripe_session_id
+    gu_charged = int(pending.gu_charged or 0) or (
+        1 if int(pending.price_usd or 0) == 0 else max(1, int(pending.price_usd or 0) // 100)
+    )
+    enforce_plan_limit(org=org, projected_events=0, projected_gu=gu_charged)
+    org.gu_in_period = int(org.gu_in_period) + gu_charged
     row.downloads = int(row.downloads or 0) + 1
     row.author_revenue_usd = int(row.author_revenue_usd or 0) + int(pending.author_cut_usd or 0)
     row.platform_revenue_usd = int(row.platform_revenue_usd or 0) + int(pending.platform_cut_usd or 0)
+    pending.status = "paid"
+    pending.gu_charged = gu_charged
+    if stripe_session_id:
+        pending.stripe_session_id = stripe_session_id
     db.commit()
     return True
 

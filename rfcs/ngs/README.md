@@ -34,6 +34,22 @@ Derived standards (Passport, Package, Certification, Manifest, Registry, Governa
 | [NGS-0011](./NGS-0011-manifest.md) | Governance Manifest (`narna.yaml`) | [`../../specs/manifest/SPEC.md`](../../specs/manifest/SPEC.md) |
 | [NGS-0012](./NGS-0012-registry.md) | Governance Registry | [`../../specs/registry/SPEC.md`](../../specs/registry/SPEC.md) |
 | [NGS-0013](./NGS-0013-governance-api.md) | Governance API | [`../../specs/governance-api/SPEC.md`](../../specs/governance-api/SPEC.md) |
+| [NGS-0014](./NGS-0014-decision-package.md) | Decision Package (Decision OS) | [`../../specs/decision-package/SPEC.md`](../../specs/decision-package/SPEC.md) |
+| [NGS-0015](./NGS-0015-capability-passport.md) | Capability Passport (Guardian) | [`../../specs/capability-passport/SPEC.md`](../../specs/capability-passport/SPEC.md) |
+| [NGS-0016](./NGS-0016-agent-container.md) | Agent Container | [`../../docs/GUARDIAN.md`](../../docs/GUARDIAN.md) |
+| [NGS-0017](./NGS-0017-behavioral-threat.md) | Behavioral Threat Engine | [`../../docs/GUARDIAN.md`](../../docs/GUARDIAN.md) |
+| [NGS-0018](./NGS-0018-agent-reputation.md) | Agent Reputation | [`../../docs/GUARDIAN.md`](../../docs/GUARDIAN.md) |
+| [NGS-0019](./NGS-0019-emergency-kill.md) | Emergency Kill | [`../../docs/GUARDIAN.md`](../../docs/GUARDIAN.md) |
+| [NGS-0020](./NGS-0020-collective-defense.md) | Collective Defense Network | [`../../docs/GUARDIAN.md`](../../docs/GUARDIAN.md) |
+| [NGS-0021](./NGS-0021-ai-gateway.md) | AI Gateway (Citizen) | [`../../specs/ai-gateway/SPEC.md`](../../specs/ai-gateway/SPEC.md) |
+| [NGS-0022](./NGS-0022-citizen-profile.md) | Citizen Profile | [`../../specs/citizen-profile/SPEC.md`](../../specs/citizen-profile/SPEC.md) |
+| [NGS-0023](./NGS-0023-universal-ai-passport.md) | Universal AI Passport (Consumer) | [`../../specs/universal-ai-passport/SPEC.md`](../../specs/universal-ai-passport/SPEC.md) |
+| [NGS-0024](./NGS-0024-adqa.md) | Autonomous Decision Quality Assurance | [`../../specs/adqa/SPEC.md`](../../specs/adqa/SPEC.md) |
+| [NGS-0025](./NGS-0025-decision-memory.md) | Decision Memory + Outcome Learning | [`../../specs/decision-memory/SPEC.md`](../../specs/decision-memory/SPEC.md) |
+| [NGS-0026](./NGS-0026-outcome-learning.md) | Outcome Learning | [`../../specs/outcome-learning/SPEC.md`](../../specs/outcome-learning/SPEC.md) |
+| [NGS-0027](./NGS-0027-dqs-network.md) | DQS Network (multi-org priors) | [`../../src/uap/dqs_network.py`](../../src/uap/dqs_network.py) |
+| [NGS-0028](./NGS-0028-model-router.md) | Model Router | [`../../specs/model-router/SPEC.md`](../../specs/model-router/SPEC.md) |
+| [NGS-0029](./NGS-0029-narna-agent.md) | NARNA Agent Runtime | [`../../specs/narna-agent/SPEC.md`](../../specs/narna-agent/SPEC.md) |
 
 ---
 

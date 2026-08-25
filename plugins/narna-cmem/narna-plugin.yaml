@@ -1,0 +1,19 @@
+apiVersion: narna.ai/v1alpha1
+kind: Plugin
+metadata:
+  id: narna-cmem
+  name: CMEM Bridge
+  version: 0.1.0
+  license: Apache-2.0
+spec:
+  extends:
+    - memory
+    - mcp
+  permissions:
+    - network
+  compatibility:
+    - cmem
+    - claude-mem
+    - mcp
+  entrypoint: src/plugin.py
+  notes: Complements CMEM continuity memory; NARNA ADQA scores decisions.

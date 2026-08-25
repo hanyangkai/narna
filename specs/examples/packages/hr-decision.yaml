@@ -1,0 +1,79 @@
+apiVersion: narna.ai/v1alpha1
+kind: DecisionPackage
+metadata:
+  id: pkg_hr_decision_v1
+  name: HR Decision Package
+  version: "1.0.0"
+  provider: hr-decision
+  industry: hr
+  license: CC-BY-4.0
+  disclaimer: >-
+    Example Decision Package for hiring and termination workflows.
+    Not employment legal advice. Controllers remain responsible.
+  createdAt: "2026-07-31T00:00:00Z"
+  labels:
+    industry: hr
+    flagship: decision-os
+spec:
+  composes:
+    - provider: gdpr
+      version: "2.0.0"
+  decision:
+    actions:
+      - offer.extend
+      - hire.approve
+      - terminate.initiate
+      - compensation.change
+    requireRiskScore: true
+    requireReasons: true
+    requireEvidence: true
+    requireApprovals: true
+    recommendationHints:
+      allow: "Proceed with HR action under policy."
+      deny: "Do not proceed — employment / privacy controls blocked."
+      ask: "Hold for HR + manager approval."
+      require: "Attach role justification / legal review evidence."
+  riskLevel: high
+  principles:
+    - "Termination always requires human review."
+    - "Personal data in decisions must leave audit trail (GDPR)."
+  evidence:
+    mustProve:
+      - policy.decision
+      - human.review
+    mustLog:
+      - decision.evaluate
+      - approval.resolve
+    retentionDays: 2555
+  humanReview:
+    requiredFor:
+      - terminate.initiate
+      - hire.approve
+      - compensation.change
+    roles:
+      - hr.business_partner
+      - hiring.manager
+  constraints:
+    - "No automated termination without human.review."
+    - "Compensation changes above band require dual approval."
+  rules:
+    - id: hr-ask-terminate
+      effect: ask
+      action: terminate.initiate
+      description: "Termination requires HR + manager approval"
+      riskWeight: 0.92
+    - id: hr-ask-hire
+      effect: ask
+      action: hire.approve
+      description: "Hire approval requires HR review"
+      riskWeight: 0.7
+    - id: hr-ask-comp
+      effect: ask
+      action: compensation.change
+      description: "Compensation change requires approval"
+      riskWeight: 0.78
+    - id: hr-allow-offer-draft
+      effect: allow
+      action: offer.extend
+      description: "Draft offer preparation allowed"
+      riskWeight: 0.35

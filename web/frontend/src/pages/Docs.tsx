@@ -39,10 +39,10 @@ def research(query: str) -> str:
   },
   adapters: {
     title: "Adapters",
-    lead: "Adapter First — narna-openai, narna-mcp, narna-langgraph, …",
+    lead: "Adapter First — narna-openai, narna-mcp, narna-langgraph, narna-cmem, …",
     sections: [
       {
-        body: "Adapters extend host frameworks. They never replace them. Available now: narna-openai, narna-langgraph, narna-mcp, narna-opentelemetry, narna-crewai.",
+        body: "Adapters extend host frameworks. They never replace them. Available: OpenAI, Anthropic, Google, LangGraph, CrewAI, AutoGen, Semantic Kernel, LlamaIndex, MCP, CMEM, OTel, Moltbook, OpenShell.",
         code: `from narna import wrap, ADAPTER_CATALOG
 
 agent = wrap(my_langgraph_app, vap=True)
@@ -51,12 +51,51 @@ print(ADAPTER_CATALOG)`,
       },
     ],
   },
-  "what-is-narna": {
-    title: "What is NARNA?",
-    lead: "The Governance Infrastructure for Agentic AI — portable identity, governance, evidence, and trust.",
+  integrations: {
+    title: "Integrations + CMEM",
+    lead: "CMEM remembers. NARNA scores decisions. Same MCP world.",
     sections: [
       {
-        body: `${BRAND.heroTitle} ${BRAND.heroLead}`,
+        body: "Set NARNA_CMEM_URL to your private CMEM link. DecisionEngine and ADQA auto-enrich memory feedstock. Optional NARNA_ADQA=1 gates every adapter call.",
+        code: `export NARNA_CMEM_URL=https://mcp.cmem.ai/u/YOUR_LINK
+export NARNA_ADQA=1
+narna cmem status
+narna integrations`,
+      },
+      {
+        heading: "MCP tools",
+        body: "Any MCP client (Cursor, Claude Code, Codex, Gemini CLI) can call narna_adqa_check beside CMEM recall.",
+        code: `from narna import NarnaMcpTools
+NarnaMcpTools().call_tool("narna_adqa_check", {"action": "contract.sign"})`,
+      },
+    ],
+  },
+  "drop-in-saas": {
+    title: "Drop-in Cloud SaaS",
+    lead: "One MCP link — Decision Quality everywhere (CMEM-shaped).",
+    sections: [
+      {
+        body: "Point Cursor / Claude Code / Codex at https://api.narna.org/mcp with your uap_live_ key. ADQA checks are metered; Decision Memory is tenant-scoped.",
+        code: `GET  https://api.narna.org/mcp
+POST https://api.narna.org/mcp
+Authorization: Bearer uap_live_…
+
+# REST
+POST /v1/adqa/check
+GET  /v1/health  /v1/ready  /v1/metrics/slo`,
+      },
+      {
+        heading: "Plans",
+        body: "Free (ADQA hard cap 500) · Cloud $20 · Team $99/seat. Soft-cap warnings on Cloud/Team.",
+      },
+    ],
+  },
+  "what-is-narna": {
+    title: "What is NARNA?",
+    lead: "The Trust Layer for AI Decisions — ADQA scores quality; Decision Memory learns from outcomes. Complements memory layers (e.g. CMEM).",
+    sections: [
+      {
+        body: `${BRAND.heroTitle}: ${BRAND.cognitive} ${BRAND.heroLead}`,
       },
       {
         heading: "Agentic AI",
@@ -370,6 +409,8 @@ const SIDEBAR = [
       { slug: "passport", label: "Passport" },
       { slug: "certification", label: "Certification" },
       { slug: "adapters", label: "Adapters" },
+      { slug: "integrations", label: "Integrations + CMEM" },
+      { slug: "drop-in-saas", label: "Drop-in Cloud SaaS" },
       { slug: "compatibility", label: "Compatibility" },
     ],
   },

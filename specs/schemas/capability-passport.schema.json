@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narna.ai/schemas/v0.1/capability-passport.schema.json",
+  "title": "NARNA Capability Passport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "type": "string", "const": "narna.ai/v1alpha1" },
+    "kind": { "type": "string", "const": "CapabilityPassport" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["agentId", "version"],
+      "properties": {
+        "agentId": { "type": "string" },
+        "version": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["grants"],
+      "properties": {
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["capability", "mode"],
+            "properties": {
+              "capability": { "type": "string" },
+              "mode": {
+                "type": "string",
+                "enum": ["allow", "ask", "sandbox", "whitelist", "restricted", "multisig", "deny"]
+              },
+              "constraints": { "type": "object" },
+              "approvalsRequired": { "type": "integer", "minimum": 1 },
+              "whitelist": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "quotas": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "maxSpawnDepth": { "type": "integer", "minimum": 0 },
+            "maxApiCallsPerHour": { "type": "integer", "minimum": 0 },
+            "maxGuPerDay": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "isolation": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "network": { "type": "string" },
+            "filesystem": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

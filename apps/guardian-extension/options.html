@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NARNA Guardian Options</title>
+    <style>
+      body {
+        font: 14px/1.5 system-ui, sans-serif;
+        max-width: 520px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      label {
+        display: block;
+        margin: 1rem 0 0.25rem;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 8px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NARNA Guardian Options</h1>
+    <label>API base URL</label>
+    <input id="apiBase" type="url" />
+    <label>Profile</label>
+    <select id="profile">
+      <option value="citizen">Citizen (free)</option>
+      <option value="family">Family</option>
+    </select>
+    <label>Device API key (auto)</label>
+    <input id="apiKey" type="text" readonly />
+    <button id="save" type="button">Save</button>
+    <button id="rereg" type="button">Re-register device</button>
+    <p id="status"></p>
+    <script src="options.js"></script>
+  </body>
+</html>

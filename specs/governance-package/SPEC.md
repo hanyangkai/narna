@@ -14,6 +14,8 @@ A **Governance Package** is a portable, versioned unit of rules that the **Const
 
 A **Constitution** (`kind: Constitution`) is one package kind. Other kinds cover compliance, org policy, risk, and human approval without locking NARNA to a single charter forever.
 
+**Decision Packages** (`kind: DecisionPackage`) compose Governance Packages into industry decision apps — see [`../decision-package/SPEC.md`](../decision-package/SPEC.md) and [`../../docs/DECISION-OS.md`](../../docs/DECISION-OS.md).
+
 ---
 
 ## 2. Envelope

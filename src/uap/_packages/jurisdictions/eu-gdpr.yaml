@@ -1,0 +1,19 @@
+kind: JurisdictionTemplate
+apiVersion: narna.org/v1
+metadata:
+  id: eu-gdpr
+  name: EU / GDPR binding overlay
+  jurisdiction: EU
+  disclaimer: Not legal advice. Example template only.
+spec:
+  retentionYears: 7
+  requiredRoles:
+    - dpo
+    - legal.counsel
+  clauses:
+    - "Processing of personal data in AI decisions requires lawful basis documentation."
+    - "Data subjects retain rights of access and erasure where applicable."
+    - "Cross-border transfers must follow GDPR Chapter V mechanisms."
+  disclaimer: >-
+    This overlay records governance intent for EU/GDPR-oriented audits.
+    It does not create a binding legal instrument by itself.

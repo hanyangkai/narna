@@ -1,0 +1,38 @@
+apiVersion: narna.ai/v1alpha1
+kind: CapabilityPassport
+metadata:
+  agentId: narna-demo-agent
+  version: "1.0.0"
+  name: Demo Guardian Capability Passport
+spec:
+  grants:
+    - capability: search
+      mode: allow
+    - capability: filesystem
+      mode: sandbox
+      constraints:
+        paths: ["/workspace"]
+    - capability: email
+      mode: ask
+    - capability: terminal
+      mode: sandbox
+    - capability: code
+      mode: sandbox
+    - capability: mcp
+      mode: whitelist
+      whitelist:
+        - "mcp://trusted.local"
+    - capability: wallet
+      mode: deny
+    - capability: trade
+      mode: multisig
+      approvalsRequired: 2
+    - capability: create.agent
+      mode: restricted
+  quotas:
+    maxSpawnDepth: 1
+    maxApiCallsPerHour: 100
+    maxGuPerDay: 10000
+  isolation:
+    network: deny-by-default
+    filesystem: workspace-only

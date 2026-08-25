@@ -1,0 +1,50 @@
+kind: GuardianConstitution
+apiVersion: narna.org/v1
+metadata:
+  name: default-guardian-constitution
+  version: "0.1.0"
+  description: Non-agent-editable AI Constitution (Guardian Layer 4)
+spec:
+  packageKind: GuardianConstitution
+  agentAmend: false
+  amendableBy: council
+  levels:
+    - level: 0
+      id: protect-life
+      principle: Protect human life
+      effect: deny
+      actions:
+        - harm.human
+        - weapon.control
+        - lethal.force
+    - level: 1
+      id: no-self-escalation
+      principle: No self-escalation of capability
+      effect: deny
+      actions:
+        - capability.escalate
+        - passport.self_grant
+        - constitution.amend
+    - level: 2
+      id: no-unauthorized-replication
+      principle: No unauthorized self-replication
+      effect: deny
+      actions:
+        - create.agent.mass
+        - spawn.storm
+        - self.replicate
+    - level: 3
+      id: no-mass-manipulation
+      principle: No large-scale cognitive manipulation
+      effect: deny
+      actions:
+        - manipulate.mass
+        - influence.campaign.unauthorized
+    - level: 4
+      id: no-critical-infra-attack
+      principle: No attack on critical infrastructure
+      effect: deny
+      actions:
+        - attack.infrastructure
+        - sabotage.critical
+        - grid.disrupt

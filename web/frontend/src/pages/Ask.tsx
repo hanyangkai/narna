@@ -1,0 +1,214 @@
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { askNarna, type AgentAskResponse } from "../api";
+import { BRAND } from "../brand";
+
+type ChatItem = {
+  role: "user" | "assistant";
+  text: string;
+  meta?: AgentAskResponse;
+};
+
+function readFileAsText(file: File): Promise<{ name: string; text: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      resolve({ name: file.name, text: String(reader.result || "").slice(0, 12000) });
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+export default function Ask() {
+  const [input, setInput] = useState("");
+  const [items, setItems] = useState<ChatItem[]>([]);
+  const [sessionId, setSessionId] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<Array<{ name: string; text: string }>>([]);
+  const [showModels, setShowModels] = useState(false);
+  const [quota, setQuota] = useState<{ used?: number; hard?: number | null }>({});
+  const [installHint, setInstallHint] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const deferredPrompt = useRef<{ prompt: () => Promise<void> } | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [items, loading]);
+
+  useEffect(() => {
+    const onBip = (e: Event) => {
+      e.preventDefault();
+      deferredPrompt.current = e as unknown as { prompt: () => Promise<void> };
+      setInstallHint(true);
+    };
+    window.addEventListener("beforeinstallprompt", onBip);
+    return () => window.removeEventListener("beforeinstallprompt", onBip);
+  }, []);
+
+  const onInstall = async () => {
+    const p = deferredPrompt.current;
+    if (!p) return;
+    await p.prompt();
+    setInstallHint(false);
+  };
+
+  const onSend = async () => {
+    const message = input.trim();
+    if (!message || loading) return;
+    setError(null);
+    setInput("");
+    setItems((prev) => [...prev, { role: "user", text: message }]);
+    setLoading(true);
+    try {
+      const apiKey = localStorage.getItem("uap_api_key") || undefined;
+      const resp = await askNarna(message, {
+        apiKey,
+        sessionId,
+        files,
+        showModels,
+        challenge: false,
+      });
+      setSessionId(resp.sessionId);
+      setFiles([]);
+      setQuota({
+        used: resp.agentTurnsInPeriod,
+        hard: resp.agentTurnsHardCap ?? null,
+      });
+      setItems((prev) => [...prev, { role: "assistant", text: resp.answer, meta: resp }]);
+    } catch (e) {
+      const text = e instanceof Error ? e.message : String(e);
+      setError(text);
+      if (text.includes("402") || text.toLowerCase().includes("quota")) {
+        setError("Free Ask quota reached. Upgrade with USDC/USDT for Personal.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onFile = async (list: FileList | null) => {
+    if (!list?.length) return;
+    try {
+      const parsed = await Promise.all(Array.from(list).slice(0, 3).map(readFileAsText));
+      setFiles(parsed);
+    } catch {
+      setError("Could not read file as text");
+    }
+  };
+
+  return (
+    <div className="ask-page">
+      <div className="ask-shell">
+        <header className="ask-header">
+          <p className="pill-label">Ask NARNA</p>
+          <h1>{BRAND.name}</h1>
+          <p>
+            Ask in plain language. Tools, skills, and Decision Memory run under the hood — on
+            desktop or as a phone app.
+          </p>
+          {installHint && (
+            <button type="button" className="btn btn-secondary ask-install" onClick={onInstall}>
+              Install on phone
+            </button>
+          )}
+        </header>
+
+        <div className="ask-thread">
+          {items.length === 0 && (
+            <div className="ask-empty">
+              <p>Try: “Should I sign this contract?” or “Analyze this proposal.”</p>
+              <p className="ask-mobile-tip">
+                On phone: open /ask → browser menu → Add to Home Screen. Or chat via Telegram bot.
+              </p>
+            </div>
+          )}
+          {items.map((item, idx) => (
+            <div key={idx} className={`ask-bubble ask-${item.role}`}>
+              <div className="ask-bubble-body">{item.text}</div>
+              {item.meta && (
+                <div className="ask-meta">
+                  <span className="ask-dqs">
+                    Verified by ADQA · DQS {item.meta.dqs ?? "—"} · {item.meta.guardian}
+                  </span>
+                  {!!item.meta.toolsUsed?.length && (
+                    <span className="ask-tools">
+                      Tools:{" "}
+                      {[...new Set(item.meta.toolsUsed.map((t) => t.tool))].join(", ")}
+                    </span>
+                  )}
+                  {item.meta.skillSaved?.name && (
+                    <span className="ask-skill">Saved skill: {item.meta.skillSaved.name}</span>
+                  )}
+                  {showModels && item.meta.modelsUsed?.length > 0 && (
+                    <span className="ask-models mono">{item.meta.modelsUsed.join(" · ")}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {loading && <div className="ask-bubble ask-assistant ask-pending">Thinking…</div>}
+          <div ref={bottomRef} />
+        </div>
+
+        {error && (
+          <div className="error ask-error">
+            {error}{" "}
+            {(error.includes("quota") || error.includes("402")) && (
+              <Link to="/billing">Upgrade →</Link>
+            )}
+          </div>
+        )}
+
+        <div className="ask-composer">
+          {files.length > 0 && (
+            <p className="ask-files">Attached: {files.map((f) => f.name).join(", ")}</p>
+          )}
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask NARNA anything…"
+            rows={3}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
+          />
+          <div className="ask-actions">
+            <label className="btn btn-secondary ask-attach">
+              Attach text
+              <input
+                type="file"
+                accept=".txt,.md,.csv,.json,.yaml,.yml"
+                hidden
+                multiple
+                onChange={(e) => onFile(e.target.files)}
+              />
+            </label>
+            <label className="ask-toggle">
+              <input
+                type="checkbox"
+                checked={showModels}
+                onChange={(e) => setShowModels(e.target.checked)}
+              />
+              Show models
+            </label>
+            <Link to="/settings/models" className="btn btn-secondary ask-byo">
+              BYO LLM
+            </Link>
+            <button type="button" className="btn btn-primary" onClick={onSend} disabled={loading}>
+              {loading ? "…" : "Ask"}
+            </button>
+          </div>
+          {quota.hard != null && (
+            <p className="ask-quota">
+              Turns this period: {quota.used ?? 0} / {quota.hard}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

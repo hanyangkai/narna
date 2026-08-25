@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NARNA Guardian</title>
+    <style>
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 14px 16px 18px;
+        font: 14px/1.4 "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: #1a1a1a;
+        background: linear-gradient(165deg, #f4f7f5 0%, #e8eef5 100%);
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 4px;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        font-size: 11px;
+        color: #556;
+        margin-bottom: 12px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 10px 0;
+      }
+      .legend span {
+        display: inline-block;
+        margin-right: 8px;
+        font-size: 11px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+      }
+      .g {
+        background: #1a7f4b;
+      }
+      .y {
+        background: #c9a227;
+      }
+      .r {
+        background: #c0392b;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid #334;
+        background: #1b2430;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      pre {
+        font-size: 10px;
+        max-height: 120px;
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 8px;
+        border-radius: 4px;
+      }
+      a {
+        color: #1a4a7a;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NARNA Guardian</h1>
+    <p class="sub">Every human protected. Every AI accountable.</p>
+    <div class="row">
+      <label for="protected">Protected Mode</label>
+      <input type="checkbox" id="protected" />
+    </div>
+    <div class="legend">
+      <span><i class="dot g"></i>Trusted</span>
+      <span><i class="dot y"></i>Caution</span>
+      <span><i class="dot r"></i>Dangerous</span>
+    </div>
+    <div class="row">
+      <button id="sync" type="button">Sync CTI</button>
+      <a href="options.html" target="_blank">Options</a>
+    </div>
+    <p class="sub" id="meta"></p>
+    <pre id="last"></pre>
+    <script src="popup.js"></script>
+  </body>
+</html>

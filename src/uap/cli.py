@@ -713,6 +713,804 @@ def cmd_conformance(args: argparse.Namespace) -> int:
     return 0 if report["conformant"] else 1
 
 
+def cmd_decision_evaluate(args: argparse.Namespace) -> int:
+    from .decision import DecisionEngine
+
+    engine = DecisionEngine(Path.cwd())
+    evidence = [x.strip() for x in (args.evidence or "").split(",") if x.strip()]
+    context = {}
+    if getattr(args, "customer", None):
+        context["customer"] = args.customer
+    if getattr(args, "contract", None):
+        context["contract"] = args.contract
+    if getattr(args, "project", None):
+        context["project"] = args.project
+    out = engine.evaluate(
+        action=args.action,
+        question=args.question,
+        provider=args.provider,
+        version=args.version,
+        path=args.path,
+        evidence_present=evidence or None,
+        session_id=args.session,
+        context=context or None,
+    )
+    _print_json(out)
+    if args.strict and out.get("decision") == "deny":
+        return 2
+    return 0
+
+
+def cmd_adqa_check(args: argparse.Namespace) -> int:
+    from .adqa import ADQAEngine
+
+    evidence = [x.strip() for x in (args.evidence or "").split(",") if x.strip()]
+    out = ADQAEngine(Path.cwd()).check_proposed(
+        action=args.action,
+        provider=args.provider,
+        evidence_present=evidence or None,
+        agent_id=args.agent,
+        question=args.question,
+        persist=not getattr(args, "no_persist", False),
+    )
+    _print_json(out)
+    guardian = (out.get("adqa") or {}).get("guardian")
+    if args.strict and guardian == "reject":
+        return 2
+    return 0
+
+
+def cmd_reason(args: argparse.Namespace) -> int:
+    from .model_router import ModelRouter
+
+    router = ModelRouter(provider=getattr(args, "provider", None) or None)
+    out = router.complete(
+        messages=[{"role": "user", "content": args.message}],
+        task=args.task,
+    )
+    _print_json(out.to_dict())
+    return 0
+
+
+def cmd_ask(args: argparse.Namespace) -> int:
+    from .model_router import ModelRouter
+    from .narna_agent import NarnaAgent
+
+    msg = getattr(args, "message_opt", None) or args.message
+    if not msg:
+        print("message required", file=sys.stderr)
+        return 2
+    router = ModelRouter(provider=getattr(args, "provider", None) or None)
+    out = NarnaAgent(Path.cwd(), router=router).ask(
+        msg, challenge=bool(getattr(args, "challenge", False))
+    )
+    _print_json(out)
+    return 0
+
+
+def cmd_cmem_status(args: argparse.Namespace) -> int:
+    from .cmem_bridge import CmemBridge
+
+    _print_json(CmemBridge(Path.cwd()).status())
+    return 0
+
+
+def cmd_cmem_search(args: argparse.Namespace) -> int:
+    from .cmem_bridge import CmemBridge
+
+    hits = CmemBridge(Path.cwd()).search(args.query, limit=args.limit)
+    _print_json({"hits": hits, "count": len(hits)})
+    return 0
+
+
+def cmd_cmem_ingest(args: argparse.Namespace) -> int:
+    from .cmem_bridge import CmemBridge
+
+    _print_json(
+        CmemBridge(Path.cwd()).ingest_local(
+            {"summary": args.summary, "action": args.action, "tags": args.tags.split(",") if args.tags else []}
+        )
+    )
+    return 0
+
+
+def cmd_integrations(args: argparse.Namespace) -> int:
+    from narna.integrations import integration_manifest
+
+    _print_json(integration_manifest())
+    return 0
+
+
+def cmd_dqs_status(args: argparse.Namespace) -> int:
+    from .dqs_network import DqsNetwork
+
+    _print_json(DqsNetwork(Path.cwd()).status())
+    return 0
+
+
+def cmd_dqs_opt_in(args: argparse.Namespace) -> int:
+    from .dqs_network import DqsNetwork
+
+    _print_json(DqsNetwork(Path.cwd()).set_opt_in(not args.off))
+    return 0
+
+
+def cmd_dqs_export(args: argparse.Namespace) -> int:
+    from .dqs_network import DqsNetwork
+
+    _print_json(DqsNetwork(Path.cwd()).export_digest(min_count=args.min_count))
+    return 0
+
+
+def cmd_dqs_import(args: argparse.Namespace) -> int:
+    import json
+
+    from .dqs_network import DqsNetwork
+
+    digest = json.loads(Path(args.path).read_text(encoding="utf-8"))
+    _print_json(DqsNetwork(Path.cwd()).import_digest(digest))
+    return 0
+
+
+def cmd_dmemory_query(args: argparse.Namespace) -> int:
+    from .decision_memory import DecisionMemory
+
+    _print_json(
+        {
+            "records": DecisionMemory(Path.cwd()).query(
+                action=args.action,
+                customer=args.customer,
+                limit=args.limit,
+                with_outcome_only=args.with_outcome,
+            )
+        }
+    )
+    return 0
+
+
+def cmd_dmemory_lessons(args: argparse.Namespace) -> int:
+    from .decision_memory import DecisionMemory
+
+    _print_json(
+        {"lessons": DecisionMemory(Path.cwd()).lessons_for(action=args.action, limit=args.limit)}
+    )
+    return 0
+
+
+def cmd_learning_outcome(args: argparse.Namespace) -> int:
+    from .outcome_learning import OutcomeLearningEngine
+
+    out = OutcomeLearningEngine(Path.cwd()).evaluate(
+        args.decision_id,
+        status=args.status,
+        detail=args.detail,
+        success_score=args.score,
+        lesson=args.lesson,
+    )
+    _print_json(out)
+    return 0
+
+
+def cmd_connect_catalog(args: argparse.Namespace) -> int:
+    from .connect import ConnectRegistry
+
+    _print_json(ConnectRegistry(Path.cwd()).catalog())
+    return 0
+
+
+def cmd_connect_register(args: argparse.Namespace) -> int:
+    from .connect import ConnectRegistry
+
+    _print_json(
+        ConnectRegistry(Path.cwd()).register(
+            type=args.type, name=args.name, endpoint=args.endpoint
+        )
+    )
+    return 0
+
+
+def cmd_connect_probe(args: argparse.Namespace) -> int:
+    from .connect import ConnectRegistry
+
+    _print_json(ConnectRegistry(Path.cwd()).probe(args.connector))
+    return 0
+
+
+def cmd_knowledge_upsert(args: argparse.Namespace) -> int:
+    import json
+
+    from .knowledge import KnowledgeGraph
+
+    props = json.loads(args.props) if args.props else {}
+    _print_json(
+        KnowledgeGraph(Path.cwd()).upsert_entity(
+            kind=args.kind, name=args.name, props=props, entity_id=args.id
+        )
+    )
+    return 0
+
+
+def cmd_knowledge_query(args: argparse.Namespace) -> int:
+    from .knowledge import KnowledgeGraph
+
+    _print_json(
+        {
+            "entities": KnowledgeGraph(Path.cwd()).query(
+                kind=args.kind, name_contains=args.q, limit=args.limit
+            )
+        }
+    )
+    return 0
+
+
+def cmd_knowledge_relate(args: argparse.Namespace) -> int:
+    from .knowledge import KnowledgeGraph
+
+    _print_json(
+        KnowledgeGraph(Path.cwd()).relate(
+            from_id=args.frm, to_id=args.to, rel_type=args.type
+        )
+    )
+    return 0
+
+
+def cmd_memory_put(args: argparse.Namespace) -> int:
+    import json
+
+    from .durable_memory import DurableMemory
+
+    records = json.loads(args.data)
+    _print_json(
+        DurableMemory(Path.cwd()).put(scope=args.scope, scope_id=args.id, records=records)
+    )
+    return 0
+
+
+def cmd_memory_get(args: argparse.Namespace) -> int:
+    from .durable_memory import DurableMemory
+
+    keys = [k.strip() for k in (args.keys or "").split(",") if k.strip()] or None
+    _print_json(
+        DurableMemory(Path.cwd()).get(scope=args.scope, scope_id=args.id, keys=keys)
+    )
+    return 0
+
+
+def cmd_automate_run(args: argparse.Namespace) -> int:
+    from .automation import AutomationEngine
+
+    _print_json(
+        AutomationEngine(Path.cwd()).run(
+            trigger=args.trigger,
+            action=args.action,
+            provider=args.provider,
+            path=args.path,
+            context={"customer": args.customer} if args.customer else None,
+        )
+    )
+    return 0
+
+
+def cmd_dmarket_list(args: argparse.Namespace) -> int:
+    from .decision_market import DecisionMarketplace
+
+    _print_json(
+        {
+            "packages": DecisionMarketplace(Path.cwd()).list_packages(
+                industry=getattr(args, "industry", None),
+                decisions_only=not getattr(args, "all", False),
+            )
+        }
+    )
+    return 0
+
+
+def cmd_dmarket_install(args: argparse.Namespace) -> int:
+    from .decision_market import DecisionMarketplace
+
+    _print_json(DecisionMarketplace(Path.cwd()).install(args.provider))
+    return 0
+
+
+def cmd_capability_evaluate(args: argparse.Namespace) -> int:
+    from .capability_gov import CapabilityGovernor
+
+    gov = CapabilityGovernor(Path.cwd())
+    out = gov.evaluate(
+        capability=args.capability,
+        agent_id=args.agent,
+        path=args.path,
+        target=args.target,
+        profile=args.profile,
+    )
+    _print_json(out)
+    if args.strict and out.get("decision") in {"deny", "restricted"}:
+        return 2
+    return 0
+
+
+def cmd_kill_issue(args: argparse.Namespace) -> int:
+    from .kill import KillStore
+
+    store = KillStore(Path.cwd())
+    tier = getattr(args, "tier", "local") or "local"
+    if tier == "domain":
+        out = store.issue_domain(
+            domain_id=args.domain,
+            reason=args.reason,
+            issued_by=args.by,
+        )
+    elif tier == "global":
+        _print_json(
+            {
+                "ok": False,
+                "error": "global kill requires council quorum — use: narna council propose --kind global_kill",
+            }
+        )
+        return 2
+    else:
+        out = store.issue_local(
+            agent_id=args.agent,
+            session_id=args.session,
+            reason=args.reason,
+            issued_by=args.by,
+        )
+    _print_json(out)
+    return 0
+
+
+def cmd_kill_status(args: argparse.Namespace) -> int:
+    from .kill import KillStore
+
+    _print_json(
+        KillStore(Path.cwd()).status(
+            agent_id=args.agent,
+            session_id=args.session,
+            domain_id=getattr(args, "domain", None),
+        )
+    )
+    return 0
+
+
+def cmd_kill_revoke(args: argparse.Namespace) -> int:
+    from .kill import KillStore
+
+    _print_json(KillStore(Path.cwd()).revoke(args.token))
+    return 0
+
+
+def cmd_threat_analyze(args: argparse.Namespace) -> int:
+    from .threat import ThreatEngine
+
+    engine = ThreatEngine(Path.cwd())
+    if args.auto_kill:
+        out = engine.analyze_and_maybe_kill(args.session, auto_kill=True)
+    else:
+        out = engine.analyze_session(args.session)
+    _print_json(out)
+    if args.strict and float(out.get("riskScore") or 0) >= 0.9:
+        return 2
+    return 0
+
+
+def cmd_collective_opt_in(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json(CollectiveDefense(Path.cwd()).set_opt_in(not args.off))
+    return 0
+
+
+def cmd_collective_publish(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+    from .threat import ThreatEngine
+
+    report = ThreatEngine(Path.cwd()).analyze_session(args.session)
+    if args.min_risk and float(report.get("riskScore") or 0) < float(args.min_risk):
+        _print_json({"ok": False, "error": "risk below --min-risk", "report": report})
+        return 2
+    sig = CollectiveDefense(Path.cwd()).publish_from_threat(report, org_id=args.org)
+    _print_json({"ok": True, "signature": sig})
+    return 0
+
+
+def cmd_collective_import(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json({"ok": True, "signature": CollectiveDefense(Path.cwd()).import_signature(args.path)})
+    return 0
+
+
+def cmd_collective_list(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json({"signatures": CollectiveDefense(Path.cwd()).list_signatures(source=args.source)})
+    return 0
+
+
+def cmd_collective_match(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    patterns = [p.strip() for p in (args.patterns or "").split(",") if p.strip()]
+    hits = CollectiveDefense(Path.cwd()).match(patterns=patterns or None, risk_band=args.band)
+    _print_json({"matches": hits})
+    return 0
+
+
+def cmd_collective_apply(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    out = CollectiveDefense(Path.cwd()).apply(
+        args.signature,
+        agent_id=args.agent,
+        auto_kill=args.kill,
+    )
+    _print_json(out)
+    return 0
+
+
+def cmd_constitution_install(args: argparse.Namespace) -> int:
+    from .council import GuardianConstitution
+
+    _print_json(GuardianConstitution(Path.cwd()).install_default())
+    return 0
+
+
+def cmd_constitution_evaluate(args: argparse.Namespace) -> int:
+    from .council import GuardianConstitution
+
+    out = GuardianConstitution(Path.cwd()).evaluate(action=args.action, agent_id=args.agent)
+    _print_json(out)
+    if args.strict and out.get("decision") == "deny":
+        return 2
+    return 0
+
+
+def cmd_constitution_show(args: argparse.Namespace) -> int:
+    from .council import GuardianConstitution
+
+    path = GuardianConstitution(Path.cwd()).resolve_path()
+    _print_json({"path": str(path), "document": GuardianConstitution(Path.cwd()).load()})
+    return 0
+
+
+def cmd_council_install(args: argparse.Namespace) -> int:
+    from .council import GovernanceCouncil
+
+    _print_json(GovernanceCouncil(Path.cwd()).install_default())
+    return 0
+
+
+def cmd_council_propose(args: argparse.Namespace) -> int:
+    from .council import GovernanceCouncil
+
+    payload: dict = {}
+    if args.kind == "amend_constitution":
+        if not args.yaml:
+            _print_json({"ok": False, "error": "--yaml path required for amend_constitution"})
+            return 2
+        payload["yaml"] = Path(args.yaml).read_text(encoding="utf-8")
+    elif args.kind == "global_kill":
+        payload["reason"] = args.reason or "council-global-kill"
+    elif args.kind == "domain_kill":
+        payload["domainId"] = args.domain
+        payload["reason"] = args.reason or "council-domain-kill"
+    else:
+        _print_json({"ok": False, "error": f"unknown kind: {args.kind}"})
+        return 2
+    prop = GovernanceCouncil(Path.cwd()).propose(
+        kind=args.kind, payload=payload, proposed_by=args.by
+    )
+    _print_json(prop)
+    return 0
+
+
+def cmd_council_approve(args: argparse.Namespace) -> int:
+    from .council import GovernanceCouncil
+
+    _print_json(GovernanceCouncil(Path.cwd()).approve(args.proposal, member_id=args.by))
+    return 0
+
+
+def cmd_reputation_get(args: argparse.Namespace) -> int:
+    from .reputation import ReputationStore
+
+    _print_json(ReputationStore(Path.cwd()).get(args.agent))
+    return 0
+
+
+def cmd_reputation_record(args: argparse.Namespace) -> int:
+    from .reputation import ReputationStore
+
+    _print_json(
+        ReputationStore(Path.cwd()).record(
+            args.agent,
+            origin=args.origin,
+            creator=args.creator,
+            model=args.model,
+            attested=args.attested,
+            attestation_ref=args.attestation,
+        )
+    )
+    return 0
+
+
+def cmd_reputation_violate(args: argparse.Namespace) -> int:
+    from .reputation import ReputationStore
+
+    _print_json(
+        ReputationStore(Path.cwd()).add_violation(
+            args.agent, kind=args.kind, severity=args.severity, detail=args.detail or ""
+        )
+    )
+    return 0
+
+
+def cmd_reputation_feedback(args: argparse.Namespace) -> int:
+    from .reputation import ReputationStore
+
+    _print_json(
+        ReputationStore(Path.cwd()).add_feedback(
+            args.agent, score=args.score, by=args.by, note=args.note or ""
+        )
+    )
+    return 0
+
+
+def cmd_container_install(args: argparse.Namespace) -> int:
+    from .container import AgentContainer
+
+    _print_json(AgentContainer(Path.cwd()).install_default())
+    return 0
+
+
+def cmd_container_profile(args: argparse.Namespace) -> int:
+    from .container import AgentContainer
+
+    _print_json(AgentContainer(Path.cwd()).profile(args.agent))
+    return 0
+
+
+def cmd_container_check(args: argparse.Namespace) -> int:
+    from .container import AgentContainer
+
+    out = AgentContainer(Path.cwd()).check(
+        agent_id=args.agent or "anonymous",
+        action=args.action,
+        tool=args.tool,
+        network=args.network,
+        spawn_depth=args.spawn_depth,
+    )
+    _print_json(out)
+    if args.strict and out.get("decision") == "deny":
+        return 2
+    return 0
+
+
+def cmd_container_docker(args: argparse.Namespace) -> int:
+    from .container_runner import DockerContainerRunner
+
+    out = DockerContainerRunner(Path.cwd()).run(
+        dry_run=not args.execute,
+        agent_id=args.agent or "agent",
+        image=args.image,
+        network=args.network,
+    )
+    _print_json(out)
+    return 0 if out.get("ok") else 1
+
+
+def cmd_collective_peers(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    cd = CollectiveDefense(Path.cwd())
+    if args.set:
+        urls = [u.strip() for u in args.set.split(",") if u.strip()]
+        _print_json(cd.set_peers(urls))
+    else:
+        _print_json({"peers": cd.list_peers()})
+    return 0
+
+
+def cmd_collective_push(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json(CollectiveDefense(Path.cwd()).push_to_peers())
+    return 0
+
+
+def cmd_collective_pull(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json(CollectiveDefense(Path.cwd()).pull_from_peers())
+    return 0
+
+
+def cmd_collective_export(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+
+    _print_json(CollectiveDefense(Path.cwd()).export_bundle())
+    return 0
+
+
+def cmd_collective_import_bundle(args: argparse.Namespace) -> int:
+    import json
+
+    from .collective import CollectiveDefense
+
+    bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
+    _print_json(CollectiveDefense(Path.cwd()).import_bundle(bundle))
+    return 0
+
+
+def cmd_cti_submit(args: argparse.Namespace) -> int:
+    import json
+
+    from .cti_hub import CTIHub
+
+    sig = json.loads(Path(args.path).read_text(encoding="utf-8"))
+    _print_json(CTIHub(Path.cwd()).submit(sig, org_id=args.org))
+    return 0
+
+
+def cmd_cti_feed(args: argparse.Namespace) -> int:
+    from .cti_hub import CTIHub
+
+    _print_json({"feed": CTIHub(Path.cwd()).feed_list(limit=args.limit)})
+    return 0
+
+
+def cmd_cti_pull(args: argparse.Namespace) -> int:
+    from .cti_hub import CTIHub
+
+    _print_json(CTIHub(Path.cwd()).pull_into_workspace(limit=args.limit))
+    return 0
+
+
+def cmd_cti_relay(args: argparse.Namespace) -> int:
+    from .cti_hub import CTIHub
+
+    _print_json(CTIHub(Path.cwd()).relay_from_local_outbox())
+    return 0
+
+
+def cmd_cti_hubs(args: argparse.Namespace) -> int:
+    from .cti_mesh import CTIMesh
+
+    mesh = CTIMesh(Path.cwd())
+    if args.set:
+        hubs = [u.strip() for u in args.set.split(",") if u.strip()]
+        _print_json(mesh.set_hubs(hubs))
+    else:
+        _print_json({"hubs": mesh.list_hubs()})
+    return 0
+
+
+def cmd_cti_sync(args: argparse.Namespace) -> int:
+    from .collective import CollectiveDefense
+    from .cti_mesh import CTIMesh
+
+    CollectiveDefense(Path.cwd()).set_opt_in(True)
+    mesh = CTIMesh(Path.cwd())
+    if args.hubs:
+        mesh.set_hubs([u.strip() for u in args.hubs.split(",") if u.strip()])
+    if args.pull_only:
+        out = mesh.pull()
+    elif args.push_only:
+        out = mesh.push()
+    else:
+        out = mesh.sync()
+    _print_json(out)
+    return 0 if out.get("ok") else 1
+
+
+def cmd_jurisdiction_list(args: argparse.Namespace) -> int:
+    from .jurisdiction import JurisdictionTemplates
+
+    _print_json({"jurisdictions": JurisdictionTemplates(Path.cwd()).list()})
+    return 0
+
+
+def cmd_jurisdiction_apply(args: argparse.Namespace) -> int:
+    from .council_binding import CouncilBinding
+    from .jurisdiction import JurisdictionTemplates
+
+    binding = CouncilBinding(Path.cwd()).get(args.binding)
+    out = JurisdictionTemplates(Path.cwd()).apply_to_binding(
+        binding, jurisdiction_id=args.jurisdiction
+    )
+    _print_json(out)
+    return 0
+
+
+def cmd_isolation_list(args: argparse.Namespace) -> int:
+    from .isolation_partner import IsolationRegistry
+
+    _print_json({"partners": IsolationRegistry(Path.cwd()).list()})
+    return 0
+
+
+def cmd_isolation_plan(args: argparse.Namespace) -> int:
+    from .isolation_partner import IsolationRegistry
+
+    _print_json(
+        IsolationRegistry(Path.cwd()).plan(args.partner, agent_id=args.agent or "agent")
+    )
+    return 0
+
+
+def cmd_isolation_apply(args: argparse.Namespace) -> int:
+    from .isolation_partner import IsolationRegistry
+
+    _print_json(
+        IsolationRegistry(Path.cwd()).apply(
+            args.partner, agent_id=args.agent or "agent", dry_run=not args.execute
+        )
+    )
+    return 0
+
+
+def cmd_isolation_certify(args: argparse.Namespace) -> int:
+    from .partner_cert import PartnerRuntimeCertifier
+
+    _print_json(
+        PartnerRuntimeCertifier(Path.cwd()).certify(
+            args.partner,
+            agent_id=args.agent or "cert-probe",
+            attested=bool(args.attested),
+            issuer=args.issuer or "narna-local",
+        )
+    )
+    return 0
+
+
+def cmd_isolation_certs(args: argparse.Namespace) -> int:
+    from .partner_cert import PartnerRuntimeCertifier
+
+    _print_json({"certificates": PartnerRuntimeCertifier(Path.cwd()).list()})
+    return 0
+
+
+def cmd_isolation_verify_cert(args: argparse.Namespace) -> int:
+    from .partner_cert import PartnerRuntimeCertifier
+
+    out = PartnerRuntimeCertifier(Path.cwd()).verify(args.partner)
+    _print_json(out)
+    return 0 if out.get("ok") else 2
+
+
+def cmd_binding_list(args: argparse.Namespace) -> int:
+    from .council_binding import CouncilBinding
+
+    _print_json({"bindings": CouncilBinding(Path.cwd()).list()})
+    return 0
+
+
+def cmd_binding_verify(args: argparse.Namespace) -> int:
+    from .council_binding import CouncilBinding
+
+    _print_json(CouncilBinding(Path.cwd()).verify(args.binding))
+    return 0
+
+
+def cmd_reputation_export(args: argparse.Namespace) -> int:
+    from .reputation import ReputationStore
+
+    _print_json(ReputationStore(Path.cwd()).export_digest(args.agent))
+    return 0
+
+
+def cmd_reputation_import(args: argparse.Namespace) -> int:
+    import json
+
+    from .reputation import ReputationStore
+
+    bundle = json.loads(Path(args.path).read_text(encoding="utf-8"))
+    _print_json(
+        ReputationStore(Path.cwd()).import_digest(bundle, map_to_agent=args.map_to)
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="narna",
@@ -954,6 +1752,403 @@ def build_parser() -> argparse.ArgumentParser:
     conf.add_argument("--workspace", default=".", help="Workspace with narna.yaml")
     conf.add_argument("--json", action="store_true")
     conf.set_defaults(func=cmd_conformance)
+
+    decision = sub.add_parser("decision", help="Decision OS — evaluate with Decision Package")
+    decision_sub = decision.add_subparsers(dest="decision_cmd", required=True)
+    d_eval = decision_sub.add_parser("evaluate", help="Evaluate action → DecisionResult")
+    d_eval.add_argument("--action", required=True, help="Action id e.g. contract.sign")
+    d_eval.add_argument("--question", default=None, help="Natural-language question")
+    d_eval.add_argument("--provider", default="legal-decision", help="Decision Package provider")
+    d_eval.add_argument("--version", default=None)
+    d_eval.add_argument("--path", default=None, help="Path to DecisionPackage YAML")
+    d_eval.add_argument(
+        "--evidence",
+        default="",
+        help="Comma-separated present evidence types (e.g. policy.decision,human.review)",
+    )
+    d_eval.add_argument("--session", default=None, help="Optional governance session id")
+    d_eval.add_argument("--customer", default=None)
+    d_eval.add_argument("--contract", default=None)
+    d_eval.add_argument("--project", default=None)
+    d_eval.add_argument("--strict", action="store_true", help="Exit 2 on deny")
+    d_eval.set_defaults(func=cmd_decision_evaluate)
+
+    adqa = sub.add_parser("adqa", help="ADQA — Decision Quality Score (NGS-0024)")
+    adqa_sub = adqa.add_subparsers(dest="adqa_cmd", required=True)
+    a_chk = adqa_sub.add_parser("check", help="Evaluate + DQS + Decision Guardian")
+    a_chk.add_argument("--action", required=True)
+    a_chk.add_argument("--provider", default="legal-decision")
+    a_chk.add_argument("--evidence", default="")
+    a_chk.add_argument("--agent", default=None)
+    a_chk.add_argument("--question", default=None)
+    a_chk.add_argument("--strict", action="store_true", help="Exit 2 on guardian reject")
+    a_chk.add_argument("--no-persist", action="store_true", help="Do not write Decision Memory")
+    a_chk.set_defaults(func=cmd_adqa_check)
+
+    reason = sub.add_parser("reason", help="Model Router complete (NGS-0028)")
+    reason.add_argument("--message", required=True)
+    reason.add_argument("--task", default="reason", choices=["cheap", "reason", "challenge", "analyze", "plan", "decide"])
+    reason.add_argument("--provider", default=None, help="mock|openrouter|openai|ollama")
+    reason.set_defaults(func=cmd_reason)
+
+    ask = sub.add_parser("ask", help="Ask NARNA Agent (NGS-0029)")
+    ask.add_argument("message", nargs="?", default=None)
+    ask.add_argument("--message", dest="message_opt", default=None)
+    ask.add_argument("--challenge", action="store_true")
+    ask.add_argument("--provider", default=None)
+    ask.set_defaults(func=cmd_ask)
+
+    cmem = sub.add_parser("cmem", help="CMEM bridge — continuity memory feedstock")
+    cmem_sub = cmem.add_subparsers(dest="cmem_cmd", required=True)
+    cm_st = cmem_sub.add_parser("status", help="Bridge status / env")
+    cm_st.set_defaults(func=cmd_cmem_status)
+    cm_se = cmem_sub.add_parser("search", help="Search observations (local or HTTP)")
+    cm_se.add_argument("query")
+    cm_se.add_argument("--limit", type=int, default=8)
+    cm_se.set_defaults(func=cmd_cmem_search)
+    cm_in = cmem_sub.add_parser("ingest", help="Ingest local observation stub")
+    cm_in.add_argument("--summary", required=True)
+    cm_in.add_argument("--action", default=None)
+    cm_in.add_argument("--tags", default="")
+    cm_in.set_defaults(func=cmd_cmem_ingest)
+
+    integ = sub.add_parser("integrations", help="List hot AI stack adapters + CMEM")
+    integ.set_defaults(func=cmd_integrations)
+
+    dqs = sub.add_parser("dqs", help="DQS Network — multi-org priors (NGS-0027)")
+    dqs_sub = dqs.add_subparsers(dest="dqs_cmd", required=True)
+    dqs_st = dqs_sub.add_parser("status")
+    dqs_st.set_defaults(func=cmd_dqs_status)
+    dqs_opt = dqs_sub.add_parser("opt-in")
+    dqs_opt.add_argument("--off", action="store_true")
+    dqs_opt.set_defaults(func=cmd_dqs_opt_in)
+    dqs_ex = dqs_sub.add_parser("export")
+    dqs_ex.add_argument("--min-count", type=int, default=3)
+    dqs_ex.set_defaults(func=cmd_dqs_export)
+    dqs_im = dqs_sub.add_parser("import")
+    dqs_im.add_argument("path")
+    dqs_im.set_defaults(func=cmd_dqs_import)
+
+    dmem = sub.add_parser("dmemory", help="Decision Memory — quality records (NGS-0025)")
+    dmem_sub = dmem.add_subparsers(dest="dmemory_cmd", required=True)
+    dm_q = dmem_sub.add_parser("query", help="Query decision records")
+    dm_q.add_argument("--action", default=None)
+    dm_q.add_argument("--customer", default=None)
+    dm_q.add_argument("--limit", type=int, default=20)
+    dm_q.add_argument("--with-outcome", action="store_true")
+    dm_q.set_defaults(func=cmd_dmemory_query)
+    dm_l = dmem_sub.add_parser("lessons", help="List lessons for an action")
+    dm_l.add_argument("--action", default=None)
+    dm_l.add_argument("--limit", type=int, default=5)
+    dm_l.set_defaults(func=cmd_dmemory_lessons)
+
+    learn = sub.add_parser("learning", help="Outcome Learning Engine")
+    learn_sub = learn.add_subparsers(dest="learning_cmd", required=True)
+    l_out = learn_sub.add_parser("outcome", help="Record outcome + update priors")
+    l_out.add_argument("decision_id")
+    l_out.add_argument("--status", required=True)
+    l_out.add_argument("--detail", default=None)
+    l_out.add_argument("--score", type=float, default=None)
+    l_out.add_argument("--lesson", default=None)
+    l_out.set_defaults(func=cmd_learning_outcome)
+
+    connect = sub.add_parser("connect", help="Decision OS — Connect module")
+    connect_sub = connect.add_subparsers(dest="connect_cmd", required=True)
+    cn_cat = connect_sub.add_parser("catalog", help="List builtins + registered connectors")
+    cn_cat.set_defaults(func=cmd_connect_catalog)
+    cn_reg = connect_sub.add_parser("register", help="Register a connector")
+    cn_reg.add_argument("--type", required=True)
+    cn_reg.add_argument("--name", required=True)
+    cn_reg.add_argument("--endpoint", default=None)
+    cn_reg.set_defaults(func=cmd_connect_register)
+    cn_pr = connect_sub.add_parser("probe", help="Probe a registered connector")
+    cn_pr.add_argument("connector")
+    cn_pr.set_defaults(func=cmd_connect_probe)
+
+    know = sub.add_parser("knowledge", help="Decision OS — Knowledge graph")
+    know_sub = know.add_subparsers(dest="knowledge_cmd", required=True)
+    k_up = know_sub.add_parser("upsert", help="Upsert an entity")
+    k_up.add_argument("--kind", required=True)
+    k_up.add_argument("--name", required=True)
+    k_up.add_argument("--id", default=None)
+    k_up.add_argument("--props", default=None, help="JSON object")
+    k_up.set_defaults(func=cmd_knowledge_upsert)
+    k_q = know_sub.add_parser("query", help="Query entities")
+    k_q.add_argument("--kind", default=None)
+    k_q.add_argument("--q", default=None)
+    k_q.add_argument("--limit", type=int, default=50)
+    k_q.set_defaults(func=cmd_knowledge_query)
+    k_rel = know_sub.add_parser("relate", help="Relate two entities")
+    k_rel.add_argument("--from", dest="frm", required=True)
+    k_rel.add_argument("--to", required=True)
+    k_rel.add_argument("--type", required=True)
+    k_rel.set_defaults(func=cmd_knowledge_relate)
+
+    mem = sub.add_parser("memory", help="Decision OS — Durable Memory")
+    mem_sub = mem.add_subparsers(dest="memory_cmd", required=True)
+    m_put = mem_sub.add_parser("put", help="Put records into a scope")
+    m_put.add_argument("--scope", required=True, choices=["project", "customer", "contract", "agent", "session", "global"])
+    m_put.add_argument("--id", required=True)
+    m_put.add_argument("--data", required=True, help="JSON object")
+    m_put.set_defaults(func=cmd_memory_put)
+    m_get = mem_sub.add_parser("get", help="Get records from a scope")
+    m_get.add_argument("--scope", required=True)
+    m_get.add_argument("--id", required=True)
+    m_get.add_argument("--keys", default=None)
+    m_get.set_defaults(func=cmd_memory_get)
+
+    auto = sub.add_parser("automate", help="Decision OS — Automation pipeline stub")
+    auto_sub = auto.add_subparsers(dest="automate_cmd", required=True)
+    a_run = auto_sub.add_parser("run", help="Run trigger → decision → plan")
+    a_run.add_argument("--trigger", required=True)
+    a_run.add_argument("--action", required=True)
+    a_run.add_argument("--provider", default="legal-decision")
+    a_run.add_argument("--path", default=None)
+    a_run.add_argument("--customer", default=None)
+    a_run.set_defaults(func=cmd_automate_run)
+
+    dmarket = sub.add_parser("dmarket", help="Decision OS — Decision Package marketplace")
+    dmarket_sub = dmarket.add_subparsers(dest="dmarket_cmd", required=True)
+    dm_l = dmarket_sub.add_parser("list", help="List Decision Packages")
+    dm_l.add_argument("--industry", default=None, help="Filter e.g. finance, hospital, crypto")
+    dm_l.add_argument("--all", action="store_true", help="Include GovernancePackages too")
+    dm_l.set_defaults(func=cmd_dmarket_list)
+    dm_i = dmarket_sub.add_parser("install", help="Install package by provider/stem")
+    dm_i.add_argument("provider")
+    dm_i.set_defaults(func=cmd_dmarket_install)
+
+    cap = sub.add_parser("capability", help="Guardian — Capability Passport evaluate (NGS-0015)")
+    cap_sub = cap.add_subparsers(dest="cap_cmd", required=True)
+    c_eval = cap_sub.add_parser("evaluate", help="Evaluate capability mode for an agent")
+    c_eval.add_argument("--capability", required=True, help="e.g. email, create.agent, wallet")
+    c_eval.add_argument("--agent", default=None)
+    c_eval.add_argument("--path", default=None, help="CapabilityPassport YAML")
+    c_eval.add_argument("--target", default=None, help="Whitelist target (e.g. MCP URL)")
+    c_eval.add_argument("--profile", default="guardian", choices=["guardian", "enterprise"])
+    c_eval.add_argument("--strict", action="store_true")
+    c_eval.set_defaults(func=cmd_capability_evaluate)
+
+    kill = sub.add_parser("kill", help="Guardian — Kill Token local/domain (NGS-0019)")
+    kill_sub = kill.add_subparsers(dest="kill_cmd", required=True)
+    k_issue = kill_sub.add_parser("issue", help="Issue kill (local|domain; global via council)")
+    k_issue.add_argument("--tier", choices=["local", "domain", "global"], default="local")
+    k_issue.add_argument("--agent", default=None)
+    k_issue.add_argument("--session", default=None)
+    k_issue.add_argument("--domain", default=None)
+    k_issue.add_argument("--reason", default="manual")
+    k_issue.add_argument("--by", default="operator")
+    k_issue.set_defaults(func=cmd_kill_issue)
+    k_status = kill_sub.add_parser("status", help="Check kill status")
+    k_status.add_argument("--agent", default=None)
+    k_status.add_argument("--session", default=None)
+    k_status.add_argument("--domain", default=None)
+    k_status.set_defaults(func=cmd_kill_status)
+    k_rev = kill_sub.add_parser("revoke", help="Revoke a kill token")
+    k_rev.add_argument("token")
+    k_rev.set_defaults(func=cmd_kill_revoke)
+
+    threat = sub.add_parser("threat", help="Guardian — Behavioral Threat Engine (NGS-0017)")
+    threat_sub = threat.add_subparsers(dest="threat_cmd", required=True)
+    t_an = threat_sub.add_parser("analyze", help="Analyze session execution graph")
+    t_an.add_argument("--session", required=True)
+    t_an.add_argument("--auto-kill", action="store_true", help="Issue local kill if risk>=0.9")
+    t_an.add_argument("--strict", action="store_true")
+    t_an.set_defaults(func=cmd_threat_analyze)
+
+    coll = sub.add_parser("collective", help="Guardian L3 — Collective Defense (NGS-0020)")
+    coll_sub = coll.add_subparsers(dest="collective_cmd", required=True)
+    c_opt = coll_sub.add_parser("opt-in", help="Opt in (or --off) to signature sharing")
+    c_opt.add_argument("--off", action="store_true")
+    c_opt.set_defaults(func=cmd_collective_opt_in)
+    c_pub = coll_sub.add_parser("publish", help="Publish threat signature from a session")
+    c_pub.add_argument("--session", required=True)
+    c_pub.add_argument("--org", default=None)
+    c_pub.add_argument("--min-risk", type=float, default=0.0)
+    c_pub.set_defaults(func=cmd_collective_publish)
+    c_imp = coll_sub.add_parser("import", help="Import a signature JSON into inbox")
+    c_imp.add_argument("path")
+    c_imp.set_defaults(func=cmd_collective_import)
+    c_list = coll_sub.add_parser("list", help="List inbox/outbox signatures")
+    c_list.add_argument("--source", choices=["inbox", "outbox"], default="inbox")
+    c_list.set_defaults(func=cmd_collective_list)
+    c_match = coll_sub.add_parser("match", help="Match inbox signatures by patterns")
+    c_match.add_argument("--patterns", default="", help="comma-separated pattern ids")
+    c_match.add_argument("--band", default=None)
+    c_match.set_defaults(func=cmd_collective_match)
+    c_apply = coll_sub.add_parser("apply", help="Apply signature: restrict caps / optional kill")
+    c_apply.add_argument("signature")
+    c_apply.add_argument("--agent", default=None)
+    c_apply.add_argument("--kill", action="store_true")
+    c_apply.set_defaults(func=cmd_collective_apply)
+    c_peers = coll_sub.add_parser("peers", help="List or set federation peer URLs")
+    c_peers.add_argument("--set", default=None, help="comma-separated peer base URLs")
+    c_peers.set_defaults(func=cmd_collective_peers)
+    c_push = coll_sub.add_parser("push", help="Push outbox signatures to peers")
+    c_push.set_defaults(func=cmd_collective_push)
+    c_pull = coll_sub.add_parser("pull", help="Pull peer signatures into inbox")
+    c_pull.set_defaults(func=cmd_collective_pull)
+    c_exp = coll_sub.add_parser("export", help="Export outbox bundle")
+    c_exp.set_defaults(func=cmd_collective_export)
+    c_ib = coll_sub.add_parser("import-bundle", help="Import federation bundle JSON")
+    c_ib.add_argument("path")
+    c_ib.set_defaults(func=cmd_collective_import_bundle)
+
+    cti = sub.add_parser("cti", help="Guardian Tier D — CTI Hub relay")
+    cti_sub = cti.add_subparsers(dest="cti_cmd", required=True)
+    cti_s = cti_sub.add_parser("submit", help="Submit signature JSON to hub feed")
+    cti_s.add_argument("path")
+    cti_s.add_argument("--org", default=None)
+    cti_s.set_defaults(func=cmd_cti_submit)
+    cti_f = cti_sub.add_parser("feed", help="List hub feed")
+    cti_f.add_argument("--limit", type=int, default=50)
+    cti_f.set_defaults(func=cmd_cti_feed)
+    cti_p = cti_sub.add_parser("pull", help="Pull hub feed into local inbox")
+    cti_p.add_argument("--limit", type=int, default=50)
+    cti_p.set_defaults(func=cmd_cti_pull)
+    cti_r = cti_sub.add_parser("relay", help="Relay local outbox into hub")
+    cti_r.set_defaults(func=cmd_cti_relay)
+    cti_h = cti_sub.add_parser("hubs", help="List or set remote CTI hub URLs")
+    cti_h.add_argument("--set", default=None, help="comma-separated hub base URLs")
+    cti_h.set_defaults(func=cmd_cti_hubs)
+    cti_sy = cti_sub.add_parser("sync", help="Push/pull mesh sync with remote hubs")
+    cti_sy.add_argument("--hubs", default=None)
+    cti_sy.add_argument("--push-only", action="store_true")
+    cti_sy.add_argument("--pull-only", action="store_true")
+    cti_sy.set_defaults(func=cmd_cti_sync)
+
+    aiconst = sub.add_parser(
+        "ai-constitution",
+        help="Guardian L4 — non-agent-editable AI Constitution",
+    )
+    aiconst_sub = aiconst.add_subparsers(dest="ai_constitution_cmd", required=True)
+    ct_in = aiconst_sub.add_parser("install", help="Install default GuardianConstitution")
+    ct_in.set_defaults(func=cmd_constitution_install)
+    ct_show = aiconst_sub.add_parser("show", help="Show active constitution")
+    ct_show.set_defaults(func=cmd_constitution_show)
+    ct_ev = aiconst_sub.add_parser("evaluate", help="Evaluate action against constitution")
+    ct_ev.add_argument("--action", required=True)
+    ct_ev.add_argument("--agent", default=None)
+    ct_ev.add_argument("--strict", action="store_true")
+    ct_ev.set_defaults(func=cmd_constitution_evaluate)
+
+    council = sub.add_parser("council", help="Guardian L4 — Governance Council")
+    council_sub = council.add_subparsers(dest="council_cmd", required=True)
+    co_in = council_sub.add_parser("install", help="Install default council")
+    co_in.set_defaults(func=cmd_council_install)
+    co_pr = council_sub.add_parser(
+        "propose", help="Propose amend / domain_kill / global_kill"
+    )
+    co_pr.add_argument(
+        "--kind",
+        required=True,
+        choices=["amend_constitution", "domain_kill", "global_kill"],
+    )
+    co_pr.add_argument("--by", required=True, help="council member id")
+    co_pr.add_argument("--yaml", default=None, help="path for amend_constitution")
+    co_pr.add_argument("--domain", default=None)
+    co_pr.add_argument("--reason", default=None)
+    co_pr.set_defaults(func=cmd_council_propose)
+    co_ap = council_sub.add_parser("approve", help="Approve a proposal (quorum executes)")
+    co_ap.add_argument("proposal")
+    co_ap.add_argument("--by", required=True)
+    co_ap.set_defaults(func=cmd_council_approve)
+
+    bind = sub.add_parser("binding", help="Guardian Tier D — Council legal bindings")
+    bind_sub = bind.add_subparsers(dest="binding_cmd", required=True)
+    b_l = bind_sub.add_parser("list", help="List sealed bindings")
+    b_l.set_defaults(func=cmd_binding_list)
+    b_v = bind_sub.add_parser("verify", help="Verify a binding")
+    b_v.add_argument("binding")
+    b_v.set_defaults(func=cmd_binding_verify)
+
+    juris = sub.add_parser("jurisdiction", help="Guardian Tier D — jurisdiction templates")
+    juris_sub = juris.add_subparsers(dest="jurisdiction_cmd", required=True)
+    j_l = juris_sub.add_parser("list", help="List jurisdiction templates")
+    j_l.set_defaults(func=cmd_jurisdiction_list)
+    j_a = juris_sub.add_parser("apply", help="Apply template to a sealed binding")
+    j_a.add_argument("binding")
+    j_a.add_argument("--jurisdiction", required=True, help="eu-gdpr | us-enterprise | vn-pdpa")
+    j_a.set_defaults(func=cmd_jurisdiction_apply)
+
+    iso = sub.add_parser("isolation", help="Guardian Tier D — isolation partners")
+    iso_sub = iso.add_subparsers(dest="isolation_cmd", required=True)
+    i_l = iso_sub.add_parser("list", help="List partners")
+    i_l.set_defaults(func=cmd_isolation_list)
+    i_p = iso_sub.add_parser("plan", help="Plan isolation for agent")
+    i_p.add_argument("--partner", required=True, choices=["docker", "kubernetes", "k8s"])
+    i_p.add_argument("--agent", default="agent")
+    i_p.set_defaults(func=cmd_isolation_plan)
+    i_a = iso_sub.add_parser("apply", help="Apply isolation (default dry-run)")
+    i_a.add_argument("--partner", required=True, choices=["docker", "kubernetes", "k8s"])
+    i_a.add_argument("--agent", default="agent")
+    i_a.add_argument("--execute", action="store_true")
+    i_a.set_defaults(func=cmd_isolation_apply)
+    i_c = iso_sub.add_parser("certify", help="Certify partner runtime (NGS-0016-partner-cert)")
+    i_c.add_argument("--partner", required=True, choices=["docker", "kubernetes", "k8s"])
+    i_c.add_argument("--agent", default="cert-probe")
+    i_c.add_argument("--attested", action="store_true", help="Operator attestation → L3")
+    i_c.add_argument("--issuer", default="narna-local")
+    i_c.set_defaults(func=cmd_isolation_certify)
+    i_cs = iso_sub.add_parser("certs", help="List partner certificates")
+    i_cs.set_defaults(func=cmd_isolation_certs)
+    i_v = iso_sub.add_parser("verify-cert", help="Re-audit and verify partner certificate")
+    i_v.add_argument("--partner", required=True, choices=["docker", "kubernetes", "k8s"])
+    i_v.set_defaults(func=cmd_isolation_verify_cert)
+
+    rep = sub.add_parser("reputation", help="Guardian — Agent Reputation (NGS-0018)")
+    rep_sub = rep.add_subparsers(dest="reputation_cmd", required=True)
+    r_get = rep_sub.add_parser("get", help="Get reputation for agent")
+    r_get.add_argument("agent")
+    r_get.set_defaults(func=cmd_reputation_get)
+    r_rec = rep_sub.add_parser("record", help="Record origin/creator/model (+ optional attestation)")
+    r_rec.add_argument("agent")
+    r_rec.add_argument("--origin", default=None)
+    r_rec.add_argument("--creator", default=None)
+    r_rec.add_argument("--model", default=None)
+    r_rec.add_argument("--attested", action="store_true")
+    r_rec.add_argument("--attestation", default=None)
+    r_rec.set_defaults(func=cmd_reputation_record)
+    r_v = rep_sub.add_parser("violate", help="Record a violation")
+    r_v.add_argument("agent")
+    r_v.add_argument("--kind", required=True)
+    r_v.add_argument("--severity", type=float, default=0.5)
+    r_v.add_argument("--detail", default=None)
+    r_v.set_defaults(func=cmd_reputation_violate)
+    r_f = rep_sub.add_parser("feedback", help="Peer feedback 0–100")
+    r_f.add_argument("agent")
+    r_f.add_argument("--score", type=float, required=True)
+    r_f.add_argument("--by", default="peer")
+    r_f.add_argument("--note", default=None)
+    r_f.set_defaults(func=cmd_reputation_feedback)
+    r_ex = rep_sub.add_parser("export", help="Export privacy-preserving reputation digest")
+    r_ex.add_argument("--agent", default=None)
+    r_ex.set_defaults(func=cmd_reputation_export)
+    r_im = rep_sub.add_parser("import", help="Import peer reputation digest")
+    r_im.add_argument("path")
+    r_im.add_argument("--map-to", default=None, help="Apply peer low/critical to this agent")
+    r_im.set_defaults(func=cmd_reputation_import)
+
+    cont = sub.add_parser("container", help="Guardian — Agent Container (NGS-0016)")
+    cont_sub = cont.add_subparsers(dest="container_cmd", required=True)
+    ct_i = cont_sub.add_parser("install", help="Install default AgentContainer")
+    ct_i.set_defaults(func=cmd_container_install)
+    ct_p = cont_sub.add_parser("profile", help="Show container profile")
+    ct_p.add_argument("--agent", default=None)
+    ct_p.set_defaults(func=cmd_container_profile)
+    ct_c = cont_sub.add_parser("check", help="Check action against container contract")
+    ct_c.add_argument("--agent", default=None)
+    ct_c.add_argument("--action", required=True)
+    ct_c.add_argument("--tool", default=None)
+    ct_c.add_argument("--network", action="store_true")
+    ct_c.add_argument("--spawn-depth", type=int, default=None)
+    ct_c.add_argument("--strict", action="store_true")
+    ct_c.set_defaults(func=cmd_container_check)
+    ct_d = cont_sub.add_parser("docker-run", help="Plan/run optional Docker Agent Container")
+    ct_d.add_argument("--agent", default="agent")
+    ct_d.add_argument("--image", default="narna/agent-container:0.1")
+    ct_d.add_argument("--network", default="none")
+    ct_d.add_argument("--execute", action="store_true", help="Actually run docker (default dry-run)")
+    ct_d.set_defaults(func=cmd_container_docker)
 
     return p
 

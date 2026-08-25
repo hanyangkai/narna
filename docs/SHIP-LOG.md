@@ -2,6 +2,12 @@
 
 **Build in public.** One entry per day → [docs/ship-log/](./ship-log/).
 
-Latest: **[2026-07-20 — UGS v0.1 freeze + adapter e2e](./ship-log/2026-07-20.md)**
+**7-day system:** [docs/launch/](./launch/) — role checklists, scorecard, daily themes.
 
-How to add today's entry: copy [`ship-log/_template.md`](./ship-log/_template.md) → `ship-log/YYYY-MM-DD.md`, commit, post the one-liner on [Discussions](https://github.com/hanyangkai/narna/discussions).
+Latest: **[2026-07-21 — Day 1 pip install](./ship-log/2026-07-21.md)** (draft)
+
+How to add today's entry:
+
+1. Open today's task sheet: [`launch/days/day-NN.md`](./launch/days/)
+2. Copy [`ship-log/_template.md`](./ship-log/_template.md) → `ship-log/YYYY-MM-DD.md`
+3. Commit + post one-liner on [Discussions → Ship log](https://github.com/hanyangkai/narna/discussions/categories/ship-log)

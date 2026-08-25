@@ -97,11 +97,25 @@ def get_chain(network: str) -> ChainConfig | None:
     return CHAINS.get(str(network).lower())
 
 
+# Public fallbacks so live auto-confirm works without paid Alchemy/Infura keys.
+# Override via UAP_*_RPC_URL when you have a dedicated endpoint.
+PUBLIC_RPC_FALLBACKS: dict[str, str] = {
+    "ethereum": "https://ethereum.publicnode.com",
+    "polygon": "https://polygon-bor.publicnode.com",
+    "base": "https://mainnet.base.org",
+    "arbitrum": "https://arb1.arbitrum.io/rpc",
+    "bsc": "https://bsc-dataseed.binance.org",
+}
+
+
 def get_rpc_url(network: str) -> str:
     chain = get_chain(network)
     if chain is None:
         return ""
-    return os.environ.get(chain.rpc_env, "").strip()
+    explicit = os.environ.get(chain.rpc_env, "").strip()
+    if explicit:
+        return explicit
+    return PUBLIC_RPC_FALLBACKS.get(chain.id, "")
 
 
 def get_token(network: str, asset: str) -> TokenConfig | None:

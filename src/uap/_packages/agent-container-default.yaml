@@ -1,0 +1,17 @@
+kind: AgentContainer
+apiVersion: narna.org/v1
+metadata:
+  name: default-agent-container
+  version: "0.1.0"
+  description: Guardian sandbox policy contract (NGS-0016)
+spec:
+  network: deny-by-default
+  networkAllowlist: []
+  filesystem: workspace-only
+  memory: isolated
+  toolsAllowlist: []  # empty → defer to Capability Passport
+  quotas:
+    maxSpawnDepth: 1
+    maxApiCallsPerHour: 100
+    maxGuPerDay: 10000
+  hostIsolationRequired: true

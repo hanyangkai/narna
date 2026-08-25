@@ -1,16 +1,15 @@
 const steps = [
-  "Developer",
-  "NARNA SDK",
-  "Agent",
-  "Model",
-  "Action",
-  "Evidence",
-  "Trust",
+  "Proposed Decision",
+  "ADQA",
+  "DQS",
+  "Guardian",
+  "Execute",
+  "Audit",
 ];
 
 export default function HeroFlow() {
   return (
-    <div className="hero-flow" aria-label="Execution flow">
+    <div className="hero-flow" aria-label="Decision quality flow">
       {steps.map((step, i) => (
         <div key={step} className="hero-flow-step">
           <div className="hero-flow-box">{step}</div>

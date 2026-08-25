@@ -29,7 +29,11 @@ Overlapping *words*: passport, governance, adapters, open protocol.
 
 > NARNA is the **compliance & trust infrastructure** for Agentic AI — portable **Governance Packages**, **UGS**, and **GU metering**. Others execute agents; NARNA makes fleets **governable and billable**.
 
-**Not:** “another agent passport protocol.”
+**Enterprise one-liner:**
+
+> NARNA is the **Decision Layer for Enterprise AI** — every consequential decision ships with **evidence, risk score, policy check, approval chain, and audit log** (Decision OS).
+
+**Not:** “another agent passport protocol.” · **Not:** “another enterprise ChatGPT.”
 
 ---
 
@@ -41,12 +45,14 @@ Must appear above the fold or in first scroll:
 2. **Governance Package / Marketplace** (compliance in one line)  
 3. **Govern Once. Run Anywhere.** (slogan lock)  
 4. **GU** pricing story (Runtime free · Trust is the product)  
-5. Table: OpenAI/Anthropic/LangGraph **execute** · NARNA **governs**
+5. **Decision OS** for enterprise buyers (Decision Packages as industry apps)  
+6. Table: OpenAI/Anthropic/LangGraph **execute** · NARNA **governs / decides with proof**
 
 Avoid leading with only “Agent Passport” — that phrase is now crowded. Prefer:
 
 - **UGS Passport** (public page)  
 - or **Agent Passport (UGS)** with package + trust score + certification
+- **Decision Package** when speaking to compliance / legal / ops buyers
 
 ---
 
