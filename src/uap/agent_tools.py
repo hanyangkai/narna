@@ -266,6 +266,16 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "parameters": {"action": "string", "limit": "int"},
     },
     {
+        "name": "memory_search",
+        "description": "Full-text search across Decision Memory + recent session turns.",
+        "parameters": {"query": "string", "limit": "int"},
+    },
+    {
+        "name": "delegate_task",
+        "description": "Spawn a short sub-ask (no nested tools) for a focused sub-question.",
+        "parameters": {"task": "string"},
+    },
+    {
         "name": "skill_list",
         "description": "List saved agent skills.",
         "parameters": {},
@@ -290,10 +300,14 @@ class AgentToolbelt:
         memory: Any = None,
         skills: Any = None,
         workspace: Path | str | None = None,
+        sessions: Any = None,
+        delegate_fn: Callable[[str], dict[str, Any]] | None = None,
     ) -> None:
         self.memory = memory
         self.skills = skills
+        self.sessions = sessions
         self.workspace = Path(workspace) if workspace else Path.cwd()
+        self._delegate_fn = delegate_fn
         self._handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "web_search": tool_web_search,
             "web_fetch": tool_web_fetch,
@@ -304,6 +318,8 @@ class AgentToolbelt:
             "workspace_read": self._workspace_read,
             "workspace_write": self._workspace_write,
             "memory_query": self._memory_query,
+            "memory_search": self._memory_search,
+            "delegate_task": self._delegate_task,
             "skill_list": self._skill_list,
             "skill_get": self._skill_get,
             "skill_save": self._skill_save,
@@ -389,6 +405,76 @@ class AgentToolbelt:
             for r in rows
         ]
         return {"ok": True, "records": compact}
+
+    def _memory_search(self, args: dict[str, Any]) -> dict[str, Any]:
+        q = str(args.get("query") or "").strip().lower()
+        if not q:
+            return {"ok": False, "error": "query required"}
+        limit = max(1, min(int(args.get("limit") or 8), 20))
+        hits: list[dict[str, Any]] = []
+        if self.memory is not None:
+            for r in self.memory.query(limit=50):
+                blob = " ".join(
+                    [
+                        str(r.get("action") or ""),
+                        str(r.get("lesson") or ""),
+                        str((r.get("context") or {}).get("question") or ""),
+                        " ".join(str(x) for x in (r.get("reasoning") or [])[:2]),
+                    ]
+                ).lower()
+                if q in blob or any(tok and tok in blob for tok in q.split()):
+                    hits.append(
+                        {
+                            "source": "decision_memory",
+                            "decisionId": r.get("decisionId"),
+                            "dqs": r.get("dqs"),
+                            "lesson": r.get("lesson"),
+                            "question": (r.get("context") or {}).get("question"),
+                        }
+                    )
+                if len(hits) >= limit:
+                    break
+        if self.sessions is not None and len(hits) < limit:
+            root = Path(self.workspace) / ".uap" / "agent-sessions"
+            if root.exists():
+                for path in sorted(root.glob("*.json"), reverse=True)[:30]:
+                    try:
+                        row = json.loads(path.read_text(encoding="utf-8"))
+                    except Exception:
+                        continue
+                    for m in (row.get("messages") or [])[-20:]:
+                        content = str(m.get("content") or "")
+                        if q in content.lower():
+                            hits.append(
+                                {
+                                    "source": "session",
+                                    "sessionId": row.get("sessionId"),
+                                    "role": m.get("role"),
+                                    "snippet": content[:240],
+                                }
+                            )
+                            if len(hits) >= limit:
+                                break
+                    if len(hits) >= limit:
+                        break
+        return {"ok": True, "query": q, "hits": hits[:limit]}
+
+    def _delegate_task(self, args: dict[str, Any]) -> dict[str, Any]:
+        task = str(args.get("task") or args.get("prompt") or "").strip()
+        if not task:
+            return {"ok": False, "error": "task required"}
+        if self._delegate_fn is None:
+            return {"ok": False, "error": "delegate not configured"}
+        try:
+            out = self._delegate_fn(task)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {
+            "ok": True,
+            "answer": out.get("answer"),
+            "dqs": out.get("dqs"),
+            "decisionId": out.get("decisionId"),
+        }
 
     def _skill_list(self, _args: dict[str, Any]) -> dict[str, Any]:
         if self.skills is None:

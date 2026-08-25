@@ -67,10 +67,31 @@ class NarnaAgent:
         self.sessions = AgentSessionStore(self.workspace)
         self.jobs = AgentJobStore(self.workspace)
         self.tools = AgentToolbelt(
-            memory=self.memory, skills=self.skills, workspace=self.workspace
+            memory=self.memory,
+            skills=self.skills,
+            workspace=self.workspace,
+            sessions=self.sessions,
+            delegate_fn=self._delegate_subask,
         )
         self.adqa = ADQAEngine(self.workspace)
         self.max_tool_rounds = max(0, int(max_tool_rounds))
+        self._delegate_depth = 0
+
+    def _delegate_subask(self, task: str) -> dict[str, Any]:
+        """Hermes-like subagent: one nested ask without further tools."""
+        if self._delegate_depth >= 1:
+            raise RuntimeError("nested delegate blocked")
+        self._delegate_depth += 1
+        try:
+            return self.ask(
+                task,
+                channel="delegate",
+                use_tools=False,
+                capture_skill=False,
+                challenge=False,
+            )
+        finally:
+            self._delegate_depth -= 1
 
     def ask(
         self,

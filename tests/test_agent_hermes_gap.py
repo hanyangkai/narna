@@ -110,6 +110,41 @@ class TelegramTests(unittest.TestCase):
         self.assertIn("web_search", msg)
 
 
+class DiscordDelegateTests(unittest.TestCase):
+    def test_discord_extract(self):
+        from uap.discord_gateway import extract_discord_message
+
+        ch, text, author = extract_discord_message(
+            {
+                "t": "MESSAGE_CREATE",
+                "d": {
+                    "channel_id": "111",
+                    "content": "Should I ship?",
+                    "author": {"id": "222", "bot": False},
+                },
+            }
+        )
+        self.assertEqual(ch, "111")
+        self.assertEqual(text, "Should I ship?")
+        self.assertEqual(author, "222")
+
+    def test_memory_search_and_delegate(self):
+        with tempfile.TemporaryDirectory() as td:
+            agent = NarnaAgent(
+                workspace=Path(td),
+                router=ModelRouter(provider="mock"),
+                max_tool_rounds=0,
+            )
+            first = agent.ask("Should I renew the lease?", use_tools=False, capture_skill=False)
+            agent.record_outcome(first["decisionId"], status="success", lesson="Check CPI clause")
+            hits = agent.tools.call("memory_search", {"query": "lease"})
+            self.assertTrue(hits["ok"])
+            self.assertTrue(hits["hits"])
+            sub = agent.tools.call("delegate_task", {"task": "Summarize lease risks"})
+            self.assertTrue(sub["ok"])
+            self.assertTrue(sub.get("answer"))
+
+
 class SandboxJobsTests(unittest.TestCase):
     def test_code_exec(self):
         from uap.agent_tools import tool_code_exec

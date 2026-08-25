@@ -1934,6 +1934,87 @@ async def agent_telegram_webhook(
     return {"ok": True, "decisionId": out.get("decisionId"), "sessionId": out.get("sessionId")}
 
 
+@app.post("/v1/agent/discord/webhook")
+async def agent_discord_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Discord message webhook / interaction relay → Ask NARNA."""
+    from uap.discord_gateway import (
+        discord_enabled,
+        extract_discord_message,
+        format_agent_reply,
+        send_discord_message,
+    )
+    from uap.narna_agent import NarnaAgent
+
+    if not discord_enabled():
+        raise HTTPException(status_code=503, detail="Discord bot not configured")
+
+    secret = os.environ.get("UAP_DISCORD_WEBHOOK_SECRET", "").strip()
+    if secret:
+        got = request.headers.get("X-Narna-Discord-Secret", "")
+        if got != secret:
+            raise HTTPException(status_code=403, detail="invalid discord secret")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    # Discord Interactions URL verification (PING type=1)
+    if isinstance(payload, dict) and payload.get("type") == 1:
+        return {"type": 1}
+
+    channel_id, text, author_id = extract_discord_message(
+        payload if isinstance(payload, dict) else {}
+    )
+    if not channel_id or not text:
+        return {"ok": True, "ignored": True}
+
+    resolved = _org_for_device_key(db, f"discord:{author_id or channel_id}")
+    try:
+        enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    except HTTPException as e:
+        if e.status_code == 402:
+            try:
+                send_discord_message(
+                    channel_id,
+                    "Free Ask quota reached. Upgrade with USDC/USDT at https://narna.org/billing",
+                )
+            except Exception:
+                pass
+            return {"ok": True, "quota": True}
+        raise
+
+    ws = tenant_workspace(resolved.id)
+    agent = NarnaAgent(
+        workspace=ws,
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.ask(
+            text,
+            channel="discord",
+            external_id=str(channel_id),
+            use_tools=True,
+        )
+    except Exception as e:
+        try:
+            send_discord_message(channel_id, f"NARNA error: {e}")
+        except Exception:
+            pass
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    bump_agent_turns(org=resolved, db=db)
+    try:
+        send_discord_message(channel_id, format_agent_reply(out))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"discord send failed: {e}") from e
+    return {"ok": True, "decisionId": out.get("decisionId"), "sessionId": out.get("sessionId")}
+
+
 @app.post("/v1/agent/ask/stream")
 def agent_ask_stream(
     body: AgentAskRequest,
