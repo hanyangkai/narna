@@ -1640,11 +1640,28 @@ table.data-table th {
   margin-top: 0.75rem;
 }
 
-.ask-skills-list {
-  margin: 0.75rem 0 0;
-  padding-left: 1.1rem;
-  color: var(--muted);
+.ask-llm-box {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  max-width: 28rem;
+}
+
+.ask-llm-box label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ask-llm-box input,
+.ask-llm-box select {
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
 }
 
 .ask-feedback {

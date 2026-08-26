@@ -36,7 +36,10 @@ Ask UI / PWA / Telegram
     →  Model Router  →  ADQA  →  Decision Memory + Skill capture
 ```
 
-BYO LLM (Personal+): org stores provider + key; Free uses hosted OpenRouter only.
+BYO LLM (all plans, Hermes-style): user pastes OpenRouter / OpenAI / Ollama key in Ask or `/settings/models`.  
+**No hosted LLM** — without a key, Ask runs **mock** (still ADQA-scored).
+
+See [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) for repo-level gaps vs Hermes Agent.
 
 ### Mobile
 

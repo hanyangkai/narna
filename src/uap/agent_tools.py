@@ -167,6 +167,42 @@ _SHELL_DENY_SUBSTR = (
 )
 
 
+def openai_tools_schema(specs: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    """Convert TOOL_SPECS → OpenAI/OpenRouter `tools` array (Hermes-style native tool_calls)."""
+    out: list[dict[str, Any]] = []
+    for spec in specs or TOOL_SPECS:
+        params = spec.get("parameters") or {}
+        properties: dict[str, Any] = {}
+        required: list[str] = []
+        for key, typ in params.items():
+            t = str(typ).lower()
+            if t.startswith("list"):
+                properties[key] = {"type": "array", "items": {"type": "string"}}
+            elif t in {"int", "integer", "number", "float"}:
+                properties[key] = {"type": "number"}
+            elif t in {"bool", "boolean"}:
+                properties[key] = {"type": "boolean"}
+            else:
+                properties[key] = {"type": "string"}
+            required.append(str(key))
+        out.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": spec["name"],
+                    "description": spec.get("description") or "",
+                    "parameters": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                        "additionalProperties": True,
+                    },
+                },
+            }
+        )
+    return out
+
+
 def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
     """Hermes-like allowlisted shell in agent workspace (optional docker backend)."""
     import shlex
@@ -181,6 +217,27 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
     for bad in _SHELL_DENY_SUBSTR:
         if bad in low:
             return {"ok": False, "error": f"blocked pattern: {bad.strip()}"}
+    # Interactive approval gate (Hermes-like). Opt-in via env or explicit requireApproval.
+    require = str(os.environ.get("UAP_SHELL_REQUIRE_APPROVAL") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if args.get("requireApproval") is True:
+        require = True
+    approved = args.get("approved") is True or str(args.get("approved") or "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if require and not approved:
+        return {
+            "ok": False,
+            "needsApproval": True,
+            "command": cmd,
+            "error": "shell_exec requires human approval — re-call with approved=true",
+        }
     try:
         parts = shlex.split(cmd, posix=os.name != "nt")
     except Exception as e:
@@ -426,8 +483,11 @@ TOOL_SPECS: list[dict[str, Any]] = [
     },
     {
         "name": "shell_exec",
-        "description": "Run allowlisted shell command inside agent workspace (ls/cat/python/git/…).",
-        "parameters": {"command": "string", "timeout": "int"},
+        "description": (
+            "Run allowlisted shell command inside agent workspace (ls/cat/python/git/…). "
+            "If needsApproval is returned, re-call with approved=true after user consent."
+        ),
+        "parameters": {"command": "string", "timeout": "int", "approved": "bool"},
     },
     {
         "name": "browser_navigate",

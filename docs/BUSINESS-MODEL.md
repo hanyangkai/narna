@@ -10,10 +10,10 @@
 
 | Plan | Price | Agent | Hosted LLM | BYO | ADQA / Memory |
 |------|------:|-------|------------|-----|---------------|
-| **Free Ask** | $0 | Ask web | OpenRouter cheap · **50** turns/mo | — | Basic DQS + short memory |
-| **Personal** (API: `cloud`) | **$20/mo** | ✓ | Higher cap | ✓ | Full Decision Memory + ADQA API |
-| **Pro** | later | Multi-model challenge | ✓ | ✓ | Advanced ADQA |
-| **Team** | **$99/seat/mo** | Shared Decision Brain | ✓ | ✓ | Shared priors · governance |
+| **Free Ask** | $0 | Ask web | **None** (mock without key) · **50** turns/mo | ✓ BYOK | Basic DQS + short memory |
+| **Personal** (API: `cloud`) | **$20/mo** | ✓ | None (BYOK) | ✓ | Full Decision Memory + ADQA API |
+| **Pro** | later | Multi-model challenge | None | ✓ | Advanced ADQA |
+| **Team** | **$99/seat/mo** | Shared Decision Brain | None | ✓ | Shared priors · governance |
 | **Enterprise** | Custom | Private + own LLM | — | ✓ | On-prem · SSO · SLA |
 
 OSS runtime (`pip install narna`) remains free for local ADQA.

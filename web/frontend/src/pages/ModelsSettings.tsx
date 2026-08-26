@@ -64,8 +64,8 @@ export default function ModelsSettings() {
         <p className="pill-label">Models</p>
         <h1>Bring Your Own LLM</h1>
         <p>
-          Personal and Team can point NARNA at OpenAI, OpenRouter, Claude-compatible OpenAI APIs, or
-          Ollama. Free Ask uses hosted routing only.
+          Hermes-style BYOK: paste OpenRouter, OpenAI, or Ollama credentials. NARNA does not host
+          an LLM for you — it routes, tools, scores (ADQA), and remembers.
         </p>
       </header>
 

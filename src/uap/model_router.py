@@ -50,9 +50,10 @@ class RouterResult:
     provider: str
     task: str
     usage: dict[str, int]
+    tool_calls: list[dict[str, Any]] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "content": self.content,
             "model": self.model,
             "provider": self.provider,
@@ -60,6 +61,9 @@ class RouterResult:
             "usage": self.usage,
             "standard": "NGS-0028",
         }
+        if self.tool_calls:
+            out["toolCalls"] = self.tool_calls
+        return out
 
 
 def normalize_task(task: str | None) -> str:
@@ -123,10 +127,12 @@ class ModelRouter:
     def complete(
         self,
         *,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         task: str = "reason",
         temperature: float = 0.2,
         max_tokens: int = 1024,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
     ) -> RouterResult:
         tag = normalize_task(task)
         model = self.pick_model(tag)
@@ -138,6 +144,8 @@ class ModelRouter:
             task=tag,
             temperature=temperature,
             max_tokens=max_tokens,
+            tools=tools,
+            tool_choice=tool_choice,
         )
 
     def reason(self, prompt: str, **kwargs: Any) -> RouterResult:
@@ -193,11 +201,13 @@ class ModelRouter:
     def _openai_compat_complete(
         self,
         *,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         model: str,
         task: str,
         temperature: float,
         max_tokens: int,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
     ) -> RouterResult:
         base = self._resolve_base()
         key = self._resolve_key()
@@ -206,12 +216,15 @@ class ModelRouter:
         if not base:
             raise RuntimeError(f"unsupported provider: {self.provider}")
 
-        body = {
+        body: dict[str, Any] = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        if tools:
+            body["tools"] = tools
+            body["tool_choice"] = tool_choice or "auto"
         headers = {
             "Content-Type": "application/json",
             "User-Agent": "narna-model-router/0.1",
@@ -237,20 +250,40 @@ class ModelRouter:
 
         choices = data.get("choices") or []
         content = ""
+        native_calls: list[dict[str, Any]] = []
         if choices:
             msg = choices[0].get("message") or {}
             content = str(msg.get("content") or "")
+            for tc in msg.get("tool_calls") or []:
+                if not isinstance(tc, dict):
+                    continue
+                fn = tc.get("function") if isinstance(tc.get("function"), dict) else {}
+                name = str(fn.get("name") or "")
+                raw_args = fn.get("arguments") or "{}"
+                try:
+                    args = json.loads(raw_args) if isinstance(raw_args, str) else dict(raw_args)
+                except Exception:
+                    args = {"_raw": str(raw_args)}
+                if name:
+                    native_calls.append(
+                        {
+                            "tool": name,
+                            "args": args if isinstance(args, dict) else {},
+                            "id": tc.get("id"),
+                        }
+                    )
         usage_raw = data.get("usage") or {}
         usage = {
             "promptTokens": int(usage_raw.get("prompt_tokens") or 0),
             "completionTokens": int(usage_raw.get("completion_tokens") or 0),
         }
         return RouterResult(
-            content=content or "(empty model response)",
+            content=content or ("(tool call)" if native_calls else "(empty model response)"),
             model=str(data.get("model") or model),
             provider=self.provider,
             task=task,
             usage=usage,
+            tool_calls=native_calls or None,
         )
 
 

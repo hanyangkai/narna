@@ -290,6 +290,10 @@ export async function askNarna(
     files?: Array<{ name: string; text: string }>;
     showModels?: boolean;
     stream?: boolean;
+    llmProvider?: string;
+    llmApiKey?: string;
+    llmBaseUrl?: string;
+    llmModel?: string;
   }
 ): Promise<AgentAskResponse> {
   const headers: Record<string, string> = {
@@ -298,12 +302,18 @@ export async function askNarna(
   };
   if (opts?.apiKey) headers.Authorization = `Bearer ${opts.apiKey}`;
   if (opts?.showModels) headers["X-Narna-Show-Models"] = "1";
-  const payload = {
+  const payload: Record<string, unknown> = {
     message,
     sessionId: opts?.sessionId,
     challenge: opts?.challenge ?? false,
     files: opts?.files ?? [],
   };
+  if (opts?.llmApiKey) {
+    payload.llmApiKey = opts.llmApiKey;
+    payload.llmProvider = opts.llmProvider || "openrouter";
+    if (opts.llmBaseUrl) payload.llmBaseUrl = opts.llmBaseUrl;
+    if (opts.llmModel) payload.llmModel = opts.llmModel;
+  }
 
   if (opts?.stream !== false && typeof EventSource === "undefined") {
     // keep POST path below; EventSource can't POST — use fetch stream

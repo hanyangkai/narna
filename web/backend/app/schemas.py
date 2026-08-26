@@ -108,6 +108,11 @@ class AgentAskRequest(BaseModel):
     sessionId: str | None = None
     challenge: bool = False
     files: list[dict[str, Any]] = Field(default_factory=list)
+    # Hermes-style BYOK — optional per-request LLM (never stored unless /models)
+    llmProvider: str | None = None
+    llmApiKey: str | None = None
+    llmBaseUrl: str | None = None
+    llmModel: str | None = None
 
 
 class AgentOutcomeRequest(BaseModel):
@@ -135,6 +140,10 @@ class AgentSkillHubPublishRequest(BaseModel):
 
 class AgentSkillHubInstallRequest(BaseModel):
     skillId: str
+
+
+class AgentSkillMarkdownImportRequest(BaseModel):
+    markdown: str
 
 
 class AgentModelsPutRequest(BaseModel):

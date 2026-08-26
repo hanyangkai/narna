@@ -21,7 +21,7 @@ PLANS: dict[str, dict[str, Any]] = {
         "seats": 1,
         "enforcement": "hard",
         "usd": 0.0,
-        "byo_llm": False,
+        "byo_llm": True,  # Hermes-style: everyone brings their own LLM key
     },
     "cloud": {
         "event_limit": None,

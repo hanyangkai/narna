@@ -90,6 +90,7 @@ from .schemas import (
     AgentOutcomeRequest,
     AgentSkillHubInstallRequest,
     AgentSkillHubPublishRequest,
+    AgentSkillMarkdownImportRequest,
     BillingCheckoutRequest,
     BillingCheckoutResponse,
     BillingCryptoCheckoutRequest,
@@ -1712,7 +1713,7 @@ def _resolve_ask_org(
     return row
 
 
-def _router_for_org(org: Organization):
+def _router_for_org(org: Organization, *, override: dict[str, Any] | None = None):
     import json as _json
 
     from uap.model_router import ModelRouter
@@ -1724,7 +1725,26 @@ def _router_for_org(org: Organization):
             cfg = _json.loads(raw)
         except Exception:
             cfg = {}
-    provider = str(cfg.get("provider") or os.environ.get("UAP_ROUTER_PROVIDER") or "mock")
+    # Per-request BYOK wins (Hermes: user key, not hosted LLM)
+    if override:
+        if override.get("apiKey"):
+            cfg["apiKey"] = override["apiKey"]
+        if override.get("provider"):
+            cfg["provider"] = override["provider"]
+        if override.get("baseUrl"):
+            cfg["baseUrl"] = override["baseUrl"]
+        if override.get("modelReason"):
+            cfg["modelReason"] = override["modelReason"]
+            cfg["modelCheap"] = override.get("modelCheap") or override["modelReason"]
+            cfg["modelChallenge"] = override.get("modelChallenge") or override["modelReason"]
+
+    provider = str(cfg.get("provider") or "").lower()
+    api_key = str(cfg.get("apiKey") or "").strip()
+    # No hosted OpenRouter fallback — mock unless user brought a key
+    if not provider:
+        provider = "openrouter" if api_key else "mock"
+    if provider in {"openrouter", "openai"} and not api_key:
+        provider = "mock"
     models = {}
     if cfg.get("modelCheap"):
         models["cheap"] = str(cfg["modelCheap"])
@@ -1734,7 +1754,7 @@ def _router_for_org(org: Organization):
         models["challenge"] = str(cfg["modelChallenge"])
     return ModelRouter(
         provider=provider,
-        api_key=str(cfg.get("apiKey") or "") or None,
+        api_key=api_key or None,
         base_url=str(cfg.get("baseUrl") or "") or None,
         models=models or None,
     )
@@ -1784,11 +1804,20 @@ def agent_ask(
         # Allow challenge on free for product demo but still one turn; soft note
         challenge = True
 
+    override = None
+    if body.llmApiKey or body.llmProvider or body.llmBaseUrl or body.llmModel:
+        override = {
+            "apiKey": body.llmApiKey,
+            "provider": body.llmProvider or "openrouter",
+            "baseUrl": body.llmBaseUrl,
+            "modelReason": body.llmModel,
+        }
+
     ws = tenant_workspace(resolved.id)
     agent = NarnaAgent(
         workspace=ws,
         tenant_id=tenant_id_for_org(resolved.id),
-        router=_router_for_org(resolved),
+        router=_router_for_org(resolved, override=override),
     )
     try:
         out = agent.ask(
@@ -1883,6 +1912,45 @@ def agent_skill_hub_install(
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     return {"ok": True, "installed": installed}
+
+
+@app.get("/v1/agent/skills/{skill_id}/markdown")
+def agent_skill_export_markdown(
+    skill_id: str,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Export skill as agentskills.io SKILL.md (Hermes interop)."""
+    from uap.agent_skills import SkillStore
+    from uap.skill_md import skill_to_markdown
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    skill = SkillStore(tenant_workspace(resolved.id)).get(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail="skill not found")
+    return {"ok": True, "skillId": skill_id, "markdown": skill_to_markdown(skill)}
+
+
+@app.post("/v1/agent/skills/import-markdown")
+def agent_skill_import_markdown(
+    body: AgentSkillMarkdownImportRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Import agentskills.io SKILL.md into tenant skill store."""
+    from uap.agent_skills import SkillStore
+    from uap.skill_md import markdown_to_skill
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    parsed = markdown_to_skill(body.markdown)
+    row = SkillStore(tenant_workspace(resolved.id)).save(
+        name=str(parsed.get("name") or "imported"),
+        body=str(parsed.get("body") or ""),
+        tags=list(parsed.get("tags") or []),
+    )
+    return {"ok": True, "skill": row, "standard": "agentskills.io"}
 
 
 @app.get("/v1/agent/sessions/{session_id}")
@@ -2274,6 +2342,14 @@ def agent_ask_stream(
     warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
     challenge = bool(body.challenge)
     ws = tenant_workspace(resolved.id)
+    override = None
+    if body.llmApiKey or body.llmProvider or body.llmBaseUrl or body.llmModel:
+        override = {
+            "apiKey": body.llmApiKey,
+            "provider": body.llmProvider or "openrouter",
+            "baseUrl": body.llmBaseUrl,
+            "modelReason": body.llmModel,
+        }
 
     def gen():
         yield f"event: status\ndata: {_json.dumps({'phase': 'start'})}\n\n"
@@ -2282,7 +2358,7 @@ def agent_ask_stream(
         agent = NarnaAgent(
             workspace=ws,
             tenant_id=tenant_id_for_org(resolved.id),
-            router=_router_for_org(resolved),
+            router=_router_for_org(resolved, override=override),
         )
         yield f"event: status\ndata: {_json.dumps({'phase': 'reason'})}\n\n"
         try:
@@ -2453,7 +2529,7 @@ def agent_models_put(
     if not plan_allows_byo_llm(org.plan):
         raise HTTPException(
             status_code=403,
-            detail="BYO LLM requires Personal (cloud) or Team — upgrade at /billing",
+            detail="BYO LLM not allowed on this plan",
         )
     provider = str(body.provider or "openrouter").lower()
     if provider not in {"openrouter", "openai", "ollama", "mock"}:

@@ -12,7 +12,7 @@ from .agent_jobs import AgentJobStore
 from .agent_memory_fts import AgentMemoryFTS
 from .agent_session import AgentSessionStore
 from .agent_skills import SkillStore
-from .agent_tools import AgentToolbelt
+from .agent_tools import AgentToolbelt, openai_tools_schema
 from .decision_memory import DecisionMemory
 from .model_router import ModelRouter, default_router_from_env
 from .skill_hub import SkillHub
@@ -48,6 +48,16 @@ def _parse_tool_calls(text: str) -> list[dict[str, Any]]:
                     args = {"query": parts[1]}
             calls.append({"tool": name, "args": args})
     return calls[:4]
+
+
+def _merge_tool_calls(
+    native: list[dict[str, Any]] | None,
+    parsed: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Prefer OpenAI-native tool_calls; fall back to JSON-fence parse (Hermes interop)."""
+    if native:
+        return native[:4]
+    return parsed
 
 
 class NarnaAgent:
@@ -154,9 +164,11 @@ class NarnaAgent:
             "You are NARNA, a decision-quality agent with tools. "
             "Use tools when you need facts, URLs, math, sandboxed code/shell, browser pages, "
             "workspace files, memory, skills, or hub skills. "
-            "To call a tool, output ONLY a JSON block like:\n"
+            "Prefer native function/tool calling when the API supports it. "
+            "Otherwise output ONLY a JSON block like:\n"
             '```json\n{"tool":"web_search","args":{"query":"..."}}\n```\n'
             "You may use code_exec / shell_exec / browser_navigate / parallel_delegate when useful. "
+            "If shell_exec returns needsApproval, ask the user before re-calling with approved=true. "
             "After tools return, give a final recommendation with risks and missing evidence. "
             "Do not claim absolute certainty. Prefer Decision Memory lessons and user profile notes."
         )
@@ -173,29 +185,51 @@ class NarnaAgent:
             f"User question:\n{msg}"
         )
 
-        messages: list[dict[str, str]] = [{"role": "system", "content": system}]
+        messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
         messages.extend(history[:-1])  # history already includes latest user; avoid dup
         messages.append({"role": "user", "content": user_blob})
 
         models_used: list[str] = []
         tool_trace: list[dict[str, Any]] = []
         draft = ""
+        openai_tools = openai_tools_schema(self.tools.specs()) if use_tools else None
 
         rounds = self.max_tool_rounds if use_tools else 0
         for _ in range(rounds + 1):
-            result = self.router.complete(messages=messages, task="reason")
+            result = self.router.complete(
+                messages=messages,
+                task="reason",
+                tools=openai_tools,
+            )
             models_used.append(result.model)
             draft = result.content
-            calls = _parse_tool_calls(draft) if use_tools else []
+            calls = (
+                _merge_tool_calls(result.tool_calls, _parse_tool_calls(draft))
+                if use_tools
+                else []
+            )
             if not calls:
                 break
             tool_results = []
+            assistant_msg: dict[str, Any] = {"role": "assistant", "content": draft or None}
+            if result.tool_calls:
+                assistant_msg["tool_calls"] = [
+                    {
+                        "id": c.get("id") or f"call_{i}",
+                        "type": "function",
+                        "function": {
+                            "name": c.get("tool"),
+                            "arguments": json.dumps(c.get("args") or {}),
+                        },
+                    }
+                    for i, c in enumerate(result.tool_calls)
+                ]
+            messages.append(assistant_msg)
             for call in calls:
                 name = str(call.get("tool") or "")
                 args = call.get("args") if isinstance(call.get("args"), dict) else {}
-                # allow flat params
                 if not args:
-                    args = {k: v for k, v in call.items() if k != "tool"}
+                    args = {k: v for k, v in call.items() if k not in {"tool", "id"}}
                 out = self.tools.call(name, args)
                 tool_trace.append({"tool": name, "args": args, "result": out})
                 if name == "web_fetch" and out.get("ok"):
@@ -209,17 +243,25 @@ class NarnaAgent:
                     if sid_skill:
                         self.skills.bump_use(sid_skill)
                 tool_results.append({"tool": name, "result": out})
-            messages.append({"role": "assistant", "content": draft})
-            messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        "Tool results (JSON). Now produce the final answer without more tools "
-                        "unless critically needed:\n"
-                        + json.dumps(tool_results, ensure_ascii=False)[:12000]
-                    ),
-                }
-            )
+                if call.get("id"):
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call["id"],
+                            "content": json.dumps(out, ensure_ascii=False)[:8000],
+                        }
+                    )
+            if not any(c.get("id") for c in calls):
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Tool results (JSON). Now produce the final answer without more tools "
+                            "unless critically needed:\n"
+                            + json.dumps(tool_results, ensure_ascii=False)[:12000]
+                        ),
+                    }
+                )
         else:
             # exhausted rounds with trailing tool call — force final
             result = self.router.complete(

@@ -37,6 +37,12 @@ export default function Ask() {
   const [installHint, setInstallHint] = useState(false);
   const [skills, setSkills] = useState<Array<{ skillId: string; name: string }>>([]);
   const [showSkills, setShowSkills] = useState(false);
+  const [showLlm, setShowLlm] = useState(false);
+  const [llmProvider, setLlmProvider] = useState(
+    () => localStorage.getItem("narna_llm_provider") || "openrouter"
+  );
+  const [llmApiKey, setLlmApiKey] = useState(() => localStorage.getItem("narna_llm_key") || "");
+  const [llmModel, setLlmModel] = useState(() => localStorage.getItem("narna_llm_model") || "");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const deferredPrompt = useRef<{ prompt: () => Promise<void> } | null>(null);
 
@@ -94,11 +100,26 @@ export default function Ask() {
   const onSend = async () => {
     const message = input.trim();
     if (!message || loading) return;
+    // Hermes-like slash commands
+    if (message === "/new" || message === "/reset") {
+      setSessionId(undefined);
+      setItems([]);
+      setInput("");
+      return;
+    }
+    if (message === "/skills") {
+      setShowSkills(true);
+      setInput("");
+      return;
+    }
     setError(null);
     setInput("");
     setItems((prev) => [...prev, { role: "user", text: message }]);
     setLoading(true);
     try {
+      localStorage.setItem("narna_llm_provider", llmProvider);
+      if (llmApiKey) localStorage.setItem("narna_llm_key", llmApiKey);
+      if (llmModel) localStorage.setItem("narna_llm_model", llmModel);
       const apiKey = localStorage.getItem("uap_api_key") || undefined;
       const resp = await askNarna(message, {
         apiKey,
@@ -106,6 +127,9 @@ export default function Ask() {
         files,
         showModels,
         challenge: false,
+        llmProvider: llmApiKey ? llmProvider : undefined,
+        llmApiKey: llmApiKey || undefined,
+        llmModel: llmApiKey && llmModel ? llmModel : undefined,
       });
       setSessionId(resp.sessionId);
       setFiles([]);
@@ -142,8 +166,8 @@ export default function Ask() {
           <p className="pill-label">Ask NARNA</p>
           <h1>{BRAND.name}</h1>
           <p>
-            Ask in plain language. Tools, skills, and Decision Memory run under the hood — on
-            desktop or as a phone app.
+            Ask in plain language. Bring your own LLM key (OpenRouter / OpenAI / Ollama) — like
+            Hermes. NARNA scores every answer with ADQA.
           </p>
           <div className="ask-header-actions">
             {installHint && (
@@ -154,11 +178,64 @@ export default function Ask() {
             <button
               type="button"
               className="btn btn-secondary"
+              onClick={() => setShowLlm((v) => !v)}
+            >
+              {llmApiKey ? "LLM key ✓" : "Add LLM key"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
               onClick={() => setShowSkills((v) => !v)}
             >
               Skills ({skills.length})
             </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setSessionId(undefined);
+                setItems([]);
+              }}
+            >
+              /new
+            </button>
           </div>
+          {showLlm && (
+            <div className="ask-llm-box">
+              <p className="ask-mobile-tip">
+                Hermes-style BYOK — key stays in your browser localStorage, sent only with Ask
+                requests (not stored on NARNA Free unless you save via Models settings).
+              </p>
+              <label>
+                Provider
+                <select value={llmProvider} onChange={(e) => setLlmProvider(e.target.value)}>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="ollama">Ollama</option>
+                  <option value="mock">Mock (no key)</option>
+                </select>
+              </label>
+              <label>
+                API key
+                <input
+                  type="password"
+                  value={llmApiKey}
+                  onChange={(e) => setLlmApiKey(e.target.value)}
+                  placeholder="sk-or-… / sk-…"
+                  className="mono"
+                />
+              </label>
+              <label>
+                Model (optional)
+                <input
+                  value={llmModel}
+                  onChange={(e) => setLlmModel(e.target.value)}
+                  placeholder="openai/gpt-4o-mini"
+                  className="mono"
+                />
+              </label>
+            </div>
+          )}
           {showSkills && (
             <ul className="ask-skills-list">
               {skills.length === 0 && <li>No saved skills yet — strong answers auto-save.</li>}
@@ -172,9 +249,9 @@ export default function Ask() {
         <div className="ask-thread">
           {items.length === 0 && (
             <div className="ask-empty">
-              <p>Try: “Should I sign this contract?” or “Analyze this proposal.”</p>
+              <p>Try: “Should I sign this contract?” — or `/new` / `/skills`.</p>
               <p className="ask-mobile-tip">
-                On phone: open /ask → browser menu → Add to Home Screen. Or chat via Telegram bot.
+                Without an LLM key, Ask runs in mock mode (still ADQA-scored). Add your key above.
               </p>
             </div>
           )}
@@ -192,6 +269,29 @@ export default function Ask() {
                       {[...new Set(item.meta.toolsUsed.map((t) => t.tool))].join(", ")}
                     </span>
                   )}
+                  {item.meta.toolsUsed
+                    ?.filter((t) => t.result && (t.result as { needsApproval?: boolean }).needsApproval)
+                    .map((t, ti) => {
+                      const cmd = String(
+                        (t.result as { command?: string }).command ||
+                          (t.args as { command?: string } | undefined)?.command ||
+                          ""
+                      );
+                      return (
+                        <button
+                          key={`approve-${ti}`}
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setInput(
+                              `Approve shell and re-run: tell NARNA to call shell_exec with approved=true for: ${cmd}`
+                            );
+                          }}
+                        >
+                          Approve shell: {cmd.slice(0, 48) || "command"}
+                        </button>
+                      );
+                    })}
                   {item.meta.skillSaved?.name && (
                     <span className="ask-skill">Saved skill: {item.meta.skillSaved.name}</span>
                   )}

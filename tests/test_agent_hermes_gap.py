@@ -237,5 +237,94 @@ class SandboxJobsTests(unittest.TestCase):
             self.assertFalse(any(j["jobId"] == recurring["jobId"] for j in jobs.due_jobs()))
 
 
+class HermesAlignTests(unittest.TestCase):
+    def test_openai_tools_schema(self):
+        from uap.agent_tools import openai_tools_schema
+
+        tools = openai_tools_schema()
+        self.assertTrue(tools)
+        self.assertEqual(tools[0]["type"], "function")
+        names = {t["function"]["name"] for t in tools}
+        self.assertIn("calculator", names)
+        self.assertIn("shell_exec", names)
+
+    def test_merge_prefers_native(self):
+        from uap.narna_agent import _merge_tool_calls
+
+        native = [{"tool": "calculator", "args": {"expression": "1+1"}, "id": "c1"}]
+        parsed = [{"tool": "web_search", "args": {"query": "x"}}]
+        self.assertEqual(_merge_tool_calls(native, parsed)[0]["tool"], "calculator")
+        self.assertEqual(_merge_tool_calls(None, parsed)[0]["tool"], "web_search")
+
+    def test_shell_approval_gate(self):
+        import os
+        import sys
+
+        from uap.agent_tools import tool_shell_exec
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            os.environ["UAP_SHELL_REQUIRE_APPROVAL"] = "1"
+            try:
+                blocked = tool_shell_exec({"command": "python -c print(1)"}, cwd=Path(td))
+                self.assertTrue(blocked.get("needsApproval"))
+                # Approval path only needs to clear the gate; execution may vary by OS shell.
+                cleared = tool_shell_exec(
+                    {"command": "python -c print(1)", "approved": True}, cwd=Path(td)
+                )
+                self.assertFalse(cleared.get("needsApproval"))
+                self.assertNotEqual(cleared.get("error"), blocked.get("error"))
+            finally:
+                os.environ.pop("UAP_SHELL_REQUIRE_APPROVAL", None)
+
+    def test_skill_md_roundtrip(self):
+        from uap.skill_md import markdown_to_skill, skill_to_markdown
+
+        md = skill_to_markdown(
+            {"name": "Review NDA", "body": "Check indemnity", "tags": ["legal"]}
+        )
+        self.assertIn("agentskills.io", md)
+        parsed = markdown_to_skill(md)
+        self.assertEqual(parsed["name"], "Review NDA")
+        self.assertIn("indemnity", str(parsed["body"]))
+
+    def test_native_tool_calls_in_ask_loop(self):
+        class NativeToolsRouter(ModelRouter):
+            def __init__(self):
+                super().__init__(provider="mock")
+                self.n = 0
+                self.saw_tools = False
+
+            def complete(self, *, messages, task="reason", tools=None, **kwargs):
+                self.n += 1
+                from uap.model_router import RouterResult
+
+                if self.n == 1:
+                    self.saw_tools = bool(tools)
+                    return RouterResult(
+                        content="",
+                        model="mock-native",
+                        provider="mock",
+                        task=task,
+                        usage={},
+                        tool_calls=[
+                            {
+                                "tool": "calculator",
+                                "args": {"expression": "7*8"},
+                                "id": "call_1",
+                            }
+                        ],
+                    )
+                return super().complete(messages=messages, task=task, **kwargs)
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            router = NativeToolsRouter()
+            agent = NarnaAgent(workspace=td, router=router)
+            out = agent.ask("what is 7*8?", use_tools=True, capture_skill=False)
+            self.assertTrue(router.saw_tools)
+            tools = out.get("toolsUsed") or []
+            self.assertTrue(any(t.get("tool") == "calculator" for t in tools))
+            self.assertIn("56", str(tools[0].get("result")))
+
+
 if __name__ == "__main__":
     unittest.main()
