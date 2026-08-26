@@ -168,7 +168,7 @@ _SHELL_DENY_SUBSTR = (
 
 
 def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
-    """Hermes-like allowlisted shell in agent workspace (no full OS)."""
+    """Hermes-like allowlisted shell in agent workspace (optional docker backend)."""
     import shlex
     import subprocess
 
@@ -191,13 +191,54 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
     if bin_name not in _SHELL_ALLOW:
         return {"ok": False, "error": f"binary not allowlisted: {bin_name}"}
     cwd.mkdir(parents=True, exist_ok=True)
+    timeout = int(args.get("timeout") or 15)
+    backend = (os.environ.get("UAP_SHELL_BACKEND") or "local").strip().lower()
+    if backend == "docker":
+        # Opt-in isolated container with workspace bind-mount (read-write).
+        image = os.environ.get("UAP_SHELL_DOCKER_IMAGE") or "python:3.12-alpine"
+        docker_cmd = [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            f"{cwd}:/work",
+            "-w",
+            "/work",
+            image,
+            *parts,
+        ]
+        try:
+            proc = subprocess.run(  # noqa: S603
+                docker_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout + 5,
+                shell=False,
+            )
+        except FileNotFoundError:
+            return {"ok": False, "error": "docker binary not found on host"}
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "timeout"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {
+            "ok": proc.returncode == 0,
+            "exitCode": proc.returncode,
+            "stdout": (proc.stdout or "")[:8000],
+            "stderr": (proc.stderr or "")[:2000],
+            "cwd": str(cwd),
+            "backend": "docker",
+            "image": image,
+        }
     try:
         proc = subprocess.run(  # noqa: S603 — allowlisted argv
             parts,
             cwd=str(cwd),
             capture_output=True,
             text=True,
-            timeout=int(args.get("timeout") or 15),
+            timeout=timeout,
             shell=False,
         )
     except subprocess.TimeoutExpired:
@@ -210,6 +251,7 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
         "stdout": (proc.stdout or "")[:8000],
         "stderr": (proc.stderr or "")[:2000],
         "cwd": str(cwd),
+        "backend": "local",
     }
 
 
@@ -480,11 +522,13 @@ class AgentToolbelt:
         sessions: Any = None,
         delegate_fn: Callable[[str], dict[str, Any]] | None = None,
         skill_hub: Any = None,
+        fts: Any = None,
     ) -> None:
         self.memory = memory
         self.skills = skills
         self.sessions = sessions
         self.skill_hub = skill_hub
+        self.fts = fts
         self.workspace = Path(workspace) if workspace else Path.cwd()
         self._delegate_fn = delegate_fn
         self._handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
@@ -707,6 +751,9 @@ class AgentToolbelt:
                                 break
                     if len(hits) >= limit:
                         break
+        if self.fts is not None and len(hits) < limit:
+            for h in self.fts.search(q, limit=limit - len(hits)):
+                hits.append(h)
         return {"ok": True, "query": q, "hits": hits[:limit]}
 
     def _delegate_task(self, args: dict[str, Any]) -> dict[str, Any]:

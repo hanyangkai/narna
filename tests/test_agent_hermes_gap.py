@@ -33,7 +33,7 @@ class ToolTests(unittest.TestCase):
 
 class SkillsSessionsTests(unittest.TestCase):
     def test_skill_roundtrip(self):
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             store = SkillStore(Path(td))
             row = store.save(name="Contract review", body="Check clause 5", tags=["legal"])
             self.assertTrue(row["skillId"])
@@ -43,7 +43,7 @@ class SkillsSessionsTests(unittest.TestCase):
             self.assertEqual(got["body"], "Check clause 5")
 
     def test_session_multiturn(self):
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             store = AgentSessionStore(Path(td))
             s = store.get_or_create(channel="web")
             sid = s["sessionId"]
@@ -77,7 +77,7 @@ class AgentToolsLoopTests(unittest.TestCase):
                     )
                 return super().complete(messages=messages, task=task, **kwargs)
 
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             agent = NarnaAgent(
                 workspace=Path(td),
                 router=ToolThenAnswer(),
@@ -129,7 +129,7 @@ class DiscordDelegateTests(unittest.TestCase):
         self.assertEqual(author, "222")
 
     def test_memory_search_and_delegate(self):
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             agent = NarnaAgent(
                 workspace=Path(td),
                 router=ModelRouter(provider="mock"),
@@ -148,7 +148,7 @@ class DiscordDelegateTests(unittest.TestCase):
         from uap.agent_tools import tool_browser_navigate, tool_shell_exec
         from uap.skill_hub import SkillHub
 
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             root = Path(td)
             cwd = root / ".uap" / "agent-workspace"
             cwd.mkdir(parents=True)
@@ -181,6 +181,31 @@ class DiscordDelegateTests(unittest.TestCase):
             self.assertTrue(par["ok"])
             self.assertEqual(len(par["results"]), 2)
 
+    def test_fts_profile_and_gateways(self):
+        from uap.agent_memory_fts import AgentMemoryFTS
+        from uap.email_gateway import extract_email_message
+        from uap.signal_gateway import extract_signal_message
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            fts = AgentMemoryFTS(Path(td))
+            fts.index_turn(session_id="s1", role="user", content="lease renewal CPI clause")
+            fts.observe_user_message("I prefer short answers")
+            hits = fts.search("CPI")
+            self.assertTrue(hits)
+            self.assertIn("preference_note", fts.get_profile())
+
+        sender, text = extract_signal_message(
+            {"envelope": {"sourceNumber": "+1555", "dataMessage": {"message": "hi"}}}
+        )
+        self.assertEqual(sender, "+1555")
+        self.assertEqual(text, "hi")
+        frm, sub, body = extract_email_message(
+            {"from": "a@b.com", "subject": "Q", "text": "Should I sign?"}
+        )
+        self.assertEqual(frm, "a@b.com")
+        self.assertEqual(sub, "Q")
+        self.assertIn("sign", body)
+
 
 class SandboxJobsTests(unittest.TestCase):
     def test_code_exec(self):
@@ -196,7 +221,7 @@ class SandboxJobsTests(unittest.TestCase):
         from uap.agent_jobs import AgentJobStore
         from uap.agent_tools import AgentToolbelt
 
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             root = Path(td)
             belt = AgentToolbelt(workspace=root)
             w = belt.call("workspace_write", {"path": "notes.txt", "text": "hello"})

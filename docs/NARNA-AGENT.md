@@ -55,15 +55,12 @@ NARNA is **not** a clone of Hermes or OpenClaw. It is a **decision-quality agent
 | Browser automation | Playwright-class | Via skills | **browser_navigate/snapshot** (Playwright if installed, else fetch) |
 | Skills | Auto-create + curator | ClawHub marketplace | Auto-capture + **Skill Hub** publish/install |
 | Memory | FTS5 sessions + Honcho | Markdown + vectors | Decision Memory + memory_search |
-| Channels | Many (TG/Discord/Slack/WA…) | **20+** gateway | Web + TG + Discord + **Slack** + **WhatsApp (Twilio)** |
-| Cron / heartbeat | Native NL cron | Heartbeat | Agent jobs + ticker |
-| Subagents | Parallel delegate | Multi-bot | `delegate_task` + **`parallel_delegate`** (≤3) |
-| Model routing | OpenRouter etc. | BYOK many | Model Router (mock/OpenRouter/OpenAI/Ollama) |
-| **Decision quality score** | — | — | **ADQA / DQS (unique)** |
+| Channels | Many | **20+** | Web + TG + Discord + Slack + WhatsApp + **Signal** + **Email** |
+| Memory | FTS5 + Honcho | Markdown/vector | Decision Memory + **SQLite FTS5** + profile notes |
+| Shell | Docker/SSH/Modal | Approvals | Allowlist local + **optional docker backend** |
 
-**Still thinner than Hermes/OpenClaw:** unrestricted Docker shell, full Playwright pipeline by default, Signal/iMessage/50+ channels, Honcho user modeling, ClawHub network effects.
+See also: [`docs/SECRETS.md`](./SECRETS.md) for keys to set.
 
-**Prod ops still open:** `UAP_OPENROUTER_API_KEY` (live LLM), channel tokens.
 
 ### Hermes gap (v1.5 → v1.6)
 

@@ -1,0 +1,95 @@
+name: Deploy VPS Ask Agent
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/uap/**"
+      - "src/narna/**"
+      - "web/backend/**"
+      - "web/frontend/**"
+      - "web/deploy/selfhost/**"
+      - "scripts/deploy_vps_agent.sh"
+      - "scripts/patch_vps_agent_env.py"
+      - ".github/workflows/deploy-vps.yml"
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require deploy secrets
+        run: |
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ] || [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "Missing VPS_SSH_KEY or VPS_HOST — see docs/SECRETS.md"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Pack, sync, patch env, rebuild, smoke
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          SIGNAL_WEBHOOK_URL: ${{ secrets.SIGNAL_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          H="${{ secrets.VPS_HOST }}"
+          U="${{ secrets.VPS_SSH_USER }}"
+          if [[ "$H" == *"@"* ]]; then TARGET="$H"; else TARGET="${U:-root}@$H"; fi
+          ssh-keyscan -H "${H##*@}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          tar -czf /tmp/narna-prod-sync.tar.gz \
+            --exclude=.git --exclude=node_modules --exclude=.deploy-secrets \
+            --exclude='**/__pycache__' --exclude=.pytest_cache --exclude=web/frontend/dist --exclude=.uap \
+            .
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            /tmp/narna-prod-sync.tar.gz scripts/patch_vps_agent_env.py \
+            "$TARGET:/tmp/"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$TARGET" \
+            'cd /opt/narna && tar -xzf /tmp/narna-prod-sync.tar.gz && rm -f /tmp/narna-prod-sync.tar.gz'
+
+          # Patch env from Actions secrets (empty vars are no-ops)
+          ssh -i ~/.ssh/deploy_key "$TARGET" \
+            "OPENROUTER_API_KEY='$OPENROUTER_API_KEY' \
+             TELEGRAM_BOT_TOKEN='$TELEGRAM_BOT_TOKEN' \
+             DISCORD_BOT_TOKEN='$DISCORD_BOT_TOKEN' \
+             SLACK_BOT_TOKEN='$SLACK_BOT_TOKEN' \
+             TWILIO_ACCOUNT_SID='$TWILIO_ACCOUNT_SID' \
+             TWILIO_AUTH_TOKEN='$TWILIO_AUTH_TOKEN' \
+             TWILIO_WHATSAPP_FROM='$TWILIO_WHATSAPP_FROM' \
+             SIGNAL_WEBHOOK_URL='$SIGNAL_WEBHOOK_URL' \
+             python3 /tmp/patch_vps_agent_env.py"
+
+          ssh -i ~/.ssh/deploy_key "$TARGET" \
+            'cd /opt/narna/web/deploy/selfhost && docker compose -f docker-compose.vps.yml up -d --build api web'
+          ssh -i ~/.ssh/deploy_key "$TARGET" \
+            'for i in $(seq 1 40); do st=$(docker inspect -f "{{.State.Health.Status}}" selfhost-api-1 2>/dev/null || echo starting); echo health=$st; [ "$st" = healthy ] && exit 0; sleep 3; done; exit 1'
+          ssh -i ~/.ssh/deploy_key "$TARGET" 'python3 - <<"PY"
+          import json, urllib.request
+          body=json.dumps({"message":"gha smoke"}).encode()
+          req=urllib.request.Request(
+            "http://127.0.0.1:8100/v1/agent/ask",
+            data=body,
+            headers={"Content-Type":"application/json","X-Narna-Device":"gha"},
+            method="POST",
+          )
+          d=json.loads(urllib.request.urlopen(req, timeout=90).read().decode())
+          assert d.get("answer"), d
+          print("OK", d.get("dqs"), d.get("standard"))
+          PY'

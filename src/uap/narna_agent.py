@@ -9,6 +9,7 @@ from typing import Any
 
 from .adqa import ADQAEngine
 from .agent_jobs import AgentJobStore
+from .agent_memory_fts import AgentMemoryFTS
 from .agent_session import AgentSessionStore
 from .agent_skills import SkillStore
 from .agent_tools import AgentToolbelt
@@ -68,6 +69,7 @@ class NarnaAgent:
         self.sessions = AgentSessionStore(self.workspace)
         self.jobs = AgentJobStore(self.workspace)
         self.hub = SkillHub(self.workspace)
+        self.fts = AgentMemoryFTS(self.workspace)
         self.tools = AgentToolbelt(
             memory=self.memory,
             skills=self.skills,
@@ -75,6 +77,7 @@ class NarnaAgent:
             sessions=self.sessions,
             delegate_fn=self._delegate_subask,
             skill_hub=self.hub,
+            fts=self.fts,
         )
         self.adqa = ADQAEngine(self.workspace)
         self.max_tool_rounds = max(0, int(max_tool_rounds))
@@ -118,6 +121,8 @@ class NarnaAgent:
         )
         sid = str(session["sessionId"])
         self.sessions.append(sid, role="user", content=msg)
+        self.fts.index_turn(session_id=sid, role="user", content=msg)
+        self.fts.observe_user_message(msg)
 
         file_bits: list[str] = []
         sources: list[dict[str, str]] = []
@@ -136,23 +141,32 @@ class NarnaAgent:
         skill_lines = [
             f"- {s.get('skillId')}: {s.get('name')}" for s in self.skills.list_skills()[:8]
         ]
+        profile = self.fts.get_profile()
+        profile_lines = [f"- {k}: {v}" for k, v in list(profile.items())[:8]]
+        fts_hits = self.fts.search(msg, limit=4)
+        fts_lines = [
+            f"- [{h.get('role')}] {h.get('snippet')}" for h in fts_hits
+        ]
         tool_catalog = json.dumps(self.tools.specs(), ensure_ascii=False)
         history = self.sessions.history_for_prompt(sid, limit=10)
 
         system = (
             "You are NARNA, a decision-quality agent with tools. "
-            "Use tools when you need facts, URLs, math, sandboxed code, workspace files, memory, or skills. "
+            "Use tools when you need facts, URLs, math, sandboxed code/shell, browser pages, "
+            "workspace files, memory, skills, or hub skills. "
             "To call a tool, output ONLY a JSON block like:\n"
             '```json\n{"tool":"web_search","args":{"query":"..."}}\n```\n'
-            "You may use code_exec for multi-step math/logic (set result=...). "
+            "You may use code_exec / shell_exec / browser_navigate / parallel_delegate when useful. "
             "After tools return, give a final recommendation with risks and missing evidence. "
-            "Do not claim absolute certainty. Prefer Decision Memory lessons when relevant."
+            "Do not claim absolute certainty. Prefer Decision Memory lessons and user profile notes."
         )
 
         context_block = "\n".join(file_bits)
         user_blob = (
             f"Prior Decision Memory:\n"
             f"{chr(10).join(prior_lines) if prior_lines else '(none)'}\n\n"
+            f"User profile:\n{chr(10).join(profile_lines) if profile_lines else '(none)'}\n\n"
+            f"FTS recall:\n{chr(10).join(fts_lines) if fts_lines else '(none)'}\n\n"
             f"Skills:\n{chr(10).join(skill_lines) if skill_lines else '(none)'}\n\n"
             f"Tools available:\n{tool_catalog}\n\n"
             f"Attachments:\n{context_block or '(none)'}\n\n"
@@ -290,6 +304,12 @@ class NarnaAgent:
                 "dqs": adqa.get("dqs"),
                 "guardian": adqa.get("guardian"),
             },
+        )
+        self.fts.index_turn(
+            session_id=sid,
+            role="assistant",
+            content=draft,
+            meta={"decisionId": record.get("decisionId"), "dqs": adqa.get("dqs")},
         )
 
         return {

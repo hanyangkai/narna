@@ -2173,6 +2173,93 @@ async def agent_whatsapp_webhook(
     return {"ok": True, "decisionId": out.get("decisionId")}
 
 
+@app.post("/v1/agent/signal/webhook")
+async def agent_signal_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.narna_agent import NarnaAgent
+    from uap.signal_gateway import extract_signal_message, format_agent_reply, signal_enabled
+
+    if not signal_enabled():
+        raise HTTPException(status_code=503, detail="Signal bridge not configured (UAP_SIGNAL_WEBHOOK_URL)")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+    sender, text = extract_signal_message(payload if isinstance(payload, dict) else {})
+    if not sender or not text:
+        return {"ok": True, "ignored": True}
+
+    resolved = _org_for_device_key(db, f"signal:{sender}")
+    enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    out = agent.ask(text, channel="signal", external_id=sender, use_tools=True)
+    bump_agent_turns(org=resolved, db=db)
+    # Outbound: POST to bridge URL
+    import urllib.request as _ur
+
+    bridge = os.environ.get("UAP_SIGNAL_WEBHOOK_URL", "").strip()
+    body = json.dumps({"to": sender, "message": format_agent_reply(out)}).encode()
+    req = _ur.Request(
+        bridge,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        _ur.urlopen(req, timeout=20).read()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"signal outbound failed: {e}") from e
+    return {"ok": True, "decisionId": out.get("decisionId")}
+
+
+@app.post("/v1/agent/email/webhook")
+async def agent_email_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.email_gateway import extract_email_message, format_agent_reply
+    from uap.narna_agent import NarnaAgent
+
+    ctype = (request.headers.get("content-type") or "").lower()
+    if "application/json" in ctype:
+        payload = await request.json()
+        form = payload if isinstance(payload, dict) else {}
+    else:
+        form = dict(await request.form())
+    frm, subject, text = extract_email_message(form)
+    if not frm or not text:
+        return {"ok": True, "ignored": True}
+    msg = f"Subject: {subject}\n\n{text}" if subject else text
+    resolved = _org_for_device_key(db, f"email:{frm}")
+    enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    out = agent.ask(msg, channel="email", external_id=frm, use_tools=True)
+    bump_agent_turns(org=resolved, db=db)
+    return {
+        "ok": True,
+        "decisionId": out.get("decisionId"),
+        "reply": format_agent_reply(out, subject=subject or ""),
+    }
+
+
+@app.get("/v1/agent/tools")
+def agent_tools_catalog() -> dict[str, Any]:
+    from uap.agent_tools import TOOL_SPECS
+
+    return {"ok": True, "tools": TOOL_SPECS, "count": len(TOOL_SPECS), "standard": "NGS-0029"}
+
+
 @app.post("/v1/agent/ask/stream")
 def agent_ask_stream(
     body: AgentAskRequest,

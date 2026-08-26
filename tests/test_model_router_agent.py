@@ -35,7 +35,7 @@ class ModelRouterTests(unittest.TestCase):
 
 class NarnaAgentTests(unittest.TestCase):
     def test_ask_pipeline(self):
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             agent = NarnaAgent(
                 workspace=Path(td),
                 tenant_id="t_test",
