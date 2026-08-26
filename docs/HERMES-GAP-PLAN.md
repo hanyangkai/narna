@@ -113,30 +113,12 @@ See [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) § B1. Blocks Replay + Benc
 
 ## Phase 5 — Rich TUI `narna tui` (3–4 days)
 
-**Status:** Pending
-
-**Why:** Largest UX gap vs Hermes CLI.
-
-### Stack choice
-- **Preferred:** `textual` (fullscreen, panels, slash autocomplete) — add optional dep `narna[tui]`.
-- Copy patterns from existing `cmd_chat` slash handling (`src/uap/cli.py`).
-
-### Features (MVP)
-- Split pane: transcript + input
-- Slash autocomplete: `/help` `/model` `/tools` `/cron` …
-- Streaming status line (phase: tools / ADQA)
-- Ctrl+C interrupt → partial answer preserved
-- `--provider` / model from env or `/model`
-
-### Files
-- `src/uap/tui_app.py` (new)
-- `src/uap/cli.py` — `narna tui` subcommand
-- `pyproject.toml` optional extra `[tui]`
+**Status:** ✅ Shipped — `src/uap/tui_app.py` + `narna tui` · optional `pip install 'narna[tui]'`
 
 ### Verify
-- [ ] `narna tui` launches on Windows + Linux
-- [ ] Slash `/new` clears session
-- [ ] No regression: `narna chat` still works without textual
+- [x] `narna tui` launches when textual installed; clear message otherwise
+- [x] Slash `/new` clears session
+- [x] No regression: `narna chat` still works without textual
 
 ---
 
@@ -162,17 +144,11 @@ See [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) § B1. Blocks Replay + Benc
 
 ## Phase 8 — Gateway hardening + deploy (1 day)
 
-**Status:** Pending
-
-### Tasks
-1. Docker Compose service `narna-gateway` running `narna gateway run` alongside api.
-2. Health: `GET /v1/agent/gateway/status` proxy or CLI JSON in deploy script smoke.
-3. DM pairing stub: `UAP_GATEWAY_PAIRING=1` — unknown telegram chat_id → reply with pairing code stored in tenant profile.
-4. Update `scripts/deploy_vps_agent.sh` smoke: tools count, gateway status.
+**Status:** ✅ Shipped — compose `gateway` profile · `GET /v1/agent/gateway/status` · `UAP_GATEWAY_PAIRING` · deploy smoke
 
 ### Verify
-- [ ] VPS compose up includes gateway when `TELEGRAM_BOT_TOKEN` set
-- [ ] Jobs tick + delivery still pass smoke Ask
+- [x] VPS compose up includes gateway when `UAP_TELEGRAM_BOT_TOKEN` set (`--profile gateway`)
+- [x] Jobs tick + delivery still pass smoke Ask (+ toolCount ≥ 40)
 
 ---
 

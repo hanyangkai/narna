@@ -2101,6 +2101,28 @@ def _org_for_device_key(db: Session, device_key: str) -> Organization:
     return row
 
 
+@app.get("/v1/agent/gateway/status")
+def agent_gateway_status() -> dict[str, Any]:
+    """Gateway health + pairing posture (no side effects)."""
+    from pathlib import Path
+
+    from uap.gateway_pairing import GatewayPairingStore, pairing_enabled
+    from uap.gateway_runner import UnifiedGateway, config_from_env
+    from uap.agent_tools import TOOL_SPECS
+
+    cfg = config_from_env()
+    root = Path(os.environ.get("UAP_TENANT_ROOT") or "/data/tenants") / "_gateway"
+    gw = UnifiedGateway(ask_fn=lambda *_: {}, config=cfg, workspace=root)
+    return {
+        "ok": True,
+        **gw.status(),
+        "pairing": GatewayPairingStore(root).status(),
+        "pairingEnabled": pairing_enabled(),
+        "toolCount": len(TOOL_SPECS),
+        "standard": "NGS-0029-gateway",
+    }
+
+
 @app.post("/v1/agent/telegram/webhook")
 async def agent_telegram_webhook(
     request: Request,
@@ -2132,6 +2154,24 @@ async def agent_telegram_webhook(
     chat_id, text, _username = extract_telegram_text(update if isinstance(update, dict) else {})
     if not chat_id or not text:
         return {"ok": True, "ignored": True}
+
+    from uap.gateway_pairing import gate_inbound
+    from pathlib import Path
+
+    # Pairing gate uses a shared workspace root (not per-tenant) for bot-level allowlist
+    pair_ws = Path(os.environ.get("UAP_TENANT_ROOT") or "/data/tenants") / "_gateway"
+    blocked = gate_inbound(
+        channel="telegram",
+        external_id=str(chat_id),
+        text=text,
+        workspace=pair_ws,
+    )
+    if blocked:
+        try:
+            send_telegram_message(chat_id, str(blocked.get("answer") or "pairing required"))
+        except Exception:
+            pass
+        return {"ok": True, "pairing": True, "paired": blocked.get("paired")}
 
     resolved = _org_for_device_key(db, f"telegram:{chat_id}")
     try:

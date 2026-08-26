@@ -44,6 +44,8 @@ services:
       UAP_AGENT_JOBS_TICKER: ${UAP_AGENT_JOBS_TICKER:-1}
       UAP_AGENT_JOBS_TICK_SEC: ${UAP_AGENT_JOBS_TICK_SEC:-300}
       UAP_JOBS_TICK_SECRET: ${UAP_JOBS_TICK_SECRET:-}
+      UAP_GATEWAY_PAIRING: ${UAP_GATEWAY_PAIRING:-0}
+      UAP_GATEWAY_VOICE_REPLY: ${UAP_GATEWAY_VOICE_REPLY:-0}
     volumes:
       - narna_tenants:/data/tenants
     depends_on:
@@ -59,6 +61,46 @@ services:
       start_period: 20s
     ports:
       - "127.0.0.1:8100:8000"
+
+  gateway:
+    build:
+      context: ../../..
+      dockerfile: web/backend/Dockerfile
+    restart: unless-stopped
+    profiles: ["gateway"]
+    env_file:
+      - .env
+    environment:
+      UAP_DATABASE_URL: postgresql+psycopg2://uap:${POSTGRES_PASSWORD}@postgres:5432/uap_cloud
+      UAP_REDIS_URL: redis://redis:6379/0
+      UAP_TENANT_ROOT: /data/tenants
+      UAP_ROUTER_PROVIDER: ${UAP_ROUTER_PROVIDER:-mock}
+      UAP_OPENROUTER_API_KEY: ${UAP_OPENROUTER_API_KEY:-}
+      UAP_OPENAI_API_KEY: ${UAP_OPENAI_API_KEY:-}
+      UAP_TELEGRAM_BOT_TOKEN: ${UAP_TELEGRAM_BOT_TOKEN:-}
+      UAP_DISCORD_BOT_TOKEN: ${UAP_DISCORD_BOT_TOKEN:-}
+      UAP_DISCORD_CHANNELS: ${UAP_DISCORD_CHANNELS:-}
+      UAP_SLACK_BOT_TOKEN: ${UAP_SLACK_BOT_TOKEN:-}
+      UAP_SLACK_CHANNELS: ${UAP_SLACK_CHANNELS:-}
+      UAP_GATEWAY_PAIRING: ${UAP_GATEWAY_PAIRING:-0}
+      UAP_GATEWAY_VOICE_REPLY: ${UAP_GATEWAY_VOICE_REPLY:-0}
+      UAP_SHELL_BACKEND: ${UAP_SHELL_BACKEND:-local}
+    volumes:
+      - narna_tenants:/data/tenants
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["python", "-m", "narna.cli", "gateway", "run"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"from uap.gateway_runner import config_from_env; c=config_from_env(); import sys; sys.exit(0 if c.telegram_token or c.discord_token or c.slack_token else 0)\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   web:
     build:

@@ -19,6 +19,23 @@ SLASH_HELP = """NARNA slash commands (Hermes-style):
   /quit | /exit      Leave chat REPL
 """
 
+SLASH_CMDS = [
+    "/help",
+    "/new",
+    "/reset",
+    "/clear",
+    "/skills",
+    "/tools",
+    "/model",
+    "/provider",
+    "/memory",
+    "/jobs",
+    "/cron",
+    "/quit",
+    "/exit",
+    "/pair",
+]
+
 
 def parse_slash(line: str) -> dict[str, Any] | None:
     """Return {cmd, args} if line is a slash command, else None."""

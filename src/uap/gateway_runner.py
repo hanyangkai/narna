@@ -70,12 +70,16 @@ class UnifiedGateway:
         }
 
     def status(self) -> dict[str, Any]:
+        from .gateway_pairing import pairing_enabled
+
         return {
             "running": self._running,
             "telegramConfigured": bool(self.config.telegram_token),
             "discordConfigured": bool(self.config.discord_token and self.config.discord_channels),
             "slackConfigured": bool(self.config.slack_token and self.config.slack_channels),
             "pollSeconds": self.config.poll_seconds,
+            "pairingEnabled": pairing_enabled(),
+            "workspace": str(self.workspace),
             "stats": dict(self.stats),
             "standard": "NGS-0029-gateway",
         }
@@ -87,9 +91,26 @@ class UnifiedGateway:
         text: str,
         external_id: str | None = None,
     ) -> dict[str, Any]:
+        from .gateway_pairing import gate_inbound
+
+        blocked = gate_inbound(
+            channel=channel,
+            external_id=external_id,
+            text=text,
+            workspace=self.workspace,
+        )
+        if blocked:
+            self.stats["handled"] += 1
+            return {
+                "ok": True,
+                "answer": blocked.get("answer"),
+                "pairing": True,
+                "paired": blocked.get("paired"),
+                "dqs": None,
+            }
         out = self.ask_fn(text, channel, external_id)
         self.stats["handled"] += 1
-        return out
+        return out if isinstance(out, dict) else {"ok": True, "answer": str(out)}
 
     def _telegram_get_updates(self) -> list[dict[str, Any]]:
         token = self.config.telegram_token

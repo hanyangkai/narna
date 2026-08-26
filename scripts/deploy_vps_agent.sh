@@ -44,8 +44,13 @@ echo "==> upload + extract on $HOST:$REMOTE_DIR"
 "${SSH[@]}" "$HOST" "mkdir -p '$REMOTE_DIR' && tar -xzf /tmp/narna-deploy.tar.gz -C '$REMOTE_DIR' && rm -f /tmp/narna-deploy.tar.gz"
 rm -f "$TAR"
 
-echo "==> rebuild api + web"
-"${SSH[@]}" "$HOST" "cd '$REMOTE_DIR/web/deploy/selfhost' && docker compose -f docker-compose.vps.yml up -d --build api web"
+echo "==> rebuild api + web (+ gateway profile if token set)"
+"${SSH[@]}" "$HOST" "cd '$REMOTE_DIR/web/deploy/selfhost' && \
+  if grep -qE '^UAP_TELEGRAM_BOT_TOKEN=.+' .env 2>/dev/null; then \
+    docker compose -f docker-compose.vps.yml --profile gateway up -d --build api web gateway; \
+  else \
+    docker compose -f docker-compose.vps.yml up -d --build api web; \
+  fi"
 
 echo "==> wait health"
 "${SSH[@]}" "$HOST" 'for i in $(seq 1 30); do
@@ -55,7 +60,7 @@ echo "==> wait health"
   sleep 3
 done; exit 1'
 
-echo "==> smoke Ask"
+echo "==> smoke Ask + gateway status"
 "${SSH[@]}" "$HOST" 'python3 - <<"PY"
 import json, urllib.request
 req = urllib.request.Request(
@@ -68,7 +73,12 @@ with urllib.request.urlopen(req, timeout=60) as r:
     body = json.loads(r.read().decode())
 print("dqs", body.get("dqs"), "tools", len(body.get("toolsUsed") or []), "session", body.get("sessionId"))
 assert body.get("answer")
+with urllib.request.urlopen("http://127.0.0.1:8100/v1/agent/gateway/status", timeout=15) as r:
+    gw = json.loads(r.read().decode())
+print("gateway tools", gw.get("toolCount"), "pairing", gw.get("pairingEnabled"), "tg", gw.get("telegramConfigured"))
+assert int(gw.get("toolCount") or 0) >= 40
 print("OK")
 PY'
 
 echo "done — set UAP_OPENROUTER_API_KEY + UAP_TELEGRAM_BOT_TOKEN on VPS for live LLM / phone"
+# gateway profile: UAP_TELEGRAM_BOT_TOKEN in .env → compose --profile gateway

@@ -17,25 +17,23 @@
 | Terminal backends | 7 | local/docker/ssh/modal/daytona | Near |
 | Memory | Honcho | FTS5 + MEMORY.md/USER.md | Near |
 | Subagent RPC | ✓ | `execute_code` + delegate ≤3 | Near |
-| Fullscreen TUI / Desktop | ✓ | REPL + PWA | Missing |
+| Fullscreen TUI / Desktop | ✓ | `narna tui` (textual opt) + PWA | Near |
 | Nous Portal Tool Gateway | ✓ | intentionally no | Skip |
 | Trajectory / RL | ✓ | — | Out of scope |
 
 ## Still not end-to-end Hermes
 
-1. Fullscreen TUI + native desktop  
+1. Native desktop app  
 2. Richer Modal/Daytona (stubs + env-gated HTTP; needs real credentials)  
 3. Honcho-depth dialectic memory  
 4. Network-scale Skills Hub  
-5. Home Assistant / richer multi-channel voice
 
 ## Shipped this pass
 
-- Browser session: `browser_click` / `browser_type` / `browser_wait` / `browser_screenshot` / `browser_vision`  
-- Job delivery fan-out → telegram/discord/slack/email (+ optional Telegram voice)  
-- Gateway Discord + Slack poll + Telegram voice→Whisper BYOK + optional TTS reply  
-- NL cron `via telegram:CHAT_ID` → `deliverTo`  
-- Shell backends: `local` / `docker` / `ssh` / `modal` / `daytona`  
-- Tool batch ≥40 (+ grep, json_query, uuid, hash, env_get, read_url_head, skill md, TTS)
+- Browser session: click/type/wait/screenshot/vision  
+- Job delivery fan-out + optional Telegram voice  
+- Gateway poll + pairing (`UAP_GATEWAY_PAIRING`) + compose profile  
+- Shell backends: local/docker/ssh/modal/daytona  
+- Tool batch ≥40 · Decision Benchmark · `narna tui`
 
 Last updated: 2026-08-26

@@ -934,13 +934,40 @@ def cmd_chat(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_tui(args: argparse.Namespace) -> int:
+    """Fullscreen TUI (optional textual). Falls back message if not installed."""
+    from .tui_app import run_tui
+
+    return run_tui(
+        provider=getattr(args, "provider", None) or None,
+        workspace=Path.cwd(),
+    )
+
+
 def cmd_gateway(args: argparse.Namespace) -> int:
+    from .gateway_pairing import GatewayPairingStore
     from .gateway_runner import UnifiedGateway, config_from_env
     from .model_router import ModelRouter
     from .narna_agent import NarnaAgent
 
     if args.gateway_cmd == "status":
-        _print_json(UnifiedGateway(ask_fn=lambda *_: {}).status())
+        gw = UnifiedGateway(ask_fn=lambda *_: {}, workspace=Path.cwd())
+        out = gw.status()
+        out["pairing"] = GatewayPairingStore(Path.cwd()).status()
+        _print_json(out)
+        return 0
+    if args.gateway_cmd == "pair":
+        store = GatewayPairingStore(Path.cwd())
+        code = getattr(args, "code", None) or ""
+        if code:
+            _print_json(store.confirm(code))
+            return 0
+        channel = getattr(args, "channel", None) or "telegram"
+        external = getattr(args, "external_id", None) or ""
+        if not external:
+            print("provide --code CODE or --external-id ID", file=sys.stderr)
+            return 2
+        _print_json(store.pair_direct(channel, external))
         return 0
 
     router = ModelRouter(provider=getattr(args, "provider", None) or None)
@@ -954,7 +981,7 @@ def cmd_gateway(args: argparse.Namespace) -> int:
             use_tools=True,
         )
 
-    gw = UnifiedGateway(ask_fn=ask_fn, config=config_from_env())
+    gw = UnifiedGateway(ask_fn=ask_fn, config=config_from_env(), workspace=Path.cwd())
     if args.gateway_cmd == "once":
         n = gw.poll_once()
         _print_json({"handled": n, **gw.status()})
@@ -2019,6 +2046,10 @@ def build_parser() -> argparse.ArgumentParser:
     chat.add_argument("--provider", default=None)
     chat.set_defaults(func=cmd_chat)
 
+    tui = sub.add_parser("tui", help="Fullscreen TUI (requires: pip install 'narna[tui]')")
+    tui.add_argument("--provider", default=None)
+    tui.set_defaults(func=cmd_tui)
+
     gw = sub.add_parser("gateway", help="Unified multi-channel gateway (Telegram poll)")
     gw_sub = gw.add_subparsers(dest="gateway_cmd", required=True)
     gw_st = gw_sub.add_parser("status")
@@ -2030,6 +2061,11 @@ def build_parser() -> argparse.ArgumentParser:
     gw_run.add_argument("--provider", default=None)
     gw_run.add_argument("--max-iters", type=int, default=None)
     gw_run.set_defaults(func=cmd_gateway)
+    gw_pair = gw_sub.add_parser("pair", help="Confirm pairing code or pair chat id directly")
+    gw_pair.add_argument("--code", default=None, help="Pending pairing code")
+    gw_pair.add_argument("--channel", default="telegram")
+    gw_pair.add_argument("--external-id", dest="external_id", default=None)
+    gw_pair.set_defaults(func=cmd_gateway)
 
     cmem = sub.add_parser("cmem", help="CMEM bridge — continuity memory feedstock")
     cmem_sub = cmem.add_subparsers(dest="cmem_cmd", required=True)
