@@ -1,0 +1,21 @@
+{
+  "id": "fin-004",
+  "category": "finance",
+  "question": "Budget check with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "budget.check",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "finance",
+    "anthropic"
+  ]
+}

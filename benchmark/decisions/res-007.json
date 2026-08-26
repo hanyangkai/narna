@@ -1,0 +1,22 @@
+{
+  "id": "res-007",
+  "category": "research",
+  "question": "Follow-up research with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "research.query",
+    "evidence": [
+      "tool.receipt",
+      "policy.decision"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "ACT",
+  "tags": [
+    "research",
+    "anthropic"
+  ]
+}

@@ -163,6 +163,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_benchmark(args: argparse.Namespace) -> int:
+    if getattr(args, "bench_cmd", None) == "run" or getattr(args, "decision_run", False):
+        return cmd_benchmark_run(args)
     if getattr(args, "narna_score", False):
         from .narna_score import compute_narna_score
 
@@ -184,6 +186,26 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     rows = store.list(limit=args.limit)
     _print_json({"records": rows})
     return 0
+
+
+def cmd_benchmark_run(args: argparse.Namespace) -> int:
+    from .decision_benchmark import run_benchmark, write_leaderboard_stub
+
+    out = run_benchmark(
+        directory=getattr(args, "dir", None) or None,
+        agent=getattr(args, "agent", None) or "mock",
+        category=getattr(args, "category", None) or None,
+        limit=getattr(args, "run_limit", None),
+    )
+    if getattr(args, "write_leaderboard", False):
+        path = Path(getattr(args, "leaderboard_path", None) or "benchmark/leaderboard.json")
+        write_leaderboard_stub(path, out)
+        out["leaderboardPath"] = str(path)
+    # Compact default: drop per-scenario rows unless --verbose
+    if not getattr(args, "verbose", False):
+        out = {k: v for k, v in out.items() if k != "results"}
+    _print_json(out)
+    return 0 if float(out.get("accuracy") or 0) >= float(getattr(args, "min_accuracy", 1.0) or 0) else 2
 
 
 def cmd_fleet(args: argparse.Namespace) -> int:
@@ -1697,13 +1719,28 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--full", action="store_true", help="Full spec conformance checks")
     doctor.set_defaults(func=cmd_doctor)
 
-    bench = sub.add_parser("benchmark", help="Trust / governance benchmarks")
+    bench = sub.add_parser("benchmark", help="Trust / governance / Decision Benchmark")
     bench.add_argument("--spec", default="agent.yaml")
     bench.add_argument("--avg", action="store_true", help="Average trust score for agent")
     bench.add_argument("--governance", action="store_true", help="Governance leaderboard")
     bench.add_argument("--narna-score", action="store_true", dest="narna_score", help="NARNA Score (0-100)")
     bench.add_argument("--limit", type=int, default=20)
     bench.set_defaults(func=cmd_benchmark)
+    bench_sub = bench.add_subparsers(dest="bench_cmd")
+    b_run = bench_sub.add_parser("run", help="Run NARNA Decision Benchmark (ACT/REVIEW/REJECT)")
+    b_run.add_argument("--agent", default="mock", choices=["mock", "strip"], help="Proposal agent")
+    b_run.add_argument("--dir", default=None, help="Scenarios directory (default: benchmark/decisions)")
+    b_run.add_argument("--category", default=None, help="Filter category (research|code|procurement|…)")
+    b_run.add_argument("--limit", type=int, default=None, dest="run_limit", help="Max scenarios")
+    b_run.add_argument("--min-accuracy", type=float, default=1.0, dest="min_accuracy")
+    b_run.add_argument("--verbose", action="store_true", help="Include per-scenario results")
+    b_run.add_argument("--write-leaderboard", action="store_true", dest="write_leaderboard")
+    b_run.add_argument(
+        "--leaderboard-path",
+        default="benchmark/leaderboard.json",
+        dest="leaderboard_path",
+    )
+    b_run.set_defaults(func=cmd_benchmark_run, decision_run=True)
 
     fleet = sub.add_parser("fleet", help="Fleet governance (C4)")
     fleet.add_argument("--path", default="fleet.yaml")

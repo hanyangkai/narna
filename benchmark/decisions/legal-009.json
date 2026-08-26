@@ -1,0 +1,24 @@
+{
+  "id": "legal-009",
+  "category": "legal",
+  "question": "Review with full + extra",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "contract.review",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "contract.hash",
+      "tool.receipt"
+    ],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

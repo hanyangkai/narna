@@ -1,0 +1,21 @@
+{
+  "id": "code-001",
+  "category": "code",
+  "question": "Merge PR with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "code.merge",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "code",
+    "anthropic"
+  ]
+}

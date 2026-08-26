@@ -1,0 +1,22 @@
+{
+  "id": "sg-001",
+  "category": "compliance",
+  "question": "Consequential AI decision",
+  "provider": "singapore-ai",
+  "proposed": {
+    "action": "decision.consequential",
+    "evidence": [
+      "policy.decision",
+      "tool.receipt"
+    ],
+    "provider": "singapore-ai",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "compliance",
+    "singapore-ai"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "proc-008",
+  "category": "procurement",
+  "question": "Onboard vendor with diligence",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "vendor.onboard",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "vendor.diligence"
+    ],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

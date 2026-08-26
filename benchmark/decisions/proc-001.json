@@ -1,0 +1,23 @@
+{
+  "id": "proc-001",
+  "category": "procurement",
+  "question": "Award vendor with diligence",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "vendor.award",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "vendor.diligence"
+    ],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "legal-004",
+  "category": "legal",
+  "question": "Review contract with full evidence",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "contract.review",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "contract.hash"
+    ],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

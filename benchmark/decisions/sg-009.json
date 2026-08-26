@@ -1,0 +1,19 @@
+{
+  "id": "sg-009",
+  "category": "compliance",
+  "question": "Secondary use bare",
+  "provider": "singapore-ai",
+  "proposed": {
+    "action": "personaldata.use.secondary",
+    "evidence": [],
+    "provider": "singapore-ai",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "compliance",
+    "singapore-ai"
+  ]
+}

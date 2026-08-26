@@ -56,7 +56,9 @@ def evaluate(
     guardian_l = str(guardian or "").lower()
     if guardian_l in {"reject", "block", "deny"} or str(out.get("decision") or "").lower() == "deny":
         verdict = "REJECT"
-    elif guardian_l in {"review", "ask", "escalate"} or (isinstance(dqs, (int, float)) and dqs < 70):
+    elif guardian_l in {"revise", "review", "ask", "escalate"} or (
+        isinstance(dqs, (int, float)) and dqs < 70
+    ):
         verdict = "REVIEW"
     else:
         verdict = "ACT"

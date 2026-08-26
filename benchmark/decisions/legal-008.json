@@ -1,0 +1,22 @@
+{
+  "id": "legal-008",
+  "category": "legal",
+  "question": "Sign with policy+hash only",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "contract.sign",
+    "evidence": [
+      "policy.decision",
+      "contract.hash"
+    ],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

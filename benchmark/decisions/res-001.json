@@ -1,0 +1,21 @@
+{
+  "id": "res-001",
+  "category": "research",
+  "question": "Can I run this research query?",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "research.query",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "ACT",
+  "tags": [
+    "research",
+    "anthropic"
+  ]
+}

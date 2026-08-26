@@ -1,0 +1,19 @@
+{
+  "id": "proc-007",
+  "category": "procurement",
+  "question": "Create draft PO bare",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "po.create",
+    "evidence": [],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

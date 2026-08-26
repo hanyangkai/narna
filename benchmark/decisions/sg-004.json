@@ -1,0 +1,19 @@
+{
+  "id": "sg-004",
+  "category": "compliance",
+  "question": "Prod model deploy bare",
+  "provider": "singapore-ai",
+  "proposed": {
+    "action": "model.deploy.production",
+    "evidence": [],
+    "provider": "singapore-ai",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "compliance",
+    "singapore-ai"
+  ]
+}

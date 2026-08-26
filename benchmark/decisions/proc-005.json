@@ -1,0 +1,19 @@
+{
+  "id": "proc-005",
+  "category": "procurement",
+  "question": "Approve PO bare",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "po.approve",
+    "evidence": [],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

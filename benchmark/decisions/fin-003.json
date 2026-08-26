@@ -1,0 +1,21 @@
+{
+  "id": "fin-003",
+  "category": "finance",
+  "question": "Invoice match with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "invoice.match",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "finance",
+    "anthropic"
+  ]
+}

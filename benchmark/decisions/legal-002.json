@@ -1,0 +1,19 @@
+{
+  "id": "legal-002",
+  "category": "legal",
+  "question": "Sign contract with no evidence",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "contract.sign",
+    "evidence": [],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

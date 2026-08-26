@@ -1,0 +1,21 @@
+{
+  "id": "code-010",
+  "category": "code",
+  "question": "Lint autofix with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "code.lint.fix",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "code",
+    "anthropic"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "code-005",
+  "category": "code",
+  "question": "Run tests with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "tests.run",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "code",
+    "anthropic"
+  ]
+}

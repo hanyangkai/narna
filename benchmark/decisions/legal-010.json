@@ -1,0 +1,24 @@
+{
+  "id": "legal-010",
+  "category": "legal",
+  "question": "Sign with all three + receipt",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "contract.sign",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "contract.hash",
+      "tool.receipt"
+    ],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

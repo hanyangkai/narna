@@ -1,0 +1,19 @@
+{
+  "id": "res-002",
+  "category": "research",
+  "question": "Research without tool receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "research.query",
+    "evidence": [],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "research",
+    "anthropic"
+  ]
+}

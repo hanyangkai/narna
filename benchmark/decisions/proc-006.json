@@ -1,0 +1,23 @@
+{
+  "id": "proc-006",
+  "category": "procurement",
+  "question": "Create draft PO with diligence",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "po.create",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "vendor.diligence"
+    ],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

@@ -143,15 +143,15 @@ Map to existing router tasks:
 
 ---
 
-### B5 — NARNA Decision Benchmark v0 (5 days)
+### B5 — NARNA Decision Benchmark v0 (5 days) ✅
 
 **Goal:** Public reproducible “Does your agent make good decisions?”
 
-**Tasks:**
-1. `benchmark/decisions/` — 50–100 JSON scenarios (research, code, procurement, legal-lite)
-2. `narna benchmark run --agent mock|openrouter|…` → accuracy + DQS stats
-3. `benchmark/README.md` + leaderboard JSON (no fake numbers in marketing)
-4. CI: run mock agent on subset
+**Shipped:**
+1. `benchmark/decisions/` — 55 JSON scenarios (research, code, procurement, legal, compliance, finance)
+2. `narna benchmark run --agent mock|strip` → accuracy + DQS stats (`src/uap/decision_benchmark.py`)
+3. `benchmark/README.md` + empty `leaderboard.json` (no fake marketing numbers)
+4. CI: `pytest tests/test_decision_benchmark.py` (subset + strip agent)
 
 **Verify:** `pytest tests/test_decision_benchmark.py` green; README has run instructions.
 
@@ -206,14 +206,9 @@ FREE NARNA AGENT → developers → decisions → traces → outcomes
 ## Execution order (combined)
 
 ```
-NOW     A: P1 browser_vision + P2 execute_code  (HERMES-GAP)
-NEXT    B1 Decision Trace
-        B3 ADQA Universal API (parallel, small)
-THEN    B2 Decision Replay
-        B4 Router critical mode
-        A: P3–P8 Hermes runtime (time-boxed)
-LATER   B5 Benchmark public launch
-        B6 repo layout migration
+DONE    B1 Trace · B2 Replay · B3 evaluate · B4 router modes · B5 Decision Benchmark
+NOW     A: P4–P8 Hermes runtime (time-boxed) when needed
+LATER   B6 repo layout migration
 ```
 
 ---

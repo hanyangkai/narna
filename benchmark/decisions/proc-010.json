@@ -1,0 +1,21 @@
+{
+  "id": "proc-010",
+  "category": "procurement",
+  "question": "Award with review only",
+  "provider": "procurement-decision",
+  "proposed": {
+    "action": "vendor.award",
+    "evidence": [
+      "human.review"
+    ],
+    "provider": "procurement-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "procurement",
+    "procurement-decision"
+  ]
+}

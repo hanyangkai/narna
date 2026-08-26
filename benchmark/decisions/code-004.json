@@ -1,0 +1,19 @@
+{
+  "id": "code-004",
+  "category": "code",
+  "question": "Deploy staging bare",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "deploy.staging",
+    "evidence": [],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REJECT",
+  "tags": [
+    "code",
+    "anthropic"
+  ]
+}

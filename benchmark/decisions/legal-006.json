@@ -1,0 +1,23 @@
+{
+  "id": "legal-006",
+  "category": "legal",
+  "question": "Consequential legal decision full",
+  "provider": "legal-decision",
+  "proposed": {
+    "action": "decision.consequential",
+    "evidence": [
+      "policy.decision",
+      "human.review",
+      "contract.hash"
+    ],
+    "provider": "legal-decision",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "legal",
+    "legal-decision"
+  ]
+}

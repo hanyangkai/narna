@@ -1,0 +1,21 @@
+{
+  "id": "res-008",
+  "category": "research",
+  "question": "Generic content with receipt",
+  "provider": "anthropic",
+  "proposed": {
+    "action": "content.summarize",
+    "evidence": [
+      "tool.receipt"
+    ],
+    "provider": "anthropic",
+    "context": {
+      "benchmark": "narna-decision-v0"
+    }
+  },
+  "expectedVerdict": "REVIEW",
+  "tags": [
+    "research",
+    "anthropic"
+  ]
+}

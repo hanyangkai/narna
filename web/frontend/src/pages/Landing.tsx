@@ -31,12 +31,12 @@ const layers = [
   {
     title: "NARNA ADQA",
     role: "Make it better",
-    points: ["Decision Quality Score", "Guardian verdicts", "Wrap Hermes / LangGraph / custom agents"],
+    points: ["Decision Quality Score", "Guardian ACT / REVIEW / REJECT", "Wrap Hermes / LangGraph / custom agents"],
   },
   {
     title: "Decision Memory",
     role: "Compound learning",
-    points: ["Decision Traces", "Outcome learning", "Replay past decisions"],
+    points: ["Decision Traces · Replay", "Outcome learning", "Decision Benchmark (open)"],
   },
 ];
 
@@ -153,6 +153,20 @@ export default function Landing() {
           <pre className="code-block">{`from narna import evaluate
 out = evaluate(action="contract.sign", evidence=["contract.reviewed"])
 # → { "dqs": 89, "verdict": "ACT" | "REVIEW" | "REJECT" }`}</pre>
+        </section>
+
+        <section className="land-section">
+          <p className="section-label">Decision Benchmark</p>
+          <h2 className="land-h2">Does your agent make good decisions?</h2>
+          <p className="land-desc">
+            Open scenarios across research, code, procurement, and legal-lite. Score ACT / REVIEW /
+            REJECT with ADQA — no invented leaderboard numbers.
+          </p>
+          <pre className="code-block">{`narna benchmark run --agent mock
+# → accuracy + DQS by category`}</pre>
+          <p className="land-desc">
+            <Link to="/benchmark">Governance &amp; decision benchmarks →</Link>
+          </p>
         </section>
 
         <section className="land-section land-split">
