@@ -154,11 +154,12 @@ See [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) § B1. Blocks Replay + Benc
 
 ## Phase 9 — Skills Hub network v0 (optional, 2 days)
 
-- Export/import SKILL.md zip bundle
-- `POST /v1/agent/skills/hub/sync` — pull public index from configurable URL (not Nous)
-- Auto-publish skill when DQS≥80 + user opt-in
+**Status:** ✅ Shipped — zip export/import · `POST /v1/agent/skills/hub/sync` · `UAP_SKILL_HUB_AUTOPUBLISH` · `narna skills *`
 
-**Skip if time-boxed** — not blocking “runtime e2e”.
+- Export/import SKILL.md zip bundle (`SkillHub.export_zip` / `import_zip`)
+- `POST /v1/agent/skills/hub/sync` — pull public index from `UAP_SKILL_HUB_INDEX_URL` (not Nous)
+- Auto-publish skill when DQS≥80 + `UAP_SKILL_HUB_AUTOPUBLISH=1`
+- Tool `skill_hub_sync` · CLI `narna skills export-zip|import-zip|hub-sync|hub-list`
 
 ---
 
@@ -192,15 +193,15 @@ P5 Rich TUI                  →  P8 Gateway deploy
 
 ## Definition of Done — “Hermes runtime e2e”
 
-- [ ] 40+ tools, native tool_calls
-- [ ] Browser navigate→click→type→vision path works in Docker
-- [ ] execute_code RPC with nested tool calls
-- [ ] MEMORY.md / USER.md in every Ask context
-- [ ] Cron delivers to 4 channels reliably
-- [ ] `narna tui` or equivalent fullscreen CLI
-- [ ] Gateway in compose with pairing + voice optional
-- [ ] Modal OR Daytona backend stub (opt-in)
-- [ ] ADQA unchanged on all paths
-- [ ] `docs/HERMES-COMPARE.md` scorecard → mostly **Parity** / **Near**
+- [x] 40+ tools, native tool_calls
+- [x] Browser navigate→click→type→vision path works in Docker (opt-in `INSTALL_BROWSER=1`)
+- [x] execute_code RPC with nested tool calls
+- [x] MEMORY.md / USER.md in every Ask context
+- [x] Cron delivers to 4 channels reliably
+- [x] `narna tui` or equivalent fullscreen CLI
+- [x] Gateway in compose with pairing + voice optional
+- [x] Modal OR Daytona backend stub (opt-in)
+- [x] ADQA unchanged on all paths
+- [x] `docs/HERMES-COMPARE.md` scorecard → mostly **Parity** / **Near**
 
 Last updated: 2026-08-26

@@ -148,6 +148,10 @@ class AgentSkillHubInstallRequest(BaseModel):
     skillId: str
 
 
+class AgentSkillHubSyncRequest(BaseModel):
+    url: str | None = None
+
+
 class AgentSkillMarkdownImportRequest(BaseModel):
     markdown: str
 

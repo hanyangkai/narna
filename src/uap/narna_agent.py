@@ -408,10 +408,23 @@ class NarnaAgent:
         )
 
         skill_saved = None
+        hub_published = None
         if capture_skill:
             skill_saved = self.skills.maybe_capture_from_answer(
                 question=msg, answer=draft, dqs=adqa.get("dqs")
             )
+            try:
+                hub_published = self.hub.maybe_autopublish(
+                    name=f"auto: {(msg.strip().split(chr(10))[0] or 'skill')[:60]}",
+                    body=(
+                        f"# Skill from Ask\n\n## Trigger\n{msg[:500]}\n\n"
+                        f"## Procedure\n{draft[:2500]}\n"
+                    ),
+                    dqs=adqa.get("dqs"),
+                    tags=["auto", "ask"],
+                )
+            except Exception:
+                hub_published = None
         # Persist high-quality lessons into MEMORY.md (Honcho-lite)
         try:
             dqs_val = int(adqa.get("dqs") or 0)
@@ -456,6 +469,7 @@ class NarnaAgent:
             "challenge": challenge_note or None,
             "toolsUsed": tool_trace,
             "skillSaved": skill_saved,
+            "hubPublished": hub_published,
             "channel": channel,
             "mode": ask_mode,
             "verdict": {"recommend": "ACT", "defer": "REVIEW", "reject": "REJECT"}.get(

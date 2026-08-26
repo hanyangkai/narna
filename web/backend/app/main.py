@@ -90,6 +90,7 @@ from .schemas import (
     AgentOutcomeRequest,
     AgentSkillHubInstallRequest,
     AgentSkillHubPublishRequest,
+    AgentSkillHubSyncRequest,
     AgentSkillMarkdownImportRequest,
     BillingCheckoutRequest,
     BillingCheckoutResponse,
@@ -2030,6 +2031,47 @@ def agent_skill_hub_install(
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     return {"ok": True, "installed": installed}
+
+
+@app.post("/v1/agent/skills/hub/sync")
+def agent_skill_hub_sync(
+    request: Request,
+    body: AgentSkillHubSyncRequest | None = None,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Pull public skill index from URL (UAP_SKILL_HUB_INDEX_URL or body.url). Not Nous."""
+    from uap.skill_hub import SkillHub
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    url = (body.url if body else None) or None
+    out = SkillHub(tenant_workspace(resolved.id)).sync_from_url(url)
+    if not out.get("ok"):
+        raise HTTPException(status_code=400, detail=str(out.get("error") or "sync failed"))
+    return out
+
+
+@app.get("/v1/agent/skills/hub/export.zip")
+def agent_skill_hub_export_zip(
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+):
+    """Download SKILL.md zip bundle from the tenant hub."""
+    from pathlib import Path as _Path
+
+    from fastapi.responses import Response
+    from uap.skill_hub import SkillHub
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    hub = SkillHub(tenant_workspace(resolved.id))
+    result = hub.export_zip()
+    data = _Path(str(result["path"])).read_bytes()
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="narna-skills-hub.zip"'},
+    )
 
 
 @app.get("/v1/agent/skills/{skill_id}/markdown")

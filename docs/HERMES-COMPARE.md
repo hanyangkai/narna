@@ -13,11 +13,12 @@
 | NL cron + channel delivery | ✓ | ✓ `deliverTo` fan-out | **Near** |
 | Unified gateway | ✓ | TG poll + Discord/Slack channel poll + voice | **Near** |
 | Browser computer-use | click/type/vision | navigate/click/type/wait/screenshot | **Near** (needs Playwright) |
-| Tools count | 40–60+ | **43** | Near |
+| Tools count | 40–60+ | **44** | Near |
 | Terminal backends | 7 | local/docker/ssh/modal/daytona | Near |
 | Memory | Honcho | FTS5 + MEMORY.md/USER.md | Near |
 | Subagent RPC | ✓ | `execute_code` + delegate ≤3 | Near |
 | Fullscreen TUI / Desktop | ✓ | `narna tui` (textual opt) + PWA | Near |
+| Network Skills Hub | ✓ | zip + sync URL + local hub | Near |
 | Nous Portal Tool Gateway | ✓ | intentionally no | Skip |
 | Trajectory / RL | ✓ | — | Out of scope |
 
@@ -26,7 +27,6 @@
 1. Native desktop app  
 2. Richer Modal/Daytona (stubs + env-gated HTTP; needs real credentials)  
 3. Honcho-depth dialectic memory  
-4. Network-scale Skills Hub  
 
 ## Shipped this pass
 
@@ -34,6 +34,6 @@
 - Job delivery fan-out + optional Telegram voice  
 - Gateway poll + pairing (`UAP_GATEWAY_PAIRING`) + compose profile  
 - Shell backends: local/docker/ssh/modal/daytona  
-- Tool batch ≥40 · Decision Benchmark · `narna tui`
+- Tool batch ≥40 · Decision Benchmark · `narna tui` · Skills Hub zip/sync
 
 Last updated: 2026-08-26

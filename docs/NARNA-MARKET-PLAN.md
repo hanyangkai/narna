@@ -157,22 +157,22 @@ Map to existing router tasks:
 
 ---
 
-### B6 — Repo layout (incremental, not big-bang)
+### B6 — Repo layout (incremental, not big-bang) ✅ docs alias
 
-Do **not** rename everything at once. Map vision → current paths:
+Do **not** rename everything at once. Map vision → current paths — see [`LAYOUT.md`](./LAYOUT.md).
 
 | Vision | Current | Migration |
 |--------|---------|-----------|
-| `agent/runtime/` | `src/uap/narna_agent.py` | symlink/docs alias first |
-| `adqa/` | `src/uap/adqa.py` | keep |
-| `decision/trace/` | **new** `decision_trace.py` | B1 |
-| `decision/replay/` | **new** `decision_replay.py` | B2 |
-| `models/` | `src/uap/model_router.py` | B4 |
-| `benchmark/` | `src/uap/benchmark.py` + `benchmark/` | B5 |
-| `sdk/` | `src/narna/` | B3 |
+| `agent/runtime/` | `src/uap/narna_agent.py` | `from narna.runtime import NarnaAgent` |
+| `adqa/` | `src/uap/adqa.py` | `from narna import evaluate, ADQAEngine` |
+| `decision/trace/` | `decision_trace.py` | `from narna.decision import DecisionTraceStore` |
+| `decision/replay/` | `decision_replay.py` | `from narna.decision import replay_trace` |
+| `models/` | `src/uap/model_router.py` | `from narna.runtime import ModelRouter` |
+| `benchmark/` | `benchmark/` + `decision_benchmark.py` | keep |
+| `sdk/` | `src/narna/` | keep |
 | `cloud/` | `web/backend/` | keep |
 
-Full physical move only after B1–B3 stable.
+Full physical move only after a stable release — aliases first.
 
 ---
 
@@ -206,9 +206,8 @@ FREE NARNA AGENT → developers → decisions → traces → outcomes
 ## Execution order (combined)
 
 ```
-DONE    B1 Trace · B2 Replay · B3 evaluate · B4 router modes · B5 Decision Benchmark
-NOW     A: P4–P8 Hermes runtime (time-boxed) when needed
-LATER   B6 repo layout migration
+DONE    Track A P1–P9 Hermes runtime · Track B1–B6 (layout = docs/aliases)
+NOW     GTM / polish · Skills Hub public index (optional URL)
 ```
 
 ---

@@ -944,6 +944,33 @@ def cmd_tui(args: argparse.Namespace) -> int:
     )
 
 
+def cmd_skills(args: argparse.Namespace) -> int:
+    from .skill_hub import SkillHub
+
+    hub = SkillHub(Path.cwd())
+    sub = getattr(args, "skills_cmd", None)
+    if sub == "hub-list":
+        _print_json({"skills": hub.list_public(), "n": len(hub.list_public())})
+        return 0
+    if sub == "export-zip":
+        out = hub.export_zip(getattr(args, "out", None) or "skills-hub.zip")
+        _print_json(out)
+        return 0
+    if sub == "import-zip":
+        path = getattr(args, "path", None)
+        if not path:
+            print("path required", file=sys.stderr)
+            return 2
+        _print_json(hub.import_zip(path))
+        return 0
+    if sub == "hub-sync":
+        out = hub.sync_from_url(getattr(args, "url", None) or None)
+        _print_json(out)
+        return 0 if out.get("ok") else 2
+    print("unknown skills subcommand", file=sys.stderr)
+    return 2
+
+
 def cmd_gateway(args: argparse.Namespace) -> int:
     from .gateway_pairing import GatewayPairingStore
     from .gateway_runner import UnifiedGateway, config_from_env
@@ -2049,6 +2076,20 @@ def build_parser() -> argparse.ArgumentParser:
     tui = sub.add_parser("tui", help="Fullscreen TUI (requires: pip install 'narna[tui]')")
     tui.add_argument("--provider", default=None)
     tui.set_defaults(func=cmd_tui)
+
+    skills_p = sub.add_parser("skills", help="Local skills + Skill Hub (zip / sync)")
+    skills_sub = skills_p.add_subparsers(dest="skills_cmd", required=True)
+    sk_list = skills_sub.add_parser("hub-list", help="List local Skill Hub index")
+    sk_list.set_defaults(func=cmd_skills)
+    sk_ez = skills_sub.add_parser("export-zip", help="Export hub as SKILL.md zip")
+    sk_ez.add_argument("--out", default="skills-hub.zip")
+    sk_ez.set_defaults(func=cmd_skills)
+    sk_iz = skills_sub.add_parser("import-zip", help="Import SKILL.md zip into hub")
+    sk_iz.add_argument("path")
+    sk_iz.set_defaults(func=cmd_skills)
+    sk_sy = skills_sub.add_parser("hub-sync", help="Sync from UAP_SKILL_HUB_INDEX_URL or --url")
+    sk_sy.add_argument("--url", default=None)
+    sk_sy.set_defaults(func=cmd_skills)
 
     gw = sub.add_parser("gateway", help="Unified multi-channel gateway (Telegram poll)")
     gw_sub = gw.add_subparsers(dest="gateway_cmd", required=True)

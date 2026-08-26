@@ -1017,6 +1017,11 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "parameters": {"skillId": "string"},
     },
     {
+        "name": "skill_hub_sync",
+        "description": "Pull public skills from UAP_SKILL_HUB_INDEX_URL (or url arg) into the local hub.",
+        "parameters": {"url": "string"},
+    },
+    {
         "name": "http_request",
         "description": "HTTP GET/POST to a public https URL (size-limited). Use for APIs.",
         "parameters": {"url": "string", "method": "string", "body": "string"},
@@ -1154,6 +1159,7 @@ class AgentToolbelt:
             "skill_hub_list": self._skill_hub_list,
             "skill_hub_publish": self._skill_hub_publish,
             "skill_hub_install": self._skill_hub_install,
+            "skill_hub_sync": self._skill_hub_sync,
             "http_request": tool_http_request,
             "image_gen": self._image_gen,
             "vision_describe": self._vision_describe,
@@ -1298,6 +1304,12 @@ class AgentToolbelt:
         except KeyError:
             return {"ok": False, "error": f"unknown hub skill: {sid}"}
         return {"ok": True, "installed": installed}
+
+    def _skill_hub_sync(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.skill_hub is None:
+            return {"ok": False, "error": "skill hub not configured"}
+        url = str(args.get("url") or "").strip() or None
+        return self.skill_hub.sync_from_url(url)
 
     def _llm_creds(self) -> tuple[str, str, str]:
         key = (

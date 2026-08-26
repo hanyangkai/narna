@@ -42,9 +42,13 @@ Optional channel bot tokens (only if you run NARNA’s shared Telegram/Discord b
 | `UAP_OPENAI_API_KEY` | Whisper STT + TTS outbound (BYOK) |
 | `UAP_GATEWAY_VOICE_REPLY` | `1` — reply to Telegram voice memos with TTS voice notes |
 | `UAP_GATEWAY_PAIRING` | `1` — unknown DMs must `/pair CODE` before Ask |
+| `UAP_SKILL_HUB_INDEX_URL` | Public skill index JSON URL (or local path) for `hub-sync` |
+| `UAP_SKILL_HUB_AUTOPUBLISH` | `1` — publish skill to local hub when Ask DQS≥80 |
 | `UAP_JOB_DELIVER_AUDIO` | `1` — job delivery prefers Telegram `sendVoice` when `audioPath` set |
 | `UAP_BROWSER_ENABLED` | Playwright browser tools |
 
 TUI: `pip install 'narna[tui]'` then `narna tui`. Compose gateway: `docker compose --profile gateway up -d`.
+
+Skills Hub: `narna skills hub-sync --url …` · `narna skills export-zip` · `POST /v1/agent/skills/hub/sync`.
 
 Workflow: `.github/workflows/deploy-vps.yml`
