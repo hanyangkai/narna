@@ -345,12 +345,18 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
     }
 
 
-def tool_browser_navigate(args: dict[str, Any]) -> dict[str, Any]:
-    """Lightweight browser: fetch page + extract title/links (Playwright optional)."""
+def tool_browser_navigate(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    """Navigate — uses persistent Playwright session when available, else one-shot/fetch."""
     url = str(args.get("url") or "").strip()
     if not url.startswith(("http://", "https://")):
         return {"ok": False, "error": "url must start with http(s)://"}
-    # Prefer playwright if installed
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).navigate(url)
+    except Exception:
+        pass
     try:
         from playwright.sync_api import sync_playwright  # type: ignore
 
@@ -365,7 +371,14 @@ def tool_browser_navigate(args: dict[str, Any]) -> dict[str, Any]:
                 href = a.get_attribute("href") or ""
                 links.append({"text": (a.inner_text() or "")[:80], "href": href})
             browser.close()
-            return {"ok": True, "engine": "playwright", "url": url, "title": title, "text": text, "links": links}
+            return {
+                "ok": True,
+                "engine": "playwright-oneshot",
+                "url": url,
+                "title": title,
+                "text": text,
+                "links": links,
+            }
     except Exception:
         pass
     try:
@@ -391,12 +404,65 @@ def tool_browser_navigate(args: dict[str, Any]) -> dict[str, Any]:
         "title": title,
         "text": text,
         "links": links,
+        "hint": "Install playwright for click/type computer-use",
     }
 
 
-def tool_browser_snapshot(args: dict[str, Any]) -> dict[str, Any]:
-    """Alias for navigate — returns readable snapshot."""
-    return tool_browser_navigate(args)
+def tool_browser_snapshot(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).snapshot()
+    except Exception:
+        return tool_browser_navigate(args, workspace=ws)
+
+
+def tool_browser_click(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).click(str(args.get("selector") or ""))
+    except Exception as e:
+        return {"ok": False, "error": str(e), "hint": "Requires playwright + prior browser_navigate"}
+
+
+def tool_browser_type(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).type_text(
+            str(args.get("selector") or ""),
+            str(args.get("text") or ""),
+            clear=args.get("clear", True) is not False,
+        )
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def tool_browser_wait(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).wait(
+            selector=str(args.get("selector") or "") or None,
+            ms=int(args.get("ms") or 1000),
+        )
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def tool_browser_screenshot(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:
+    ws = Path(workspace) if workspace else Path.cwd()
+    try:
+        from .browser_session import get_browser_session
+
+        return get_browser_session(ws).screenshot(name=str(args.get("name") or "browser.png"))
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 _CODE_FORBIDDEN = {
@@ -557,13 +623,33 @@ TOOL_SPECS: list[dict[str, Any]] = [
     },
     {
         "name": "browser_navigate",
-        "description": "Open a URL and return title, text, links (Playwright if available, else fetch).",
+        "description": "Open a URL in persistent browser session (Playwright) or fetch fallback.",
         "parameters": {"url": "string"},
     },
     {
         "name": "browser_snapshot",
-        "description": "Readable snapshot of a page URL.",
+        "description": "Readable snapshot of the current browser page (or URL).",
         "parameters": {"url": "string"},
+    },
+    {
+        "name": "browser_click",
+        "description": "Click a CSS selector in the persistent browser session (computer-use).",
+        "parameters": {"selector": "string"},
+    },
+    {
+        "name": "browser_type",
+        "description": "Type text into a CSS selector (computer-use).",
+        "parameters": {"selector": "string", "text": "string", "clear": "bool"},
+    },
+    {
+        "name": "browser_wait",
+        "description": "Wait for selector or milliseconds in browser session.",
+        "parameters": {"selector": "string", "ms": "int"},
+    },
+    {
+        "name": "browser_screenshot",
+        "description": "Save a screenshot of the current browser page to workspace.",
+        "parameters": {"name": "string"},
     },
     {
         "name": "datetime_now",
@@ -706,8 +792,12 @@ class AgentToolbelt:
             "calculator": tool_calculator,
             "code_exec": tool_code_exec,
             "shell_exec": self._shell_exec,
-            "browser_navigate": tool_browser_navigate,
-            "browser_snapshot": tool_browser_snapshot,
+            "browser_navigate": self._browser_navigate,
+            "browser_snapshot": self._browser_snapshot,
+            "browser_click": self._browser_click,
+            "browser_type": self._browser_type,
+            "browser_wait": self._browser_wait,
+            "browser_screenshot": self._browser_screenshot,
             "datetime_now": tool_datetime_now,
             "workspace_list": self._workspace_list,
             "workspace_read": self._workspace_read,
@@ -739,8 +829,8 @@ class AgentToolbelt:
         if not fn:
             return {"ok": False, "error": f"unknown tool: {name}"}
         timeout = 25
-        if name in {"web_search", "web_fetch", "browser_navigate", "browser_snapshot"}:
-            timeout = 25
+        if name in {"web_search", "web_fetch", "browser_navigate", "browser_snapshot", "browser_click", "browser_type", "browser_wait", "browser_screenshot"}:
+            timeout = 30
         if name == "code_exec":
             timeout = 5
         if name == "shell_exec":
@@ -763,6 +853,24 @@ class AgentToolbelt:
     def _shell_exec(self, args: dict[str, Any]) -> dict[str, Any]:
         cwd = (self.workspace / ".uap" / "agent-workspace").resolve()
         return tool_shell_exec(args, cwd=cwd)
+
+    def _browser_navigate(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_navigate(args, workspace=self.workspace)
+
+    def _browser_snapshot(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_snapshot(args, workspace=self.workspace)
+
+    def _browser_click(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_click(args, workspace=self.workspace)
+
+    def _browser_type(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_type(args, workspace=self.workspace)
+
+    def _browser_wait(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_wait(args, workspace=self.workspace)
+
+    def _browser_screenshot(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_screenshot(args, workspace=self.workspace)
 
     def _parallel_delegate(self, args: dict[str, Any]) -> dict[str, Any]:
         tasks = args.get("tasks")
@@ -953,6 +1061,7 @@ class AgentToolbelt:
                 every_minutes=parsed.get("everyMinutes"),
                 run_at=parsed.get("runAt"),
                 channel=str(parsed.get("channel") or "job"),
+                deliver_to=str(parsed.get("deliverTo") or "") or None,
             )
         except ValueError as e:
             return {"ok": False, "error": str(e)}

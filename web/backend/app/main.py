@@ -2415,6 +2415,7 @@ def agent_jobs_create(
     run_at = body.runAt
     prompt = body.prompt
     channel = body.channel or "job"
+    deliver_to = body.deliverTo
     if body.schedule:
         from uap.nl_cron import parse_nl_schedule
 
@@ -2428,6 +2429,7 @@ def agent_jobs_create(
         run_at = parsed.get("runAt") if not run_at else run_at
         prompt = str(parsed.get("prompt") or prompt)
         channel = str(parsed.get("channel") or channel)
+        deliver_to = parsed.get("deliverTo") or deliver_to
     if normalize_plan(resolved.plan) == "free" and every:
         raise HTTPException(
             status_code=403,
@@ -2439,6 +2441,7 @@ def agent_jobs_create(
             every_minutes=every,
             run_at=run_at,
             channel=channel,
+            deliver_to=deliver_to,
             enabled=body.enabled,
         )
     except ValueError as e:

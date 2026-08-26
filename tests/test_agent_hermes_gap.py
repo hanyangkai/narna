@@ -330,10 +330,11 @@ class HermesLevelUpTests(unittest.TestCase):
     def test_nl_cron_every_day(self):
         from uap.nl_cron import parse_nl_schedule
 
-        p = parse_nl_schedule("every day remind me to review risk via telegram")
+        p = parse_nl_schedule("every day remind me to review risk via telegram:999")
         self.assertEqual(p["everyMinutes"], 1440)
         self.assertIn("review", p["prompt"].lower())
         self.assertEqual(p["channel"], "telegram")
+        self.assertEqual(p["deliverTo"], "999")
 
     def test_nl_cron_in_minutes(self):
         from uap.nl_cron import parse_nl_schedule
@@ -379,7 +380,27 @@ class HermesLevelUpTests(unittest.TestCase):
     def test_tool_count_grown(self):
         from uap.agent_tools import TOOL_SPECS
 
-        self.assertGreaterEqual(len(TOOL_SPECS), 26)
+        self.assertGreaterEqual(len(TOOL_SPECS), 30)
+
+    def test_job_delivery_noop(self):
+        from uap.job_delivery import deliver_job_result
+
+        out = deliver_job_result(
+            channel="job",
+            deliver_to=None,
+            out={"answer": "hi", "dqs": 70},
+            job_id="job_1",
+        )
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["delivered"])
+
+    def test_browser_click_without_session(self):
+        from uap.agent_tools import tool_browser_click
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            out = tool_browser_click({"selector": "a"}, workspace=Path(td))
+            # Either playwright missing or no page — must not crash
+            self.assertIn("ok", out)
 
 
 if __name__ == "__main__":

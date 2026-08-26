@@ -132,6 +132,7 @@ class AgentJobCreateRequest(BaseModel):
     # Hermes-like NL: "every day remind me to …" / "in 10 minutes …"
     schedule: str | None = None
     channel: str | None = None
+    deliverTo: str | None = None
 
 
 class AgentSkillHubPublishRequest(BaseModel):

@@ -1,4 +1,4 @@
-"""Natural-language cron → everyMinutes / runAt (Hermes-like)."""
+"""Natural-language cron → everyMinutes / runAt / deliverTo (Hermes-like)."""
 
 from __future__ import annotations
 
@@ -18,50 +18,50 @@ def _iso(dt: datetime) -> str:
 def parse_nl_schedule(text: str) -> dict[str, Any]:
     """
     Parse phrases like:
-      every 30 minutes …
-      every hour …
-      daily / every day …
-      weekly / every week …
-      every monday …
-      in 10 minutes …
-      at 2026-08-27T12:00:00Z …
-    Returns {everyMinutes?, runAt?, prompt, channel?, raw}.
+      every day remind me to review risk via telegram:123456
+      in 10 minutes check portfolio to discord:channelId
+      every hour ping health via slack:C0123
+    Returns {everyMinutes?, runAt?, prompt, channel?, deliverTo?, raw}.
     """
     raw = (text or "").strip()
     if not raw:
         raise ValueError("schedule text required")
 
     channel = "job"
-    ch_m = re.search(r"\b(?:to|on|via)\s+(telegram|discord|slack|email|web|whatsapp)\b", raw, re.I)
+    deliver_to: str | None = None
+    ch_m = re.search(
+        r"\b(?:to|on|via)\s+(telegram|discord|slack|email|web|whatsapp)"
+        r"(?:\s*[:=]\s*([^\s,]+))?",
+        raw,
+        re.I,
+    )
     if ch_m:
         channel = ch_m.group(1).lower()
+        if ch_m.group(2):
+            deliver_to = ch_m.group(2).strip().strip("'\"")
 
-    # Strip leading /cron
     body = re.sub(r"^/cron\s+", "", raw, flags=re.I).strip()
+    # Remove delivery clause from prompt body
+    body = re.sub(
+        r"\b(?:to|on|via)\s+(telegram|discord|slack|email|web|whatsapp)"
+        r"(?:\s*[:=]\s*[^\s,]+)?",
+        " ",
+        body,
+        flags=re.I,
+    )
+    body = re.sub(r"\s+", " ", body).strip()
 
     every: int | None = None
     run_at: str | None = None
     prompt = body
 
-    # ISO run-at
-    iso_m = re.search(
-        r"\bat\s+(\d{4}-\d{2}-\d{2}T[\d:.\-+Z]+)\b",
-        body,
-        re.I,
-    )
+    iso_m = re.search(r"\bat\s+(\d{4}-\d{2}-\d{2}T[\d:.\-+Z]+)\b", body, re.I)
     if iso_m:
         run_at = iso_m.group(1)
         prompt = (body[: iso_m.start()] + body[iso_m.end() :]).strip()
         prompt = re.sub(r"^(run|schedule|remind(?:\s+me)?)\s+", "", prompt, flags=re.I).strip()
-        return {
-            "everyMinutes": None,
-            "runAt": run_at,
-            "prompt": prompt or body,
-            "channel": channel,
-            "raw": raw,
-        }
+        return _result(None, run_at, prompt or body, channel, deliver_to, raw)
 
-    # in N minutes/hours
     in_m = re.search(r"\bin\s+(\d+)\s*(minutes?|mins?|hours?|hrs?)\b", body, re.I)
     if in_m:
         n = int(in_m.group(1))
@@ -70,16 +70,10 @@ def parse_nl_schedule(text: str) -> dict[str, Any]:
         run_at = _iso(_now() + delta)
         prompt = (body[: in_m.start()] + body[in_m.end() :]).strip()
         prompt = re.sub(r"^(run|schedule|remind(?:\s+me)?)\s+", "", prompt, flags=re.I).strip()
-        return {
-            "everyMinutes": None,
-            "runAt": run_at,
-            "prompt": prompt or "scheduled reminder",
-            "channel": channel,
-            "raw": raw,
-        }
+        return _result(None, run_at, prompt or "scheduled reminder", channel, deliver_to, raw)
 
     patterns: list[tuple[re.Pattern[str], int]] = [
-        (re.compile(r"\bevery\s+(\d+)\s*(minutes?|mins?)\b", re.I), 0),  # special
+        (re.compile(r"\bevery\s+(\d+)\s*(minutes?|mins?)\b", re.I), 0),
         (re.compile(r"\bevery\s+(\d+)\s*(hours?|hrs?)\b", re.I), 0),
         (re.compile(r"\bevery\s+hour\b", re.I), 60),
         (re.compile(r"\bhourly\b", re.I), 60),
@@ -110,13 +104,24 @@ def parse_nl_schedule(text: str) -> dict[str, Any]:
     prompt = re.sub(r"^(to|that)\s+", "", prompt, flags=re.I).strip() or body
 
     if every is None and run_at is None:
-        # default: one-shot soon
         run_at = _iso(_now() + timedelta(minutes=1))
 
+    return _result(every, run_at, prompt[:4000], channel, deliver_to, raw)
+
+
+def _result(
+    every: int | None,
+    run_at: str | None,
+    prompt: str,
+    channel: str,
+    deliver_to: str | None,
+    raw: str,
+) -> dict[str, Any]:
     return {
         "everyMinutes": every,
         "runAt": run_at,
-        "prompt": prompt[:4000],
+        "prompt": prompt,
         "channel": channel,
+        "deliverTo": deliver_to,
         "raw": raw,
     }

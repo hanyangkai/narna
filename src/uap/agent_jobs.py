@@ -51,6 +51,7 @@ class AgentJobStore:
         every_minutes: int | None = None,
         run_at: str | None = None,
         channel: str = "job",
+        deliver_to: str | None = None,
         enabled: bool = True,
     ) -> dict[str, Any]:
         prompt = (prompt or "").strip()
@@ -69,10 +70,12 @@ class AgentJobStore:
             "prompt": prompt[:4000],
             "everyMinutes": int(every_minutes) if every_minutes else None,
             "channel": channel,
+            "deliverTo": (deliver_to or "").strip() or None,
             "enabled": bool(enabled),
             "nextRunAt": next_run,
             "lastRunAt": None,
             "lastDecisionId": None,
+            "lastDelivery": None,
             "runCount": 0,
             "createdAt": _iso(now),
             "updatedAt": _iso(now),
@@ -110,13 +113,21 @@ class AgentJobStore:
                 due.append(row)
         return due
 
-    def mark_ran(self, job_id: str, *, decision_id: str | None = None) -> dict[str, Any]:
+    def mark_ran(
+        self,
+        job_id: str,
+        *,
+        decision_id: str | None = None,
+        delivery: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         row = self.get(job_id)
         if not row:
             raise KeyError(job_id)
         now = _now()
         row["lastRunAt"] = _iso(now)
         row["lastDecisionId"] = decision_id
+        if delivery is not None:
+            row["lastDelivery"] = delivery
         row["runCount"] = int(row.get("runCount") or 0) + 1
         every = row.get("everyMinutes")
         if every and int(every) > 0:

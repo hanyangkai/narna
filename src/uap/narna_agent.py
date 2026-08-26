@@ -171,7 +171,8 @@ class NarnaAgent:
             "Prefer native function/tool calling when the API supports it. "
             "Otherwise output ONLY a JSON block like:\n"
             '```json\n{"tool":"web_search","args":{"query":"..."}}\n```\n'
-            "You may use code_exec / shell_exec / browser_navigate / parallel_delegate when useful. "
+            "You may use code_exec / shell_exec / browser_navigate / browser_click / browser_type / "
+            "parallel_delegate when useful. "
             "If shell_exec returns needsApproval, ask the user before re-calling with approved=true. "
             "After tools return, give a final recommendation with risks and missing evidence. "
             "Do not claim absolute certainty. Prefer Decision Memory lessons and user profile notes."
@@ -401,7 +402,9 @@ class NarnaAgent:
         return {**row, "skillImproved": improved}
 
     def run_due_jobs(self, *, limit: int = 10) -> list[dict[str, Any]]:
-        """Execute due scheduled Ask jobs (cron tick)."""
+        """Execute due scheduled Ask jobs and fan-out results to channels (Hermes cron)."""
+        from .job_delivery import deliver_job_result
+
         results: list[dict[str, Any]] = []
         for job in self.jobs.due_jobs()[:limit]:
             out = self.ask(
@@ -410,6 +413,16 @@ class NarnaAgent:
                 use_tools=True,
                 capture_skill=True,
             )
-            self.jobs.mark_ran(str(job["jobId"]), decision_id=out.get("decisionId"))
-            results.append({"jobId": job["jobId"], "ask": out})
+            delivery = deliver_job_result(
+                channel=str(job.get("channel") or "job"),
+                deliver_to=str(job.get("deliverTo") or "") or None,
+                out=out,
+                job_id=str(job.get("jobId") or ""),
+            )
+            self.jobs.mark_ran(
+                str(job["jobId"]),
+                decision_id=out.get("decisionId"),
+                delivery=delivery,
+            )
+            results.append({"jobId": job["jobId"], "ask": out, "delivery": delivery})
         return results
