@@ -289,6 +289,39 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
             "backend": "docker",
             "image": image,
         }
+    if backend == "ssh":
+        # Opt-in remote shell: ssh user@host -- allowlisted command (Hermes SSH backend v0)
+        host = (os.environ.get("UAP_SHELL_SSH_HOST") or "").strip()
+        user = (os.environ.get("UAP_SHELL_SSH_USER") or "").strip()
+        if not host:
+            return {"ok": False, "error": "UAP_SHELL_SSH_HOST not set"}
+        target = f"{user}@{host}" if user else host
+        ssh_bin = os.environ.get("UAP_SHELL_SSH_BIN") or "ssh"
+        remote = " ".join(shlex.quote(p) for p in parts)
+        ssh_cmd = [ssh_bin, "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", target, remote]
+        try:
+            proc = subprocess.run(  # noqa: S603
+                ssh_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout + 5,
+                shell=False,
+            )
+        except FileNotFoundError:
+            return {"ok": False, "error": "ssh binary not found"}
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "timeout"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {
+            "ok": proc.returncode == 0,
+            "exitCode": proc.returncode,
+            "stdout": (proc.stdout or "")[:8000],
+            "stderr": (proc.stderr or "")[:2000],
+            "cwd": str(cwd),
+            "backend": "ssh",
+            "host": host,
+        }
     try:
         proc = subprocess.run(  # noqa: S603 — allowlisted argv
             parts,
@@ -460,6 +493,39 @@ def _safe_workspace_path(root: Path, rel: str) -> Path | None:
     return target
 
 
+def tool_http_request(args: dict[str, Any]) -> dict[str, Any]:
+    """Allowlisted HTTP client for public APIs (Hermes tool parity v0)."""
+    url = str(args.get("url") or "").strip()
+    method = str(args.get("method") or "GET").upper()
+    if not url.startswith("https://"):
+        return {"ok": False, "error": "only https:// URLs allowed"}
+    if method not in {"GET", "POST", "HEAD"}:
+        return {"ok": False, "error": "method must be GET|POST|HEAD"}
+    body = args.get("body")
+    data = None
+    headers = {"User-Agent": "narna-agent/0.2 (+https://narna.org)"}
+    if body is not None and method == "POST":
+        raw = body if isinstance(body, (bytes, bytearray)) else str(body).encode("utf-8")
+        if len(raw) > 50_000:
+            return {"ok": False, "error": "body too large"}
+        data = raw
+        headers["Content-Type"] = str(args.get("contentType") or "application/json")
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            text = resp.read(100_000).decode("utf-8", errors="replace")
+            return {
+                "ok": True,
+                "status": getattr(resp, "status", 200),
+                "body": text[:20000],
+            }
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")[:2000]
+        return {"ok": False, "status": e.code, "error": detail}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 TOOL_SPECS: list[dict[str, Any]] = [
     {
         "name": "web_search",
@@ -569,6 +635,41 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "description": "Install a hub skill into the local skill store.",
         "parameters": {"skillId": "string"},
     },
+    {
+        "name": "http_request",
+        "description": "HTTP GET/POST to a public https URL (size-limited). Use for APIs.",
+        "parameters": {"url": "string", "method": "string", "body": "string"},
+    },
+    {
+        "name": "image_gen",
+        "description": "Generate an image via OpenRouter/OpenAI-compatible image API (BYOK).",
+        "parameters": {"prompt": "string", "model": "string"},
+    },
+    {
+        "name": "vision_describe",
+        "description": "Describe an image URL with a vision-capable chat model (BYOK).",
+        "parameters": {"url": "string", "question": "string"},
+    },
+    {
+        "name": "schedule_job",
+        "description": "Schedule an Ask job with natural language cron (Hermes-like).",
+        "parameters": {"schedule": "string", "prompt": "string"},
+    },
+    {
+        "name": "jobs_list",
+        "description": "List scheduled agent jobs.",
+        "parameters": {},
+    },
+    {
+        "name": "profile_get",
+        "description": "Read user profile notes learned from conversation.",
+        "parameters": {},
+    },
+    {
+        "name": "profile_set",
+        "description": "Set a user profile note key/value.",
+        "parameters": {"key": "string", "value": "string"},
+    },
 ]
 
 
@@ -583,12 +684,20 @@ class AgentToolbelt:
         delegate_fn: Callable[[str], dict[str, Any]] | None = None,
         skill_hub: Any = None,
         fts: Any = None,
+        jobs: Any = None,
+        llm_api_key: str | None = None,
+        llm_provider: str | None = None,
+        llm_base_url: str | None = None,
     ) -> None:
         self.memory = memory
         self.skills = skills
         self.sessions = sessions
         self.skill_hub = skill_hub
         self.fts = fts
+        self.jobs = jobs
+        self.llm_api_key = llm_api_key
+        self.llm_provider = (llm_provider or "").lower() or None
+        self.llm_base_url = llm_base_url
         self.workspace = Path(workspace) if workspace else Path.cwd()
         self._delegate_fn = delegate_fn
         self._handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
@@ -613,6 +722,13 @@ class AgentToolbelt:
             "skill_hub_list": self._skill_hub_list,
             "skill_hub_publish": self._skill_hub_publish,
             "skill_hub_install": self._skill_hub_install,
+            "http_request": tool_http_request,
+            "image_gen": self._image_gen,
+            "vision_describe": self._vision_describe,
+            "schedule_job": self._schedule_job,
+            "jobs_list": self._jobs_list,
+            "profile_get": self._profile_get,
+            "profile_set": self._profile_set,
         }
 
     def specs(self) -> list[dict[str, Any]]:
@@ -629,6 +745,10 @@ class AgentToolbelt:
             timeout = 5
         if name == "shell_exec":
             timeout = 20
+        if name in {"image_gen", "vision_describe"}:
+            timeout = 90
+        if name == "http_request":
+            timeout = 30
         if name == "parallel_delegate":
             timeout = 90
         try:
@@ -699,6 +819,166 @@ class AgentToolbelt:
         except KeyError:
             return {"ok": False, "error": f"unknown hub skill: {sid}"}
         return {"ok": True, "installed": installed}
+
+    def _llm_creds(self) -> tuple[str, str, str]:
+        key = (
+            self.llm_api_key
+            or os.environ.get("UAP_OPENROUTER_API_KEY")
+            or os.environ.get("OPENROUTER_API_KEY")
+            or os.environ.get("UAP_OPENAI_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")
+            or ""
+        ).strip()
+        if self.llm_provider:
+            provider = self.llm_provider
+        elif os.environ.get("UAP_OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY"):
+            provider = "openrouter"
+        elif key:
+            provider = "openai"
+        else:
+            provider = "mock"
+        base = (self.llm_base_url or "").rstrip("/")
+        if not base:
+            if provider == "openrouter":
+                base = "https://openrouter.ai/api/v1"
+            elif provider == "openai":
+                base = "https://api.openai.com/v1"
+            else:
+                base = ""
+        return key, provider, base
+
+    def _image_gen(self, args: dict[str, Any]) -> dict[str, Any]:
+        prompt = str(args.get("prompt") or "").strip()
+        if not prompt:
+            return {"ok": False, "error": "prompt required"}
+        key, provider, base = self._llm_creds()
+        if not key or not base:
+            return {"ok": False, "error": "BYOK API key required for image_gen"}
+        model = str(args.get("model") or "google/gemini-2.5-flash-image-preview")
+        # OpenRouter image via chat completions with modalities
+        body = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if provider == "openrouter":
+            body["modalities"] = ["image", "text"]
+        req = urllib.request.Request(
+            f"{base}/chat/completions",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+                "User-Agent": "narna-agent/0.2",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        msg = ((data.get("choices") or [{}])[0].get("message") or {})
+        images = msg.get("images") or []
+        urls = []
+        for im in images:
+            u = (im.get("image_url") or {}).get("url") if isinstance(im, dict) else None
+            if u:
+                urls.append(u)
+        return {
+            "ok": True,
+            "provider": provider,
+            "model": model,
+            "text": str(msg.get("content") or "")[:2000],
+            "images": urls[:4],
+        }
+
+    def _vision_describe(self, args: dict[str, Any]) -> dict[str, Any]:
+        url = str(args.get("url") or "").strip()
+        question = str(args.get("question") or "Describe this image briefly.").strip()
+        if not url.startswith(("http://", "https://")):
+            return {"ok": False, "error": "url must be http(s)"}
+        key, provider, base = self._llm_creds()
+        if not key or not base:
+            return {"ok": False, "error": "BYOK API key required for vision_describe"}
+        model = str(
+            args.get("model")
+            or ("openai/gpt-4o-mini" if provider == "openrouter" else "gpt-4o-mini")
+        )
+        content = [
+            {"type": "text", "text": question},
+            {"type": "image_url", "image_url": {"url": url}},
+        ]
+        body = {
+            "model": model,
+            "messages": [{"role": "user", "content": content}],
+            "max_tokens": 600,
+        }
+        req = urllib.request.Request(
+            f"{base}/chat/completions",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+                "User-Agent": "narna-agent/0.2",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        text = str(((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "")
+        return {"ok": True, "description": text[:4000], "model": model, "provider": provider}
+
+    def _schedule_job(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.jobs is None:
+            return {"ok": False, "error": "jobs not configured"}
+        from .nl_cron import parse_nl_schedule
+
+        schedule = str(args.get("schedule") or args.get("when") or "").strip()
+        prompt = str(args.get("prompt") or "").strip()
+        if not schedule and not prompt:
+            return {"ok": False, "error": "schedule or prompt required"}
+        text = schedule if schedule else prompt
+        if prompt and schedule and prompt not in schedule:
+            text = f"{schedule} {prompt}"
+        try:
+            parsed = parse_nl_schedule(text)
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        try:
+            row = self.jobs.create(
+                prompt=str(parsed.get("prompt") or prompt or text),
+                every_minutes=parsed.get("everyMinutes"),
+                run_at=parsed.get("runAt"),
+                channel=str(parsed.get("channel") or "job"),
+            )
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": True, "job": row, "parsed": parsed}
+
+    def _jobs_list(self, _args: dict[str, Any]) -> dict[str, Any]:
+        if self.jobs is None:
+            return {"ok": False, "error": "jobs not configured"}
+        return {"ok": True, "jobs": self.jobs.list_jobs()}
+
+    def _profile_get(self, _args: dict[str, Any]) -> dict[str, Any]:
+        if self.fts is None:
+            return {"ok": False, "error": "profile store not configured"}
+        return {"ok": True, "profile": self.fts.get_profile()}
+
+    def _profile_set(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.fts is None:
+            return {"ok": False, "error": "profile store not configured"}
+        key = str(args.get("key") or "").strip()
+        value = str(args.get("value") or "").strip()
+        if not key or not value:
+            return {"ok": False, "error": "key and value required"}
+        if len(key) > 64 or len(value) > 2000:
+            return {"ok": False, "error": "key/value too long"}
+        self.fts.set_profile(key, value)
+        return {"ok": True, "profile": self.fts.get_profile()}
 
     def _workspace_list(self, args: dict[str, Any]) -> dict[str, Any]:
         rel = str(args.get("path") or ".")

@@ -101,15 +101,149 @@ export default function Ask() {
     const message = input.trim();
     if (!message || loading) return;
     // Hermes-like slash commands
-    if (message === "/new" || message === "/reset") {
+    const lower = message.toLowerCase();
+    if (lower === "/new" || lower === "/reset") {
       setSessionId(undefined);
       setItems([]);
       setInput("");
       return;
     }
-    if (message === "/skills") {
+    if (lower === "/clear") {
+      setItems([]);
+      setInput("");
+      return;
+    }
+    if (lower === "/skills") {
       setShowSkills(true);
       setInput("");
+      return;
+    }
+    if (lower === "/help") {
+      setItems((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text:
+            "Slash commands: /help /new /clear /skills /tools /model [id] /provider [name] /memory [q] /jobs /cron <nl>",
+        },
+      ]);
+      setInput("");
+      return;
+    }
+    if (lower === "/tools") {
+      setItems((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text:
+            "Tools: web_search, web_fetch, calculator, code_exec, shell_exec, browser_*, datetime_now, workspace_*, memory_*, delegate_*, skill_*, http_request, image_gen, vision_describe, schedule_job, jobs_list, profile_*",
+        },
+      ]);
+      setInput("");
+      return;
+    }
+    if (lower === "/model" || lower.startsWith("/model ")) {
+      const rest = message.slice(6).trim();
+      if (rest) {
+        setLlmModel(rest);
+        localStorage.setItem("narna_llm_model", rest);
+        setItems((prev) => [
+          ...prev,
+          { role: "assistant", text: `Model set to ${rest}` },
+        ]);
+      } else {
+        setShowLlm(true);
+        setItems((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            text: `Current model: ${llmModel || "(provider default)"} · provider ${llmProvider}`,
+          },
+        ]);
+      }
+      setInput("");
+      return;
+    }
+    if (lower === "/provider" || lower.startsWith("/provider ")) {
+      const rest = message.slice(9).trim().toLowerCase();
+      if (rest && ["openrouter", "openai", "ollama", "mock"].includes(rest)) {
+        setLlmProvider(rest);
+        localStorage.setItem("narna_llm_provider", rest);
+        setItems((prev) => [
+          ...prev,
+          { role: "assistant", text: `Provider set to ${rest}` },
+        ]);
+      } else {
+        setShowLlm(true);
+        setItems((prev) => [
+          ...prev,
+          { role: "assistant", text: `Provider: ${llmProvider}. Use /provider openrouter|openai|ollama|mock` },
+        ]);
+      }
+      setInput("");
+      return;
+    }
+    if (lower === "/memory" || lower.startsWith("/memory ")) {
+      const q = message.slice(7).trim() || "recent";
+      setInput("");
+      setItems((prev) => [...prev, { role: "user", text: message }]);
+      setLoading(true);
+      try {
+        const apiKey = localStorage.getItem("uap_api_key") || undefined;
+        const resp = await askNarna(
+          `Use memory_search tool with query "${q}" then summarize the top lessons for me.`,
+          {
+            apiKey,
+            sessionId,
+            llmProvider: llmApiKey ? llmProvider : undefined,
+            llmApiKey: llmApiKey || undefined,
+            llmModel: llmApiKey && llmModel ? llmModel : undefined,
+          }
+        );
+        setSessionId(resp.sessionId);
+        setItems((prev) => [...prev, { role: "assistant", text: resp.answer, meta: resp }]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (lower === "/jobs") {
+      setItems((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Use /cron <natural language> to schedule, e.g. /cron every day remind me to review risk. Or ask: list my jobs.",
+        },
+      ]);
+      setInput("");
+      return;
+    }
+    if (lower.startsWith("/cron ")) {
+      const nl = message.slice(6).trim();
+      setInput("");
+      setItems((prev) => [...prev, { role: "user", text: message }]);
+      setLoading(true);
+      try {
+        const apiKey = localStorage.getItem("uap_api_key") || undefined;
+        const resp = await askNarna(
+          `Schedule this with the schedule_job tool (natural language): ${nl}`,
+          {
+            apiKey,
+            sessionId,
+            llmProvider: llmApiKey ? llmProvider : undefined,
+            llmApiKey: llmApiKey || undefined,
+            llmModel: llmApiKey && llmModel ? llmModel : undefined,
+          }
+        );
+        setSessionId(resp.sessionId);
+        setItems((prev) => [...prev, { role: "assistant", text: resp.answer, meta: resp }]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     setError(null);
@@ -249,7 +383,7 @@ export default function Ask() {
         <div className="ask-thread">
           {items.length === 0 && (
             <div className="ask-empty">
-              <p>Try: “Should I sign this contract?” — or `/new` / `/skills`.</p>
+              <p>Try: “Should I sign this contract?” — or `/help` `/new` `/model` `/cron`.</p>
               <p className="ask-mobile-tip">
                 Without an LLM key, Ask runs in mock mode (still ADQA-scored). Add your key above.
               </p>

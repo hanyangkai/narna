@@ -2411,16 +2411,34 @@ def agent_jobs_create(
     from uap.agent_jobs import AgentJobStore
 
     resolved = _resolve_ask_org(request=request, org=org, db=db)
-    if normalize_plan(resolved.plan) == "free" and body.everyMinutes:
+    every = body.everyMinutes
+    run_at = body.runAt
+    prompt = body.prompt
+    channel = body.channel or "job"
+    if body.schedule:
+        from uap.nl_cron import parse_nl_schedule
+
+        try:
+            parsed = parse_nl_schedule(
+                body.schedule if not body.prompt else f"{body.schedule} {body.prompt}"
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        every = parsed.get("everyMinutes") if every is None else every
+        run_at = parsed.get("runAt") if not run_at else run_at
+        prompt = str(parsed.get("prompt") or prompt)
+        channel = str(parsed.get("channel") or channel)
+    if normalize_plan(resolved.plan) == "free" and every:
         raise HTTPException(
             status_code=403,
             detail="Recurring jobs require Personal or Team — upgrade at /billing",
         )
     try:
         row = AgentJobStore(tenant_workspace(resolved.id)).create(
-            prompt=body.prompt,
-            every_minutes=body.everyMinutes,
-            run_at=body.runAt,
+            prompt=prompt,
+            every_minutes=every,
+            run_at=run_at,
+            channel=channel,
             enabled=body.enabled,
         )
     except ValueError as e:

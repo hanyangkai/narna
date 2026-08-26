@@ -88,6 +88,10 @@ class NarnaAgent:
             delegate_fn=self._delegate_subask,
             skill_hub=self.hub,
             fts=self.fts,
+            jobs=self.jobs,
+            llm_api_key=getattr(self.router, "api_key", None),
+            llm_provider=getattr(self.router, "provider", None),
+            llm_base_url=getattr(self.router, "base_url", None),
         )
         self.adqa = ADQAEngine(self.workspace)
         self.max_tool_rounds = max(0, int(max_tool_rounds))

@@ -129,6 +129,9 @@ class AgentJobCreateRequest(BaseModel):
     everyMinutes: int | None = None
     runAt: str | None = None
     enabled: bool = True
+    # Hermes-like NL: "every day remind me to …" / "in 10 minutes …"
+    schedule: str | None = None
+    channel: str | None = None
 
 
 class AgentSkillHubPublishRequest(BaseModel):

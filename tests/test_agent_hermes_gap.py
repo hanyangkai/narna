@@ -326,5 +326,61 @@ class HermesAlignTests(unittest.TestCase):
             self.assertIn("56", str(tools[0].get("result")))
 
 
+class HermesLevelUpTests(unittest.TestCase):
+    def test_nl_cron_every_day(self):
+        from uap.nl_cron import parse_nl_schedule
+
+        p = parse_nl_schedule("every day remind me to review risk via telegram")
+        self.assertEqual(p["everyMinutes"], 1440)
+        self.assertIn("review", p["prompt"].lower())
+        self.assertEqual(p["channel"], "telegram")
+
+    def test_nl_cron_in_minutes(self):
+        from uap.nl_cron import parse_nl_schedule
+
+        p = parse_nl_schedule("in 10 minutes check portfolio")
+        self.assertTrue(p["runAt"])
+        self.assertIsNone(p["everyMinutes"])
+
+    def test_slash_parse(self):
+        from uap.slash_commands import parse_slash
+
+        self.assertEqual(parse_slash("/model gpt-4o")["cmd"], "/model")
+        self.assertIsNone(parse_slash("hello"))
+
+    def test_http_request_rejects_http(self):
+        from uap.agent_tools import tool_http_request
+
+        out = tool_http_request({"url": "http://example.com"})
+        self.assertFalse(out["ok"])
+
+    def test_schedule_job_tool(self):
+        from uap.agent_jobs import AgentJobStore
+        from uap.agent_tools import AgentToolbelt
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            jobs = AgentJobStore(Path(td))
+            belt = AgentToolbelt(workspace=Path(td), jobs=jobs)
+            out = belt.call(
+                "schedule_job",
+                {"schedule": "every 60 minutes ping health check"},
+            )
+            self.assertTrue(out.get("ok"), msg=str(out))
+            self.assertEqual(out["job"]["everyMinutes"], 60)
+
+    def test_gateway_status(self):
+        from uap.gateway_runner import UnifiedGateway
+
+        gw = UnifiedGateway(ask_fn=lambda m, c, e: {"answer": "ok"})
+        st = gw.status()
+        self.assertIn("telegramConfigured", st)
+        self.assertEqual(st["standard"], "NGS-0029-gateway")
+
+    def test_tool_count_grown(self):
+        from uap.agent_tools import TOOL_SPECS
+
+        self.assertGreaterEqual(len(TOOL_SPECS), 26)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -788,6 +788,126 @@ def cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_chat(args: argparse.Namespace) -> int:
+    """Hermes-like interactive REPL with slash commands."""
+    from .model_router import ModelRouter
+    from .narna_agent import NarnaAgent
+    from .slash_commands import SLASH_HELP, parse_slash
+
+    router = ModelRouter(provider=getattr(args, "provider", None) or None)
+    agent = NarnaAgent(Path.cwd(), router=router)
+    session_id: str | None = None
+    print("NARNA chat — type /help · /quit to exit")
+    while True:
+        try:
+            line = input("you> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if not line:
+            continue
+        slash = parse_slash(line)
+        if slash:
+            cmd = slash["cmd"]
+            arg = slash["args"]
+            if cmd in {"/quit", "/exit"}:
+                break
+            if cmd == "/help":
+                print(SLASH_HELP)
+                continue
+            if cmd in {"/new", "/reset"}:
+                session_id = None
+                print("(new session)")
+                continue
+            if cmd == "/tools":
+                print(", ".join(t["name"] for t in agent.tools.specs()))
+                continue
+            if cmd == "/skills":
+                for s in agent.skills.list_skills()[:20]:
+                    print(f"- {s.get('skillId')}: {s.get('name')}")
+                continue
+            if cmd == "/jobs":
+                for j in agent.jobs.list_jobs()[:20]:
+                    print(f"- {j.get('jobId')}: {j.get('prompt')} every={j.get('everyMinutes')}")
+                continue
+            if cmd == "/memory":
+                q = arg or "decision"
+                hits = agent.fts.search(q, limit=5)
+                _print_json({"hits": hits})
+                continue
+            if cmd == "/cron":
+                from .nl_cron import parse_nl_schedule
+
+                try:
+                    parsed = parse_nl_schedule(arg or line)
+                    row = agent.jobs.create(
+                        prompt=str(parsed["prompt"]),
+                        every_minutes=parsed.get("everyMinutes"),
+                        run_at=parsed.get("runAt"),
+                        channel=str(parsed.get("channel") or "job"),
+                    )
+                    _print_json({"ok": True, "job": row, "parsed": parsed})
+                except Exception as e:
+                    print(f"error: {e}", file=sys.stderr)
+                continue
+            if cmd == "/model":
+                if arg:
+                    router.models = {**(router.models or {}), "reason": arg}
+                    print(f"model={arg}")
+                else:
+                    print(f"provider={router.provider} model={router.pick_model('reason')}")
+                continue
+            if cmd == "/provider":
+                if arg:
+                    router.provider = arg.lower()
+                    print(f"provider={router.provider}")
+                else:
+                    print(f"provider={router.provider}")
+                continue
+            print(f"unknown slash: {cmd} — try /help")
+            continue
+        out = agent.ask(line, session_id=session_id, use_tools=True)
+        session_id = str(out.get("sessionId") or session_id)
+        print(f"narna> {out.get('answer')}")
+        print(f"  [DQS {out.get('dqs')} · {out.get('guardian')}]")
+    return 0
+
+
+def cmd_gateway(args: argparse.Namespace) -> int:
+    from .gateway_runner import UnifiedGateway, config_from_env
+    from .model_router import ModelRouter
+    from .narna_agent import NarnaAgent
+
+    if args.gateway_cmd == "status":
+        _print_json(UnifiedGateway(ask_fn=lambda *_: {}).status())
+        return 0
+
+    router = ModelRouter(provider=getattr(args, "provider", None) or None)
+    agent = NarnaAgent(Path.cwd(), router=router)
+
+    def ask_fn(message: str, channel: str, external_id: str | None) -> dict:
+        return agent.ask(
+            message,
+            channel=channel,
+            external_id=external_id,
+            use_tools=True,
+        )
+
+    gw = UnifiedGateway(ask_fn=ask_fn, config=config_from_env())
+    if args.gateway_cmd == "once":
+        n = gw.poll_once()
+        _print_json({"handled": n, **gw.status()})
+        return 0
+    # run
+    print("gateway running (Ctrl+C to stop)…", file=sys.stderr)
+    try:
+        gw.run_forever(max_iterations=getattr(args, "max_iters", None))
+    except KeyboardInterrupt:
+        gw.stop()
+    _print_json(gw.status())
+    return 0
+
+
 def cmd_cmem_status(args: argparse.Namespace) -> int:
     from .cmem_bridge import CmemBridge
 
@@ -1797,6 +1917,22 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--challenge", action="store_true")
     ask.add_argument("--provider", default=None)
     ask.set_defaults(func=cmd_ask)
+
+    chat = sub.add_parser("chat", help="Interactive Hermes-like REPL with slash commands")
+    chat.add_argument("--provider", default=None)
+    chat.set_defaults(func=cmd_chat)
+
+    gw = sub.add_parser("gateway", help="Unified multi-channel gateway (Telegram poll)")
+    gw_sub = gw.add_subparsers(dest="gateway_cmd", required=True)
+    gw_st = gw_sub.add_parser("status")
+    gw_st.set_defaults(func=cmd_gateway)
+    gw_once = gw_sub.add_parser("once", help="Poll channels once")
+    gw_once.add_argument("--provider", default=None)
+    gw_once.set_defaults(func=cmd_gateway)
+    gw_run = gw_sub.add_parser("run", help="Run forever")
+    gw_run.add_argument("--provider", default=None)
+    gw_run.add_argument("--max-iters", type=int, default=None)
+    gw_run.set_defaults(func=cmd_gateway)
 
     cmem = sub.add_parser("cmem", help="CMEM bridge — continuity memory feedstock")
     cmem_sub = cmem.add_subparsers(dest="cmem_cmd", required=True)
