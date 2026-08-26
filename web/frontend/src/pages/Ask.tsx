@@ -198,6 +198,7 @@ export default function Ask() {
           {
             apiKey,
             sessionId,
+            mode: askMode,
             llmProvider: llmApiKey ? llmProvider : undefined,
             llmApiKey: llmApiKey || undefined,
             llmModel: llmApiKey && llmModel ? llmModel : undefined,
@@ -235,6 +236,7 @@ export default function Ask() {
           {
             apiKey,
             sessionId,
+            mode: askMode,
             llmProvider: llmApiKey ? llmProvider : undefined,
             llmApiKey: llmApiKey || undefined,
             llmModel: llmApiKey && llmModel ? llmModel : undefined,
