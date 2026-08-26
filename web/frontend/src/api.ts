@@ -258,6 +258,8 @@ export type AgentAskResponse = {
   dqs: number | null;
   guardian: string | null;
   decisionId: string;
+  traceId?: string;
+  verdict?: string;
   modelsUsed: string[];
   sources: Array<{ type: string; name: string }>;
   sessionId: string;

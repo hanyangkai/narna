@@ -55,6 +55,8 @@ Execute [`HERMES-GAP-PLAN.md`](./HERMES-GAP-PLAN.md) phases P1–P8.
 
 ### B1 — Decision Trace v1 (3 days)
 
+**Status:** ✅ Shipped — `decision_trace.py` · Ask emits `traceId` · API + CLI + MCP
+
 **Goal:** Every Ask → structured trace, not just DQS number.
 
 Schema `DecisionTrace` (store in `.uap/decision-traces/{id}.json`):
@@ -91,6 +93,8 @@ Schema `DecisionTrace` (store in `.uap/decision-traces/{id}.json`):
 
 ### B2 — Decision Replay v1 (3 days)
 
+**Status:** ✅ Shipped — `decision_replay.py` · `narna replay` · `POST /v1/decision/replay`
+
 **Goal:** “Replay this decision with today's knowledge.”
 
 **Tasks:**
@@ -103,6 +107,8 @@ Schema `DecisionTrace` (store in `.uap/decision-traces/{id}.json`):
 ---
 
 ### B3 — ADQA Universal API (2 days)
+
+**Status:** ✅ Shipped — `from narna import evaluate` · `POST /v1/adqa/evaluate` · MCP `narna_evaluate_action`
 
 **Goal:** Any agent (Hermes, LangGraph, custom) calls NARNA without switching runtime.
 

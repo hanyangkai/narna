@@ -788,6 +788,45 @@ def cmd_ask(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_trace(args: argparse.Namespace) -> int:
+    from .decision_trace import DecisionTraceStore
+
+    store = DecisionTraceStore(Path.cwd())
+    if args.trace_cmd == "list":
+        rows = store.list_traces(limit=args.limit)
+        _print_json({"traces": rows, "count": len(rows)})
+        return 0
+    row = store.get(args.trace_id)
+    if not row:
+        print("trace not found", file=sys.stderr)
+        return 1
+    _print_json(row)
+    return 0
+
+
+def cmd_replay(args: argparse.Namespace) -> int:
+    from .model_router import ModelRouter
+    from .narna_agent import NarnaAgent
+
+    agent = NarnaAgent(Path.cwd(), router=ModelRouter(provider=getattr(args, "provider", None) or None))
+    try:
+        out = agent.replay(args.trace_id, extra_context=args.context)
+    except KeyError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    _print_json(out)
+    return 0
+
+
+def cmd_evaluate(args: argparse.Namespace) -> int:
+    from narna.evaluate import evaluate
+
+    evidence = [x.strip() for x in (args.evidence or "").split(",") if x.strip()]
+    out = evaluate(action=args.action, evidence=evidence or None, question=args.question)
+    _print_json(out)
+    return 0
+
+
 def cmd_chat(args: argparse.Namespace) -> int:
     """Hermes-like interactive REPL with slash commands."""
     from .model_router import ModelRouter
@@ -1917,6 +1956,27 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--challenge", action="store_true")
     ask.add_argument("--provider", default=None)
     ask.set_defaults(func=cmd_ask)
+
+    trace = sub.add_parser("trace", help="Decision Trace list/get (NGS-0030)")
+    trace_sub = trace.add_subparsers(dest="trace_cmd", required=True)
+    tr_list = trace_sub.add_parser("list")
+    tr_list.add_argument("--limit", type=int, default=20)
+    tr_list.set_defaults(func=cmd_trace)
+    tr_get = trace_sub.add_parser("get")
+    tr_get.add_argument("trace_id")
+    tr_get.set_defaults(func=cmd_trace)
+
+    replay = sub.add_parser("replay", help="Replay a Decision Trace")
+    replay.add_argument("trace_id")
+    replay.add_argument("--context", default=None)
+    replay.add_argument("--provider", default=None)
+    replay.set_defaults(func=cmd_replay)
+
+    evaluate_p = sub.add_parser("evaluate", help="ADQA evaluate any action (universal API)")
+    evaluate_p.add_argument("action")
+    evaluate_p.add_argument("--evidence", default="", help="Comma-separated evidence ids")
+    evaluate_p.add_argument("--question", default=None)
+    evaluate_p.set_defaults(func=cmd_evaluate)
 
     chat = sub.add_parser("chat", help="Interactive Hermes-like REPL with slash commands")
     chat.add_argument("--provider", default=None)

@@ -30,6 +30,7 @@ from narna.wrap import track, wrap
 from narna.integrations import integration_manifest
 from narna.mcp_tools import NarnaMcpTools, TOOL_DEFS as MCP_TOOL_DEFS
 
+from narna.evaluate import evaluate
 from uap.adqa import ADQAEngine
 from uap.cmem_bridge import CmemBridge
 
@@ -41,6 +42,7 @@ __all__ = [
     "agent",
     "policy",
     "audit",
+    "evaluate",
     "compute_narna_score",
     "ADAPTER_CATALOG",
     "ConstitutionRuntime",

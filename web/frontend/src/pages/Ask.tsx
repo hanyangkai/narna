@@ -396,7 +396,11 @@ export default function Ask() {
                 <div className="ask-meta">
                   <span className="ask-dqs">
                     Verified by ADQA · DQS {item.meta.dqs ?? "—"} · {item.meta.guardian}
+                    {item.meta.verdict ? ` · ${item.meta.verdict}` : ""}
                   </span>
+                  {item.meta.traceId && (
+                    <span className="ask-tools mono">Trace: {item.meta.traceId}</span>
+                  )}
                   {!!item.meta.toolsUsed?.length && (
                     <span className="ask-tools">
                       Tools:{" "}

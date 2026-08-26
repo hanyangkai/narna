@@ -71,6 +71,49 @@ TOOL_DEFS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "narna_evaluate_action",
+        "description": "Evaluate any proposed action with ADQA → ACT/REVIEW/REJECT + DQS (universal API).",
+        "inputSchema": {
+            "type": "object",
+            "required": ["action"],
+            "properties": {
+                "action": {"type": "string"},
+                "evidence": {"type": "array", "items": {"type": "string"}},
+                "question": {"type": "string"},
+                "context": {"type": "object"},
+            },
+        },
+    },
+    {
+        "name": "narna_trace_get",
+        "description": "Load a Decision Trace by traceId or decisionId.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["traceId"],
+            "properties": {"traceId": {"type": "string"}},
+        },
+    },
+    {
+        "name": "narna_trace_list",
+        "description": "List recent Decision Traces.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"limit": {"type": "integer", "default": 10}},
+        },
+    },
+    {
+        "name": "narna_replay",
+        "description": "Replay a Decision Trace with today's knowledge.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["traceId"],
+            "properties": {
+                "traceId": {"type": "string"},
+                "extraContext": {"type": "string"},
+            },
+        },
+    },
 ]
 
 
@@ -91,6 +134,10 @@ class NarnaMcpTools:
             "narna_learning_prior": self._learning_prior,
             "narna_cmem_enrich": self._cmem_enrich,
             "narna_agent_ask": self._agent_ask,
+            "narna_evaluate_action": self._evaluate_action,
+            "narna_trace_get": self._trace_get,
+            "narna_trace_list": self._trace_list,
+            "narna_replay": self._replay,
         }
         fn = handlers.get(name)
         if not fn:
@@ -147,3 +194,44 @@ class NarnaMcpTools:
             challenge=bool(args.get("challenge")),
         )
         return {"ok": True, **out}
+
+    def _evaluate_action(self, args: dict[str, Any]) -> dict[str, Any]:
+        from narna.evaluate import evaluate
+
+        return evaluate(
+            action=str(args.get("action") or ""),
+            evidence=list(args.get("evidence") or []) if isinstance(args.get("evidence"), list) else None,
+            context=args.get("context") if isinstance(args.get("context"), dict) else None,
+            question=args.get("question"),
+            workspace=self.workspace,
+        )
+
+    def _trace_get(self, args: dict[str, Any]) -> dict[str, Any]:
+        from uap.decision_trace import DecisionTraceStore
+
+        tid = str(args.get("traceId") or args.get("trace_id") or "")
+        row = DecisionTraceStore(self.workspace).get(tid)
+        if not row:
+            return {"ok": False, "error": "trace not found"}
+        return {"ok": True, "trace": row}
+
+    def _trace_list(self, args: dict[str, Any]) -> dict[str, Any]:
+        from uap.decision_trace import DecisionTraceStore
+
+        rows = DecisionTraceStore(self.workspace).list_traces(limit=int(args.get("limit") or 10))
+        return {"ok": True, "traces": rows, "count": len(rows)}
+
+    def _replay(self, args: dict[str, Any]) -> dict[str, Any]:
+        from uap.model_router import ModelRouter
+        from uap.narna_agent import NarnaAgent
+
+        agent = NarnaAgent(self.workspace, router=ModelRouter())
+        try:
+            out = agent.replay(
+                str(args.get("traceId") or ""),
+                extra_context=str(args.get("extraContext") or args.get("extra_context") or "")
+                or None,
+            )
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        return out

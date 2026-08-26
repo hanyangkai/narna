@@ -1686,6 +1686,123 @@ def adqa_check(
     return {"ok": True, **out}
 
 
+@app.post("/v1/adqa/evaluate")
+def adqa_evaluate(
+    body: dict[str, Any],
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Universal ADQA evaluate — wrap any agent decision (Hermes/LangGraph/custom).
+
+    Returns DQS + Guardian + ACT/REVIEW/REJECT verdict.
+    """
+    from narna.evaluate import evaluate as narna_evaluate
+
+    require = os.environ.get("UAP_ADQA_REQUIRE_AUTH", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if require and org is None:
+        raise HTTPException(status_code=401, detail="API key required for ADQA Cloud")
+    action = str(body.get("action") or "").strip()
+    if not action:
+        raise HTTPException(status_code=400, detail="action required")
+    ws = tenant_workspace(org.id) if org is not None else tenant_workspace(tenant_id="anon")
+    warn = None
+    if org is not None:
+        warn = enforce_plan_limit(org=org, projected_events=0, projected_gu=0, projected_adqa=1)
+    try:
+        out = narna_evaluate(
+            action=action,
+            evidence=body.get("evidence") or body.get("evidencePresent"),
+            context=body.get("context") if isinstance(body.get("context"), dict) else None,
+            question=body.get("question"),
+            workspace=ws,
+            agent_id=str(body.get("agentId") or "") or None,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    if org is not None:
+        bump_adqa_usage(org=org, db=db)
+        out["tenantId"] = tenant_id_for_org(org.id)
+        out["plan"] = normalize_plan(org.plan)
+    if warn:
+        out["quota"] = warn
+    return out
+
+
+@app.get("/v1/decision/traces")
+def decision_traces_list(
+    request: Request,
+    limit: int = 20,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """List recent Decision Traces (NGS-0030)."""
+    from uap.decision_trace import DecisionTraceStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    rows = DecisionTraceStore(ws, tenant_id=tenant_id_for_org(resolved.id)).list_traces(
+        limit=limit
+    )
+    return {"ok": True, "traces": rows, "count": len(rows), "standard": "NGS-0030-trace"}
+
+
+@app.get("/v1/decision/traces/{trace_id}")
+def decision_trace_get(
+    trace_id: str,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.decision_trace import DecisionTraceStore
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    row = DecisionTraceStore(ws, tenant_id=tenant_id_for_org(resolved.id)).get(trace_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="trace not found")
+    return {"ok": True, "trace": row}
+
+
+@app.post("/v1/decision/replay")
+def decision_replay(
+    body: dict[str, Any],
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Replay a Decision Trace with today's knowledge."""
+    from uap.narna_agent import NarnaAgent
+
+    trace_id = str(body.get("traceId") or body.get("trace_id") or "").strip()
+    if not trace_id:
+        raise HTTPException(status_code=400, detail="traceId required")
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.replay(
+            trace_id,
+            extra_context=str(body.get("extraContext") or body.get("extra_context") or "")
+            or None,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    bump_agent_turns(org=resolved, db=db)
+    out["plan"] = normalize_plan(resolved.plan)
+    if warn:
+        out["quota"] = warn
+    return out
+
+
 def _anon_org_name(request: Request) -> str:
     import hashlib
 

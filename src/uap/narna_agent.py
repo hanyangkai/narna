@@ -14,6 +14,7 @@ from .agent_session import AgentSessionStore
 from .agent_skills import SkillStore
 from .agent_tools import AgentToolbelt, openai_tools_schema
 from .decision_memory import DecisionMemory
+from .decision_trace import DecisionTraceStore
 from .model_router import ModelRouter, default_router_from_env
 from .skill_hub import SkillHub
 
@@ -75,6 +76,7 @@ class NarnaAgent:
         self.tenant_id = tenant_id
         self.router = router or default_router_from_env()
         self.memory = DecisionMemory(self.workspace, tenant_id=tenant_id)
+        self.traces = DecisionTraceStore(self.workspace, tenant_id=tenant_id)
         self.skills = SkillStore(self.workspace)
         self.sessions = AgentSessionStore(self.workspace)
         self.jobs = AgentJobStore(self.workspace)
@@ -336,6 +338,55 @@ class NarnaAgent:
             tenant_id=self.tenant_id,
         )
 
+        evidence_objs: list[dict[str, Any]] = []
+        for s in sources:
+            evidence_objs.append(
+                {"type": str(s.get("type") or "source"), "ref": str(s.get("name") or "")}
+            )
+        for t in tool_trace[:15]:
+            evidence_objs.append(
+                {
+                    "type": "tool",
+                    "ref": str(t.get("tool") or ""),
+                    "ok": (t.get("result") or {}).get("ok"),
+                }
+            )
+        if file_bits:
+            evidence_objs.append({"type": "file", "ref": "attachment.reviewed"})
+
+        guardian = str(adqa.get("guardian") or "").lower()
+        chosen = "recommend"
+        if guardian in {"reject", "block", "deny"}:
+            chosen = "reject"
+        elif guardian in {"review", "ask", "escalate"}:
+            chosen = "defer"
+
+        trace = self.traces.create(
+            goal=msg,
+            context={
+                "sessionId": sid,
+                "channel": channel,
+                "priors": len(priors),
+                "challenge": bool(challenge),
+            },
+            evidence=evidence_objs,
+            options=[
+                {"id": "recommend", "label": "Proceed with recommendation"},
+                {"id": "defer", "label": "Gather more evidence / review"},
+                {"id": "reject", "label": "Do not act"},
+            ],
+            chosen=chosen,
+            rationale=draft[:2000],
+            adqa=adqa,
+            tools_used=tool_trace,
+            models_used=models_used,
+            action=action,
+            decision_id=str(record.get("decisionId") or ""),
+            session_id=sid,
+            channel=channel,
+            answer=draft,
+        )
+
         skill_saved = None
         if capture_skill:
             skill_saved = self.skills.maybe_capture_from_answer(
@@ -348,6 +399,7 @@ class NarnaAgent:
             content=draft,
             meta={
                 "decisionId": record.get("decisionId"),
+                "traceId": trace.get("traceId"),
                 "dqs": adqa.get("dqs"),
                 "guardian": adqa.get("guardian"),
             },
@@ -356,7 +408,11 @@ class NarnaAgent:
             session_id=sid,
             role="assistant",
             content=draft,
-            meta={"decisionId": record.get("decisionId"), "dqs": adqa.get("dqs")},
+            meta={
+                "decisionId": record.get("decisionId"),
+                "traceId": trace.get("traceId"),
+                "dqs": adqa.get("dqs"),
+            },
         )
 
         return {
@@ -364,6 +420,7 @@ class NarnaAgent:
             "dqs": adqa.get("dqs"),
             "guardian": adqa.get("guardian"),
             "decisionId": record.get("decisionId"),
+            "traceId": trace.get("traceId"),
             "modelsUsed": models_used,
             "sources": sources,
             "sessionId": sid,
@@ -372,6 +429,9 @@ class NarnaAgent:
             "toolsUsed": tool_trace,
             "skillSaved": skill_saved,
             "channel": channel,
+            "verdict": {"recommend": "ACT", "defer": "REVIEW", "reject": "REJECT"}.get(
+                chosen, "ACT"
+            ),
             "standard": "NGS-0029",
         }
 
@@ -392,6 +452,20 @@ class NarnaAgent:
             success_score=success_score,
             lesson=lesson,
         )
+        # Mirror outcome onto Decision Trace when present
+        try:
+            tr = self.traces.get_by_decision(decision_id)
+            if tr:
+                self.traces.attach_outcome(
+                    str(tr["traceId"]),
+                    status=status,
+                    detail=detail,
+                    lesson=lesson,
+                    success_score=success_score,
+                )
+                row["traceId"] = tr.get("traceId")
+        except Exception:
+            pass
         improved = None
         if lesson:
             improved = self.skills.improve_from_outcome(
@@ -426,3 +500,24 @@ class NarnaAgent:
             )
             results.append({"jobId": job["jobId"], "ask": out, "delivery": delivery})
         return results
+
+    def replay(self, trace_id: str, *, extra_context: str | None = None) -> dict[str, Any]:
+        """Replay a Decision Trace with today's knowledge (NGS-0030)."""
+        from .decision_replay import replay_trace
+
+        tr = self.traces.get(trace_id)
+        if not tr:
+            raise KeyError(f"unknown traceId: {trace_id}")
+
+        def ask_fn(message: str, **kwargs: Any) -> dict[str, Any]:
+            return self.ask(message, **kwargs)
+
+        result = replay_trace(tr, ask_fn=ask_fn, extra_context=extra_context)
+        # Mark replay linkage on new trace if present
+        new_tid = (result.get("replayed") or {}).get("traceId")
+        if new_tid:
+            new_tr = self.traces.get(str(new_tid))
+            if new_tr:
+                new_tr["replayOf"] = tr.get("traceId")
+                self.traces.save(new_tr)
+        return result
