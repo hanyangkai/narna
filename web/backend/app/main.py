@@ -88,6 +88,8 @@ from .schemas import (
     AgentJobCreateRequest,
     AgentModelsPutRequest,
     AgentOutcomeRequest,
+    AgentSkillHubInstallRequest,
+    AgentSkillHubPublishRequest,
     BillingCheckoutRequest,
     BillingCheckoutResponse,
     BillingCryptoCheckoutRequest,
@@ -1829,6 +1831,60 @@ def agent_skills_list(
     return {"ok": True, "skills": skills, "count": len(skills), "standard": "NGS-0029-skills"}
 
 
+@app.get("/v1/agent/skills/hub")
+def agent_skill_hub_list(
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.skill_hub import SkillHub
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    skills = SkillHub(tenant_workspace(resolved.id)).list_public()
+    return {"ok": True, "skills": skills, "count": len(skills), "standard": "NGS-0029-skill-hub"}
+
+
+@app.post("/v1/agent/skills/hub")
+def agent_skill_hub_publish(
+    body: AgentSkillHubPublishRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.skill_hub import SkillHub
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    try:
+        row = SkillHub(tenant_workspace(resolved.id)).publish(
+            name=body.name,
+            body=body.body,
+            tags=body.tags,
+            author=body.author or resolved.name,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return {"ok": True, "skill": row}
+
+
+@app.post("/v1/agent/skills/hub/install")
+def agent_skill_hub_install(
+    body: AgentSkillHubInstallRequest,
+    request: Request,
+    org: Organization | None = Depends(get_org_optional),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.agent_skills import SkillStore
+    from uap.skill_hub import SkillHub
+
+    resolved = _resolve_ask_org(request=request, org=org, db=db)
+    ws = tenant_workspace(resolved.id)
+    try:
+        installed = SkillHub(ws).install_to_store(body.skillId, skills=SkillStore(ws))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return {"ok": True, "installed": installed}
+
+
 @app.get("/v1/agent/sessions/{session_id}")
 def agent_session_get(
     session_id: str,
@@ -2013,6 +2069,108 @@ async def agent_discord_webhook(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"discord send failed: {e}") from e
     return {"ok": True, "decisionId": out.get("decisionId"), "sessionId": out.get("sessionId")}
+
+
+@app.post("/v1/agent/slack/events")
+async def agent_slack_events(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from uap.narna_agent import NarnaAgent
+    from uap.slack_gateway import (
+        extract_slack_event,
+        format_agent_reply,
+        send_slack_message,
+        slack_enabled,
+    )
+
+    if not slack_enabled():
+        raise HTTPException(status_code=503, detail="Slack bot not configured")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    if isinstance(payload, dict) and payload.get("type") == "url_verification":
+        return {"challenge": payload.get("challenge")}
+
+    channel, text, user = extract_slack_event(payload if isinstance(payload, dict) else {})
+    if not channel or not text:
+        return {"ok": True, "ignored": True}
+
+    resolved = _org_for_device_key(db, f"slack:{user or channel}")
+    try:
+        enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    except HTTPException as e:
+        if e.status_code == 402:
+            try:
+                send_slack_message(channel, "Free Ask quota reached — https://narna.org/billing")
+            except Exception:
+                pass
+            return {"ok": True, "quota": True}
+        raise
+
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.ask(text, channel="slack", external_id=str(channel), use_tools=True)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    bump_agent_turns(org=resolved, db=db)
+    send_slack_message(channel, format_agent_reply(out))
+    return {"ok": True, "decisionId": out.get("decisionId")}
+
+
+@app.post("/v1/agent/whatsapp/webhook")
+async def agent_whatsapp_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Twilio WhatsApp webhook (form-urlencoded)."""
+    from uap.narna_agent import NarnaAgent
+    from uap.whatsapp_gateway import (
+        extract_whatsapp_form,
+        format_agent_reply,
+        send_whatsapp_message,
+        whatsapp_enabled,
+    )
+
+    if not whatsapp_enabled():
+        raise HTTPException(status_code=503, detail="WhatsApp/Twilio not configured")
+
+    form = dict(await request.form())
+    frm, text = extract_whatsapp_form(form)
+    if not frm or not text:
+        return {"ok": True, "ignored": True}
+
+    resolved = _org_for_device_key(db, f"whatsapp:{frm}")
+    try:
+        enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    except HTTPException as e:
+        if e.status_code == 402:
+            try:
+                send_whatsapp_message(frm, "Free Ask quota reached — narna.org/billing")
+            except Exception:
+                pass
+            return {"ok": True, "quota": True}
+        raise
+
+    agent = NarnaAgent(
+        workspace=tenant_workspace(resolved.id),
+        tenant_id=tenant_id_for_org(resolved.id),
+        router=_router_for_org(resolved),
+    )
+    try:
+        out = agent.ask(text, channel="whatsapp", external_id=frm, use_tools=True)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    bump_agent_turns(org=resolved, db=db)
+    send_whatsapp_message(frm, format_agent_reply(out))
+    return {"ok": True, "decisionId": out.get("decisionId")}
 
 
 @app.post("/v1/agent/ask/stream")

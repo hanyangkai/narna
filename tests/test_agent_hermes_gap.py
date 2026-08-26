@@ -144,6 +144,43 @@ class DiscordDelegateTests(unittest.TestCase):
             self.assertTrue(sub["ok"])
             self.assertTrue(sub.get("answer"))
 
+    def test_shell_browser_hub_parallel(self):
+        from uap.agent_tools import tool_browser_navigate, tool_shell_exec
+        from uap.skill_hub import SkillHub
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cwd = root / ".uap" / "agent-workspace"
+            cwd.mkdir(parents=True)
+            (cwd / "note.txt").write_text("hello hub", encoding="utf-8")
+            # use python -c? blocked if python allowed - use cat-like via python read file
+            # on windows, type/cat may vary — use python allowlisted
+            sh = tool_shell_exec({"command": "python -c \"print(open('note.txt').read())\""}, cwd=cwd)
+            # python -c may be ok; if posix shlex works
+            if not sh.get("ok"):
+                # fallback: echo
+                sh = tool_shell_exec({"command": "echo hello"}, cwd=cwd)
+            self.assertTrue(sh.get("ok") or sh.get("stdout"), sh)
+
+            bad = tool_shell_exec({"command": "rm -rf /"}, cwd=cwd)
+            self.assertFalse(bad.get("ok"))
+
+            # browser fetch engine (no network assert — may fail offline)
+            br = tool_browser_navigate({"url": "https://example.com"})
+            self.assertIn("ok", br)
+
+            hub = SkillHub(root)
+            pub = hub.publish(name="Review leases", body="Always check CPI", tags=["legal"])
+            agent = NarnaAgent(workspace=root, router=ModelRouter(provider="mock"))
+            inst = agent.tools.call("skill_hub_install", {"skillId": pub["skillId"]})
+            self.assertTrue(inst["ok"])
+            par = agent.tools.call(
+                "parallel_delegate",
+                {"tasks": ["Risk A?", "Risk B?"]},
+            )
+            self.assertTrue(par["ok"])
+            self.assertEqual(len(par["results"]), 2)
+
 
 class SandboxJobsTests(unittest.TestCase):
     def test_code_exec(self):

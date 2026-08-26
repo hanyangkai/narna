@@ -50,22 +50,20 @@ NARNA is **not** a clone of Hermes or OpenClaw. It is a **decision-quality agent
 
 | Capability | Hermes | OpenClaw | NARNA now |
 |------------|--------|----------|-----------|
-| Tool loop | 40–60+ tools | 50+ skills/tools | ~14 tools (web, code_exec, workspace, memory, skills, delegate) |
-| Terminal / OS shell | Docker/SSH/Modal sandboxes | Gateway approvals | **No** (sandbox Python only) |
-| Browser automation | Playwright-class | Via skills | **No** |
-| Skills | Auto-create + curator | ClawHub marketplace | Auto-capture DQS≥75 + outcome improve |
-| Memory | FTS5 sessions + Honcho | Markdown + vectors | Decision Memory + session search |
-| Channels | Many (TG/Discord/Slack/WA…) | **20+** gateway | Web PWA + Telegram + **Discord** |
+| Tool loop | 40–60+ tools | 50+ skills/tools | ~20 tools (web, **shell_exec**, **browser_***, code_exec, workspace, memory, skills, hub, parallel_delegate) |
+| Terminal / OS shell | Docker/SSH/Modal sandboxes | Gateway approvals | **Allowlisted shell** in agent workspace |
+| Browser automation | Playwright-class | Via skills | **browser_navigate/snapshot** (Playwright if installed, else fetch) |
+| Skills | Auto-create + curator | ClawHub marketplace | Auto-capture + **Skill Hub** publish/install |
+| Memory | FTS5 sessions + Honcho | Markdown + vectors | Decision Memory + memory_search |
+| Channels | Many (TG/Discord/Slack/WA…) | **20+** gateway | Web + TG + Discord + **Slack** + **WhatsApp (Twilio)** |
 | Cron / heartbeat | Native NL cron | Heartbeat | Agent jobs + ticker |
-| Subagents | Parallel delegate | Multi-bot | `delegate_task` (single nested) |
+| Subagents | Parallel delegate | Multi-bot | `delegate_task` + **`parallel_delegate`** (≤3) |
 | Model routing | OpenRouter etc. | BYOK many | Model Router (mock/OpenRouter/OpenAI/Ollama) |
 | **Decision quality score** | — | — | **ADQA / DQS (unique)** |
-| Marketplace skills | Skills Hub | ClawHub | **No** |
 
-**Still open (big):** full shell sandbox, browser bot, WhatsApp/Slack/Signal, skill marketplace,
-parallel multi-agent, FTS5/SQLite memory depth, desktop TUI.
+**Still thinner than Hermes/OpenClaw:** unrestricted Docker shell, full Playwright pipeline by default, Signal/iMessage/50+ channels, Honcho user modeling, ClawHub network effects.
 
-**Prod ops still open:** `UAP_OPENROUTER_API_KEY` (live LLM), Telegram/Discord tokens.
+**Prod ops still open:** `UAP_OPENROUTER_API_KEY` (live LLM), channel tokens.
 
 ### Hermes gap (v1.5 → v1.6)
 

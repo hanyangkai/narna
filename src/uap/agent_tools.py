@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import ast
+import concurrent.futures
 import json
 import math
+import os
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
-import concurrent.futures
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -123,6 +124,147 @@ def tool_calculator(args: dict[str, Any]) -> dict[str, Any]:
 def tool_datetime_now(_args: dict[str, Any]) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     return {"ok": True, "utc": now.isoformat().replace("+00:00", "Z"), "unix": int(now.timestamp())}
+
+
+_SHELL_ALLOW = {
+    "ls",
+    "dir",
+    "pwd",
+    "cat",
+    "type",
+    "head",
+    "tail",
+    "wc",
+    "echo",
+    "find",
+    "grep",
+    "rg",
+    "python",
+    "python3",
+    "py",
+    "node",
+    "npm",
+    "git",
+    "which",
+    "where",
+}
+_SHELL_DENY_SUBSTR = (
+    "rm ",
+    "del ",
+    "sudo",
+    "chmod",
+    "chown",
+    "mkfs",
+    "dd ",
+    ">:",
+    "`",
+    "$(",
+    "curl ",
+    "wget ",
+    "powershell",
+    "cmd.exe",
+    "/etc/passwd",
+)
+
+
+def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
+    """Hermes-like allowlisted shell in agent workspace (no full OS)."""
+    import shlex
+    import subprocess
+
+    cmd = str(args.get("command") or args.get("cmd") or "").strip()
+    if not cmd:
+        return {"ok": False, "error": "command required"}
+    if len(cmd) > 500:
+        return {"ok": False, "error": "command too long"}
+    low = cmd.lower()
+    for bad in _SHELL_DENY_SUBSTR:
+        if bad in low:
+            return {"ok": False, "error": f"blocked pattern: {bad.strip()}"}
+    try:
+        parts = shlex.split(cmd, posix=os.name != "nt")
+    except Exception as e:
+        return {"ok": False, "error": f"parse error: {e}"}
+    if not parts:
+        return {"ok": False, "error": "empty command"}
+    bin_name = Path(parts[0]).name.lower().replace(".exe", "")
+    if bin_name not in _SHELL_ALLOW:
+        return {"ok": False, "error": f"binary not allowlisted: {bin_name}"}
+    cwd.mkdir(parents=True, exist_ok=True)
+    try:
+        proc = subprocess.run(  # noqa: S603 — allowlisted argv
+            parts,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=int(args.get("timeout") or 15),
+            shell=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "timeout"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return {
+        "ok": proc.returncode == 0,
+        "exitCode": proc.returncode,
+        "stdout": (proc.stdout or "")[:8000],
+        "stderr": (proc.stderr or "")[:2000],
+        "cwd": str(cwd),
+    }
+
+
+def tool_browser_navigate(args: dict[str, Any]) -> dict[str, Any]:
+    """Lightweight browser: fetch page + extract title/links (Playwright optional)."""
+    url = str(args.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return {"ok": False, "error": "url must start with http(s)://"}
+    # Prefer playwright if installed
+    try:
+        from playwright.sync_api import sync_playwright  # type: ignore
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=20000, wait_until="domcontentloaded")
+            title = page.title()
+            text = page.inner_text("body")[:6000]
+            links = []
+            for a in page.query_selector_all("a[href]")[:20]:
+                href = a.get_attribute("href") or ""
+                links.append({"text": (a.inner_text() or "")[:80], "href": href})
+            browser.close()
+            return {"ok": True, "engine": "playwright", "url": url, "title": title, "text": text, "links": links}
+    except Exception:
+        pass
+    try:
+        html = _http_get(url, timeout=20, max_bytes=300_000)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    title_m = re.search(r"(?is)<title[^>]*>(.*?)</title>", html)
+    title = re.sub(r"\s+", " ", title_m.group(1)).strip() if title_m else ""
+    links = []
+    for m in re.finditer(r'(?is)<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html):
+        href, label = m.group(1), re.sub(r"<[^>]+>", "", m.group(2))
+        links.append({"text": re.sub(r"\s+", " ", label).strip()[:80], "href": href})
+        if len(links) >= 20:
+            break
+    text = re.sub(r"(?is)<script.*?>.*?</script>", " ", html)
+    text = re.sub(r"(?is)<style.*?>.*?</style>", " ", text)
+    text = re.sub(r"(?is)<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()[:6000]
+    return {
+        "ok": True,
+        "engine": "fetch",
+        "url": url,
+        "title": title,
+        "text": text,
+        "links": links,
+    }
+
+
+def tool_browser_snapshot(args: dict[str, Any]) -> dict[str, Any]:
+    """Alias for navigate — returns readable snapshot."""
+    return tool_browser_navigate(args)
 
 
 _CODE_FORBIDDEN = {
@@ -241,6 +383,21 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "parameters": {"code": "string"},
     },
     {
+        "name": "shell_exec",
+        "description": "Run allowlisted shell command inside agent workspace (ls/cat/python/git/…).",
+        "parameters": {"command": "string", "timeout": "int"},
+    },
+    {
+        "name": "browser_navigate",
+        "description": "Open a URL and return title, text, links (Playwright if available, else fetch).",
+        "parameters": {"url": "string"},
+    },
+    {
+        "name": "browser_snapshot",
+        "description": "Readable snapshot of a page URL.",
+        "parameters": {"url": "string"},
+    },
+    {
         "name": "datetime_now",
         "description": "Current UTC time.",
         "parameters": {},
@@ -276,6 +433,11 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "parameters": {"task": "string"},
     },
     {
+        "name": "parallel_delegate",
+        "description": "Run up to 3 sub-asks in parallel (no nested tools each).",
+        "parameters": {"tasks": "list[string]"},
+    },
+    {
         "name": "skill_list",
         "description": "List saved agent skills.",
         "parameters": {},
@@ -290,6 +452,21 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "description": "Save or update a reusable skill from this session.",
         "parameters": {"name": "string", "body": "string", "tags": "list"},
     },
+    {
+        "name": "skill_hub_list",
+        "description": "List skills published to the local Skill Hub.",
+        "parameters": {},
+    },
+    {
+        "name": "skill_hub_publish",
+        "description": "Publish a skill to the Skill Hub (ClawHub-like).",
+        "parameters": {"name": "string", "body": "string", "tags": "list"},
+    },
+    {
+        "name": "skill_hub_install",
+        "description": "Install a hub skill into the local skill store.",
+        "parameters": {"skillId": "string"},
+    },
 ]
 
 
@@ -302,10 +479,12 @@ class AgentToolbelt:
         workspace: Path | str | None = None,
         sessions: Any = None,
         delegate_fn: Callable[[str], dict[str, Any]] | None = None,
+        skill_hub: Any = None,
     ) -> None:
         self.memory = memory
         self.skills = skills
         self.sessions = sessions
+        self.skill_hub = skill_hub
         self.workspace = Path(workspace) if workspace else Path.cwd()
         self._delegate_fn = delegate_fn
         self._handlers: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
@@ -313,6 +492,9 @@ class AgentToolbelt:
             "web_fetch": tool_web_fetch,
             "calculator": tool_calculator,
             "code_exec": tool_code_exec,
+            "shell_exec": self._shell_exec,
+            "browser_navigate": tool_browser_navigate,
+            "browser_snapshot": tool_browser_snapshot,
             "datetime_now": tool_datetime_now,
             "workspace_list": self._workspace_list,
             "workspace_read": self._workspace_read,
@@ -320,9 +502,13 @@ class AgentToolbelt:
             "memory_query": self._memory_query,
             "memory_search": self._memory_search,
             "delegate_task": self._delegate_task,
+            "parallel_delegate": self._parallel_delegate,
             "skill_list": self._skill_list,
             "skill_get": self._skill_get,
             "skill_save": self._skill_save,
+            "skill_hub_list": self._skill_hub_list,
+            "skill_hub_publish": self._skill_hub_publish,
+            "skill_hub_install": self._skill_hub_install,
         }
 
     def specs(self) -> list[dict[str, Any]]:
@@ -333,10 +519,14 @@ class AgentToolbelt:
         if not fn:
             return {"ok": False, "error": f"unknown tool: {name}"}
         timeout = 25
-        if name in {"web_search", "web_fetch"}:
-            timeout = 20
+        if name in {"web_search", "web_fetch", "browser_navigate", "browser_snapshot"}:
+            timeout = 25
         if name == "code_exec":
             timeout = 5
+        if name == "shell_exec":
+            timeout = 20
+        if name == "parallel_delegate":
+            timeout = 90
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 fut = pool.submit(fn, dict(args or {}))
@@ -345,6 +535,66 @@ class AgentToolbelt:
             return {"ok": False, "error": f"tool timeout after {timeout}s", "tool": name}
         except Exception as e:
             return {"ok": False, "error": str(e), "tool": name}
+
+    def _shell_exec(self, args: dict[str, Any]) -> dict[str, Any]:
+        cwd = (self.workspace / ".uap" / "agent-workspace").resolve()
+        return tool_shell_exec(args, cwd=cwd)
+
+    def _parallel_delegate(self, args: dict[str, Any]) -> dict[str, Any]:
+        tasks = args.get("tasks")
+        if not isinstance(tasks, list) or not tasks:
+            return {"ok": False, "error": "tasks list required"}
+        if self._delegate_fn is None:
+            return {"ok": False, "error": "delegate not configured"}
+        cleaned = [str(t).strip() for t in tasks if str(t).strip()][:3]
+        results: list[dict[str, Any]] = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            futs = {pool.submit(self._delegate_fn, t): t for t in cleaned}
+            for fut in concurrent.futures.as_completed(futs):
+                task = futs[fut]
+                try:
+                    out = fut.result()
+                    results.append(
+                        {
+                            "task": task,
+                            "ok": True,
+                            "answer": out.get("answer"),
+                            "dqs": out.get("dqs"),
+                            "decisionId": out.get("decisionId"),
+                        }
+                    )
+                except Exception as e:
+                    results.append({"task": task, "ok": False, "error": str(e)})
+        return {"ok": True, "results": results}
+
+    def _skill_hub_list(self, _args: dict[str, Any]) -> dict[str, Any]:
+        if self.skill_hub is None:
+            return {"ok": False, "error": "skill hub not configured"}
+        return {"ok": True, "skills": self.skill_hub.list_public()}
+
+    def _skill_hub_publish(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.skill_hub is None:
+            return {"ok": False, "error": "skill hub not configured"}
+        try:
+            row = self.skill_hub.publish(
+                name=str(args.get("name") or ""),
+                body=str(args.get("body") or ""),
+                tags=list(args.get("tags") or []) if isinstance(args.get("tags"), list) else [],
+                author=str(args.get("author") or "agent"),
+            )
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": True, "skill": row}
+
+    def _skill_hub_install(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.skill_hub is None or self.skills is None:
+            return {"ok": False, "error": "skill hub/store not configured"}
+        sid = str(args.get("skillId") or "")
+        try:
+            installed = self.skill_hub.install_to_store(sid, skills=self.skills)
+        except KeyError:
+            return {"ok": False, "error": f"unknown hub skill: {sid}"}
+        return {"ok": True, "installed": installed}
 
     def _workspace_list(self, args: dict[str, Any]) -> dict[str, Any]:
         rel = str(args.get("path") or ".")

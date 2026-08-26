@@ -14,6 +14,7 @@ from .agent_skills import SkillStore
 from .agent_tools import AgentToolbelt
 from .decision_memory import DecisionMemory
 from .model_router import ModelRouter, default_router_from_env
+from .skill_hub import SkillHub
 
 _TOOL_RE = re.compile(
     r"```(?:json)?\s*(\{[\s\S]*?\"tool\"[\s\S]*?\})\s*```|"
@@ -66,12 +67,14 @@ class NarnaAgent:
         self.skills = SkillStore(self.workspace)
         self.sessions = AgentSessionStore(self.workspace)
         self.jobs = AgentJobStore(self.workspace)
+        self.hub = SkillHub(self.workspace)
         self.tools = AgentToolbelt(
             memory=self.memory,
             skills=self.skills,
             workspace=self.workspace,
             sessions=self.sessions,
             delegate_fn=self._delegate_subask,
+            skill_hub=self.hub,
         )
         self.adqa = ADQAEngine(self.workspace)
         self.max_tool_rounds = max(0, int(max_tool_rounds))

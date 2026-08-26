@@ -126,6 +126,17 @@ class AgentJobCreateRequest(BaseModel):
     enabled: bool = True
 
 
+class AgentSkillHubPublishRequest(BaseModel):
+    name: str
+    body: str
+    tags: list[str] = Field(default_factory=list)
+    author: str | None = None
+
+
+class AgentSkillHubInstallRequest(BaseModel):
+    skillId: str
+
+
 class AgentModelsPutRequest(BaseModel):
     provider: str = "openrouter"  # openrouter|openai|ollama|mock
     apiKey: str | None = None
