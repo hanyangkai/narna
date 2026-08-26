@@ -96,42 +96,24 @@ See [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) § B1. Blocks Replay + Benc
 
 ## Phase 3 — Honcho-lite memory v1 (2–3 days)
 
-**Why:** Hermes `MEMORY.md` / `USER.md` + session summarization.
-
-### Tasks
-1. `src/uap/agent_memory_md.py` — read/write `workspace/.uap/MEMORY.md`, `USER.md` (Hermes layout).
-2. Extend `AgentMemoryFTS`:
-   - After each Ask with DQS≥70, append bullet to MEMORY.md (lesson one-liner).
-   - `observe_user_message` also updates USER.md preferences section.
-3. Inject MEMORY.md + USER.md into `narna_agent.ask` system context (truncate 2k each).
-4. Tool `memory_summarize`: LLM compress last N FTS turns → MEMORY.md section (BYOK).
-5. Optional cron: `/cron weekly summarize memory` via existing jobs.
-
-### Verify
-- [ ] Roundtrip: Ask → MEMORY.md grows
-- [ ] `memory_search` hits + MD files consistent
-- [ ] Tests in `tests/test_agent_memory_md.py`
+**Status:** ✅ Shipped — `agent_memory_md.py` MEMORY.md / USER.md + Ask inject + lessons on DQS≥70
 
 ---
 
 ## Phase 4 — Terminal backends Modal + Daytona stubs (2 days)
 
-**Why:** Hermes “runs anywhere” story; keep BYOK/env-gated.
-
-### Tasks
-1. `UAP_SHELL_BACKEND=modal` — POST to Modal sandbox API if `UAP_MODAL_TOKEN` + `UAP_MODAL_APP` set; else clear error.
-2. `UAP_SHELL_BACKEND=daytona` — Daytona workspace exec API stub (same pattern as ssh).
-3. Document env vars in `docs/SECRETS.md` + `docs/SELF-HOST.md`.
-4. No default cloud keys — opt-in only.
+**Status:** ✅ Shipped — `src/uap/shell_remote.py` + `UAP_SHELL_BACKEND=modal|daytona`
 
 ### Verify
-- [ ] Without env → `{ok:false, error:...not set}`
-- [ ] Unit test mocks HTTP exec response
-- [ ] `HERMES-COMPARE.md` terminal row → “local/docker/ssh/modal/daytona”
+- [x] Without env → `{ok:false, error:...not set}`
+- [x] Unit test mocks HTTP exec response
+- [x] `HERMES-COMPARE.md` terminal row → “local/docker/ssh/modal/daytona”
 
 ---
 
 ## Phase 5 — Rich TUI `narna tui` (3–4 days)
+
+**Status:** Pending
 
 **Why:** Largest UX gap vs Hermes CLI.
 
@@ -160,43 +142,27 @@ See [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) § B1. Blocks Replay + Benc
 
 ## Phase 6 — Voice + TTS outbound (1–2 days)
 
-**Why:** Hermes voice notes on Telegram; we have inbound Whisper stub only.
-
-### Tasks
-1. Tool `text_to_speech` — OpenAI TTS BYOK → save `.uap/audio/out.mp3`.
-2. `job_delivery` + gateway: if channel=telegram and `deliverAudio=true`, send voice via `sendVoice` API.
-3. Gateway: optional reply-as-voice when user sent voice memo (`UAP_GATEWAY_VOICE_REPLY=1`).
+**Status:** ✅ Shipped — `text_to_speech` tool + Telegram `sendVoice` + optional `UAP_GATEWAY_VOICE_REPLY`
 
 ### Verify
-- [ ] TTS tool returns path without key → `needsKey`
-- [ ] Mock test for telegram sendVoice payload shape
+- [x] TTS tool returns path without key → `needsKey`
+- [x] Mock test for telegram sendVoice payload shape
 
 ---
 
 ## Phase 7 — Tool expansion batch (+8 tools, 2 days)
 
-**Target:** 40 tools (Hermes lower bound).
-
-| Tool | Notes |
-|------|--------|
-| `grep_workspace` | ripgrep in agent-workspace |
-| `json_query` | jq-lite via json.loads path |
-| `uuid` | ids helper |
-| `hash` | sha256 hex |
-| `env_get` | allowlisted env keys only |
-| `read_url_head` | HEAD request metadata |
-| `skill_export_md` | wrap `skill_md.skill_to_markdown` |
-| `skill_import_md` | wrap markdown_to_skill + save |
-
-Copy handler style from `workspace_read` / `skill_save`.
+**Status:** ✅ Shipped — ≥40 tools (`grep_workspace`, `json_query`, `uuid`, `hash`, `env_get`, `read_url_head`, `skill_export_md`, `skill_import_md` + TTS)
 
 ### Verify
-- [ ] `len(TOOL_SPECS) >= 40`
-- [ ] OpenAI tools schema builds without error
+- [x] `len(TOOL_SPECS) >= 40`
+- [x] OpenAI tools schema builds without error
 
 ---
 
 ## Phase 8 — Gateway hardening + deploy (1 day)
+
+**Status:** Pending
 
 ### Tasks
 1. Docker Compose service `narna-gateway` running `narna gateway run` alongside api.

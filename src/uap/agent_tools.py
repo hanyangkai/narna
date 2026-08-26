@@ -322,6 +322,16 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
             "backend": "ssh",
             "host": host,
         }
+    if backend == "modal":
+        from .shell_remote import exec_modal
+
+        remote = " ".join(shlex.quote(p) for p in parts)
+        return exec_modal(command=remote, timeout=timeout, cwd=str(cwd))
+    if backend == "daytona":
+        from .shell_remote import exec_daytona
+
+        remote = " ".join(shlex.quote(p) for p in parts)
+        return exec_daytona(command=remote, timeout=timeout, cwd=str(cwd))
     try:
         proc = subprocess.run(  # noqa: S603 — allowlisted argv
             parts,
@@ -644,6 +654,226 @@ def tool_http_request(args: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 
+_ENV_ALLOW = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "USER",
+        "USERNAME",
+        "LANG",
+        "TZ",
+        "TERM",
+        "UAP_SHELL_BACKEND",
+        "UAP_BROWSER_ENABLED",
+        "NARNA_ENV",
+        "NODE_ENV",
+    }
+)
+
+
+def tool_grep_workspace(args: dict[str, Any], *, workspace: Path) -> dict[str, Any]:
+    """Search text files under agent-workspace (ripgrep if present, else Python)."""
+    import re
+    import subprocess
+
+    pattern = str(args.get("pattern") or args.get("query") or "").strip()
+    if not pattern:
+        return {"ok": False, "error": "pattern required"}
+    if len(pattern) > 200:
+        return {"ok": False, "error": "pattern too long"}
+    base = (workspace / ".uap" / "agent-workspace").resolve()
+    base.mkdir(parents=True, exist_ok=True)
+    rel = str(args.get("path") or ".").strip() or "."
+    root = base if rel in {".", ""} else _safe_workspace_path(workspace, rel)
+    if root is None or not root.exists():
+        return {"ok": False, "error": "path not found"}
+    limit = min(50, int(args.get("limit") or 20))
+    # Prefer ripgrep
+    try:
+        proc = subprocess.run(  # noqa: S603
+            ["rg", "-n", "--max-count", str(limit), "-e", pattern, str(root)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            shell=False,
+        )
+        if proc.returncode in {0, 1}:
+            lines = [ln for ln in (proc.stdout or "").splitlines() if ln.strip()][:limit]
+            return {"ok": True, "matches": lines, "engine": "rg", "n": len(lines)}
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    try:
+        rx = re.compile(pattern)
+    except re.error as e:
+        return {"ok": False, "error": f"invalid regex: {e}"}
+    matches: list[str] = []
+    for path in root.rglob("*"):
+        if not path.is_file() or path.stat().st_size > 500_000:
+            continue
+        if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp3", ".ogg", ".bin"}:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for i, line in enumerate(text.splitlines(), 1):
+            if rx.search(line):
+                rel_p = path.relative_to(base) if path.is_relative_to(base) else path.name
+                matches.append(f"{rel_p}:{i}:{line.strip()[:200]}")
+                if len(matches) >= limit:
+                    return {"ok": True, "matches": matches, "engine": "python", "n": len(matches)}
+    return {"ok": True, "matches": matches, "engine": "python", "n": len(matches)}
+
+
+def tool_json_query(args: dict[str, Any]) -> dict[str, Any]:
+    """jq-lite: walk dotted path with optional [index] segments."""
+    import re
+
+    raw = args.get("json")
+    if raw is None:
+        return {"ok": False, "error": "json required"}
+    if isinstance(raw, (dict, list)):
+        data: Any = raw
+    else:
+        try:
+            data = json.loads(str(raw))
+        except Exception as e:
+            return {"ok": False, "error": f"invalid json: {e}"}
+    path = str(args.get("path") or args.get("query") or "").strip()
+    if not path or path == ".":
+        return {"ok": True, "value": data}
+    cur: Any = data
+    for part in path.replace("[", ".[").split("."):
+        if not part:
+            continue
+        m = re.fullmatch(r"\[(\d+)\]", part)
+        if m:
+            idx = int(m.group(1))
+            if not isinstance(cur, list) or idx >= len(cur):
+                return {"ok": False, "error": f"index out of range: {part}"}
+            cur = cur[idx]
+            continue
+        if not isinstance(cur, dict) or part not in cur:
+            return {"ok": False, "error": f"key not found: {part}"}
+        cur = cur[part]
+    return {"ok": True, "value": cur, "path": path}
+
+
+def tool_uuid(args: dict[str, Any] | None = None) -> dict[str, Any]:
+    import uuid as _uuid
+
+    args = args or {}
+    n = min(10, max(1, int(args.get("n") or 1)))
+    ids = [str(_uuid.uuid4()) for _ in range(n)]
+    return {"ok": True, "uuid": ids[0], "uuids": ids}
+
+
+def tool_hash(args: dict[str, Any]) -> dict[str, Any]:
+    import hashlib
+
+    text = args.get("text")
+    if text is None:
+        return {"ok": False, "error": "text required"}
+    raw = str(text).encode("utf-8")
+    if len(raw) > 200_000:
+        return {"ok": False, "error": "text too large"}
+    algo = str(args.get("algo") or "sha256").lower()
+    if algo not in {"sha256", "sha1", "md5"}:
+        return {"ok": False, "error": "algo must be sha256|sha1|md5"}
+    h = hashlib.new(algo, raw).hexdigest()
+    return {"ok": True, "algo": algo, "hex": h, "bytes": len(raw)}
+
+
+def tool_env_get(args: dict[str, Any]) -> dict[str, Any]:
+    key = str(args.get("key") or "").strip()
+    if not key:
+        return {"ok": False, "error": "key required", "allowlist": sorted(_ENV_ALLOW)}
+    if key not in _ENV_ALLOW:
+        return {"ok": False, "error": f"key not allowlisted: {key}", "allowlist": sorted(_ENV_ALLOW)}
+    return {"ok": True, "key": key, "value": os.environ.get(key), "set": key in os.environ}
+
+
+def tool_read_url_head(args: dict[str, Any]) -> dict[str, Any]:
+    url = str(args.get("url") or "").strip()
+    if not url.startswith("https://"):
+        return {"ok": False, "error": "https URL required"}
+    req = urllib.request.Request(
+        url,
+        method="HEAD",
+        headers={"User-Agent": "narna-agent/0.2 (+https://narna.org)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            headers = {k.lower(): v for k, v in resp.headers.items()}
+            return {
+                "ok": True,
+                "status": getattr(resp, "status", 200),
+                "url": url,
+                "contentType": headers.get("content-type"),
+                "contentLength": headers.get("content-length"),
+                "headers": {k: headers[k] for k in list(headers)[:20]},
+            }
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "status": e.code, "error": str(e.reason)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def tool_text_to_speech(args: dict[str, Any], *, workspace: Path) -> dict[str, Any]:
+    """OpenAI TTS BYOK → workspace/.uap/audio/out.mp3 (Hermes gap P6)."""
+    text = str(args.get("text") or "").strip()
+    if not text:
+        return {"ok": False, "error": "text required"}
+    if len(text) > 4000:
+        return {"ok": False, "error": "text too long (max 4000)"}
+    key = (
+        str(args.get("apiKey") or "").strip()
+        or (os.environ.get("UAP_OPENAI_API_KEY") or "").strip()
+        or (os.environ.get("OPENAI_API_KEY") or "").strip()
+    )
+    if not key:
+        return {"ok": False, "needsKey": True, "error": "OpenAI API key required for TTS (BYOK)"}
+    model = str(args.get("model") or "tts-1").strip()
+    voice = str(args.get("voice") or "alloy").strip()
+    out_dir = workspace / ".uap" / "audio"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    name = str(args.get("name") or "out.mp3").strip().replace("..", "")
+    if not name.endswith(".mp3"):
+        name = f"{name}.mp3"
+    dest = out_dir / Path(name).name
+    body = json.dumps({"model": model, "input": text, "voice": voice}).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/audio/speech",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+            "User-Agent": "narna-agent/0.2",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            audio = resp.read()
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")[:500]
+        return {"ok": False, "error": f"TTS HTTP {e.code}: {detail}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    if len(audio) < 32:
+        return {"ok": False, "error": "empty audio response"}
+    dest.write_bytes(audio)
+    return {
+        "ok": True,
+        "path": str(dest.relative_to(workspace)) if dest.is_relative_to(workspace) else str(dest),
+        "bytes": len(audio),
+        "model": model,
+        "voice": voice,
+    }
+
+
 TOOL_SPECS: list[dict[str, Any]] = [
     {
         "name": "web_search",
@@ -821,6 +1051,51 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "description": "Set a user profile note key/value.",
         "parameters": {"key": "string", "value": "string"},
     },
+    {
+        "name": "grep_workspace",
+        "description": "Search files in agent-workspace by regex (ripgrep or Python fallback).",
+        "parameters": {"pattern": "string", "path": "string", "limit": "number"},
+    },
+    {
+        "name": "json_query",
+        "description": "jq-lite: extract a value from JSON via dotted path (e.g. a.b[0].c).",
+        "parameters": {"json": "string", "path": "string"},
+    },
+    {
+        "name": "uuid",
+        "description": "Generate one or more UUID4 strings.",
+        "parameters": {"n": "number"},
+    },
+    {
+        "name": "hash",
+        "description": "Hash text (sha256|sha1|md5) and return hex digest.",
+        "parameters": {"text": "string", "algo": "string"},
+    },
+    {
+        "name": "env_get",
+        "description": "Read an allowlisted environment variable (no secrets).",
+        "parameters": {"key": "string"},
+    },
+    {
+        "name": "read_url_head",
+        "description": "HTTP HEAD on an https URL — status, content-type, length.",
+        "parameters": {"url": "string"},
+    },
+    {
+        "name": "skill_export_md",
+        "description": "Export a saved skill as agentskills.io SKILL.md markdown.",
+        "parameters": {"skillId": "string"},
+    },
+    {
+        "name": "skill_import_md",
+        "description": "Import a SKILL.md markdown string and save as a skill.",
+        "parameters": {"markdown": "string"},
+    },
+    {
+        "name": "text_to_speech",
+        "description": "OpenAI TTS (BYOK) → save mp3 under .uap/audio/.",
+        "parameters": {"text": "string", "voice": "string", "name": "string", "apiKey": "string"},
+    },
 ]
 
 
@@ -886,6 +1161,15 @@ class AgentToolbelt:
             "jobs_list": self._jobs_list,
             "profile_get": self._profile_get,
             "profile_set": self._profile_set,
+            "grep_workspace": self._grep_workspace,
+            "json_query": tool_json_query,
+            "uuid": tool_uuid,
+            "hash": tool_hash,
+            "env_get": tool_env_get,
+            "read_url_head": tool_read_url_head,
+            "skill_export_md": self._skill_export_md,
+            "skill_import_md": self._skill_import_md,
+            "text_to_speech": self._text_to_speech,
         }
 
     def specs(self) -> list[dict[str, Any]]:
@@ -914,10 +1198,12 @@ class AgentToolbelt:
             timeout = 5
         if name == "shell_exec":
             timeout = 20
-        if name in {"image_gen", "vision_describe"}:
+        if name in {"image_gen", "vision_describe", "text_to_speech"}:
             timeout = 90
         if name == "http_request":
             timeout = 30
+        if name in {"grep_workspace", "read_url_head"}:
+            timeout = 20
         if name == "parallel_delegate":
             timeout = 90
         try:
@@ -1331,3 +1617,38 @@ class AgentToolbelt:
         tags = args.get("tags") if isinstance(args.get("tags"), list) else []
         row = self.skills.save(name=name, body=body, tags=[str(t) for t in tags])
         return {"ok": True, "skill": row}
+
+    def _skill_export_md(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.skills is None:
+            return {"ok": False, "error": "skills not configured"}
+        from .skill_md import skill_to_markdown
+
+        sid = str(args.get("skillId") or args.get("id") or "")
+        row = self.skills.get(sid)
+        if not row:
+            return {"ok": False, "error": f"unknown skill: {sid}"}
+        md = skill_to_markdown(row)
+        return {"ok": True, "skillId": sid, "markdown": md}
+
+    def _skill_import_md(self, args: dict[str, Any]) -> dict[str, Any]:
+        if self.skills is None:
+            return {"ok": False, "error": "skills not configured"}
+        from .skill_md import markdown_to_skill
+
+        md = str(args.get("markdown") or args.get("md") or "").strip()
+        if not md:
+            return {"ok": False, "error": "markdown required"}
+        parsed = markdown_to_skill(md)
+        name = str(parsed.get("name") or "imported")
+        body = str(parsed.get("body") or "")
+        tags = parsed.get("tags") if isinstance(parsed.get("tags"), list) else []
+        if not body:
+            return {"ok": False, "error": "empty skill body"}
+        row = self.skills.save(name=name, body=body, tags=[str(t) for t in tags])
+        return {"ok": True, "skill": row}
+
+    def _grep_workspace(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_grep_workspace(args, workspace=self.workspace)
+
+    def _text_to_speech(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_text_to_speech(args, workspace=self.workspace)

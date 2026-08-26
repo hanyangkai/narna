@@ -326,6 +326,22 @@ Bot polls every ~20s, scans ERC-20 `Transfer` logs, confirms ≥3 blocks, upgrad
 
 
 
+## Agent shell backends (optional)
+
+
+
+`UAP_SHELL_BACKEND=local|docker|ssh|modal|daytona` — default `local`. Modal/Daytona need BYOK tokens (`UAP_MODAL_*`, `UAP_DAYTONA_*`); see [`SECRETS.md`](./SECRETS.md). No company cloud keys.
+
+
+
+TTS outbound: set `UAP_OPENAI_API_KEY` + optionally `UAP_GATEWAY_VOICE_REPLY=1`.
+
+
+
+---
+
+
+
 ## What we intentionally skip (for now)
 
 

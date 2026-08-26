@@ -21,6 +21,8 @@ def deliver_job_result(
     deliver_to: str | None,
     out: dict[str, Any],
     job_id: str = "",
+    deliver_audio: bool | None = None,
+    audio_path: str | None = None,
 ) -> dict[str, Any]:
     """Send job Ask result to telegram|discord|slack|email when deliver_to is set."""
     ch = (channel or "job").lower().strip()
@@ -29,10 +31,31 @@ def deliver_job_result(
         return {"ok": True, "delivered": False, "reason": "no deliverTo"}
 
     text = format_job_reply(out, job_id=job_id)
+    want_audio = deliver_audio
+    if want_audio is None:
+        want_audio = str(os.environ.get("UAP_JOB_DELIVER_AUDIO") or "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    if want_audio is False and out.get("deliverAudio") is True:
+        want_audio = True
+    path = audio_path or str(out.get("audioPath") or "").strip() or None
+
     try:
         if ch == "telegram":
-            from .telegram_gateway import send_telegram_message
+            from .telegram_gateway import send_telegram_message, send_telegram_voice
 
+            if want_audio and path:
+                send_telegram_voice(target, path, caption=text[:200])
+                return {
+                    "ok": True,
+                    "delivered": True,
+                    "channel": ch,
+                    "to": target,
+                    "audio": True,
+                }
             send_telegram_message(target, text)
             return {"ok": True, "delivered": True, "channel": ch, "to": target}
         if ch == "discord":

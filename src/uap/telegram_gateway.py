@@ -39,6 +39,66 @@ def send_telegram_message(chat_id: int | str, text: str) -> dict[str, Any]:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def send_telegram_voice(chat_id: int | str, audio_path: str, *, caption: str = "") -> dict[str, Any]:
+    """Send a voice note via Telegram sendVoice (multipart)."""
+    import mimetypes
+    from pathlib import Path
+
+    token = _token()
+    if not token:
+        raise RuntimeError("UAP_TELEGRAM_BOT_TOKEN not set")
+    path = Path(audio_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"audio not found: {audio_path}")
+    boundary = "----narnaVoiceBoundary7MA4YWxkTrZu0gW"
+    raw = path.read_bytes()
+    filename = path.name
+    ctype = mimetypes.guess_type(filename)[0] or "audio/mpeg"
+    parts: list[bytes] = []
+
+    def _field(name: str, value: str) -> None:
+        parts.append(
+            (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
+                f"{value}\r\n"
+            ).encode("utf-8")
+        )
+
+    _field("chat_id", str(chat_id))
+    if caption:
+        _field("caption", caption[:1024])
+    parts.append(
+        (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="voice"; filename="{filename}"\r\n'
+            f"Content-Type: {ctype}\r\n\r\n"
+        ).encode("utf-8")
+    )
+    parts.append(raw)
+    parts.append(f"\r\n--{boundary}--\r\n".encode("utf-8"))
+    body = b"".join(parts)
+    url = f"https://api.telegram.org/bot{token}/sendVoice"
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def build_telegram_voice_payload(chat_id: int | str, filename: str, *, caption: str = "") -> dict[str, Any]:
+    """Shape used by tests / dry-run without hitting Telegram."""
+    return {
+        "method": "sendVoice",
+        "chat_id": str(chat_id),
+        "filename": filename,
+        "caption": (caption or "")[:1024],
+    }
+
+
 def extract_telegram_text(update: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
     """Return (chat_id, text, username)."""
     msg = update.get("message") or update.get("edited_message") or {}

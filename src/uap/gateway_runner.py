@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable
 
 
@@ -52,9 +53,11 @@ class UnifiedGateway:
         *,
         ask_fn: AskFn,
         config: GatewayConfig | None = None,
+        workspace: str | Path | None = None,
     ) -> None:
         self.ask_fn = ask_fn
         self.config = config or config_from_env()
+        self.workspace = Path(workspace) if workspace else Path.cwd()
         self._tg_offset = 0
         self._discord_last: dict[str, str] = {}
         self._slack_last: dict[str, str] = {}
@@ -146,6 +149,7 @@ class UnifiedGateway:
                 continue
             text = str(msg.get("text") or msg.get("caption") or "").strip()
             voice = msg.get("voice") or msg.get("audio")
+            inbound_voice = bool(voice)
             if voice and not text:
                 self.stats["voice"] += 1
                 from .voice_transcribe import transcribe_audio_file
@@ -173,6 +177,32 @@ class UnifiedGateway:
             dqs = out.get("dqs")
             if dqs is not None:
                 reply = f"{reply}\n\n— ADQA DQS {dqs}"
+            voice_reply = str(os.environ.get("UAP_GATEWAY_VOICE_REPLY") or "").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+            if inbound_voice and voice_reply:
+                try:
+                    from pathlib import Path
+
+                    from .agent_tools import tool_text_to_speech
+                    from .telegram_gateway import send_telegram_voice
+
+                    tts = tool_text_to_speech(
+                        {"text": reply[:500], "name": f"tg_{chat}.mp3"},
+                        workspace=self.workspace,
+                    )
+                    if tts.get("ok") and tts.get("path"):
+                        audio = Path(str(self.workspace) / str(tts["path"]))
+                        if not audio.is_file():
+                            audio = Path(str(tts["path"]))
+                        send_telegram_voice(chat, str(audio), caption=reply[:200])
+                        n += 1
+                        continue
+                except Exception:
+                    self.stats["errors"] += 1
             self._telegram_send(chat, reply)
             n += 1
         return n
