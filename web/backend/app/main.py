@@ -1944,6 +1944,7 @@ def agent_ask(
             challenge=challenge,
             channel="web",
             use_tools=True,
+            mode=str(body.mode or "cheap"),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -2486,6 +2487,7 @@ def agent_ask_stream(
                 challenge=challenge,
                 channel="web",
                 use_tools=True,
+                mode=str(body.mode or "cheap"),
             )
         except Exception as e:
             yield f"event: error\ndata: {_json.dumps({'error': str(e)})}\n\n"

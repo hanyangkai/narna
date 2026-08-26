@@ -1473,6 +1473,53 @@ table.data-table th {
   color: rgba(165, 243, 252, 0.85);
 }
 
+.land-layers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.land-layer {
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--border);
+  background: var(--surface, #fff);
+  border-radius: 4px;
+}
+
+.land-layer h3 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.land-layer ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  opacity: 0.9;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.ask-mode-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.ask-mode-label select {
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
 .land-final {
   padding-bottom: 4rem;
   border-top: 1px solid var(--border);
@@ -1485,7 +1532,8 @@ table.data-table th {
   .land-price-row,
   .land-price-row-3,
   .land-howto-item,
-  .land-compare {
+  .land-compare,
+  .land-layers {
     grid-template-columns: 1fr;
   }
 

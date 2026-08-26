@@ -10,6 +10,7 @@ from typing import Any
 from .adqa import ADQAEngine
 from .agent_jobs import AgentJobStore
 from .agent_memory_fts import AgentMemoryFTS
+from .agent_memory_md import AgentMemoryMd
 from .agent_session import AgentSessionStore
 from .agent_skills import SkillStore
 from .agent_tools import AgentToolbelt, openai_tools_schema
@@ -82,6 +83,7 @@ class NarnaAgent:
         self.jobs = AgentJobStore(self.workspace)
         self.hub = SkillHub(self.workspace)
         self.fts = AgentMemoryFTS(self.workspace)
+        self.memory_md = AgentMemoryMd(self.workspace)
         self.tools = AgentToolbelt(
             memory=self.memory,
             skills=self.skills,
@@ -127,6 +129,7 @@ class NarnaAgent:
         external_id: str | None = None,
         use_tools: bool = True,
         capture_skill: bool = True,
+        mode: str = "cheap",
     ) -> dict[str, Any]:
         msg = (message or "").strip()
         if not msg:
@@ -139,6 +142,7 @@ class NarnaAgent:
         self.sessions.append(sid, role="user", content=msg)
         self.fts.index_turn(session_id=sid, role="user", content=msg)
         self.fts.observe_user_message(msg)
+        self.memory_md.observe_user_message(msg)
 
         file_bits: list[str] = []
         sources: list[dict[str, str]] = []
@@ -163,8 +167,13 @@ class NarnaAgent:
         fts_lines = [
             f"- [{h.get('role')}] {h.get('snippet')}" for h in fts_hits
         ]
+        mem_md = self.memory_md.read_memory(max_chars=1800)
+        user_md = self.memory_md.read_user(max_chars=1200)
         tool_catalog = json.dumps(self.tools.specs(), ensure_ascii=False)
         history = self.sessions.history_for_prompt(sid, limit=10)
+        ask_mode = (mode or "cheap").strip().lower()
+        if ask_mode not in {"cheap", "quality", "critical"}:
+            ask_mode = "cheap"
 
         system = (
             "You are NARNA, a decision-quality agent with tools. "
@@ -184,6 +193,8 @@ class NarnaAgent:
         user_blob = (
             f"Prior Decision Memory:\n"
             f"{chr(10).join(prior_lines) if prior_lines else '(none)'}\n\n"
+            f"MEMORY.md:\n{mem_md or '(empty)'}\n\n"
+            f"USER.md:\n{user_md or '(empty)'}\n\n"
             f"User profile:\n{chr(10).join(profile_lines) if profile_lines else '(none)'}\n\n"
             f"FTS recall:\n{chr(10).join(fts_lines) if fts_lines else '(none)'}\n\n"
             f"Skills:\n{chr(10).join(skill_lines) if skill_lines else '(none)'}\n\n"
@@ -203,11 +214,19 @@ class NarnaAgent:
 
         rounds = self.max_tool_rounds if use_tools else 0
         for _ in range(rounds + 1):
-            result = self.router.complete(
-                messages=messages,
-                task="reason",
-                tools=openai_tools,
-            )
+            # First round may use multi-model mode; tool follow-ups stay single-pass cheap
+            if _ == 0 and ask_mode in {"quality", "critical"} and not tool_trace:
+                result = self.router.complete_mode(
+                    messages=messages,
+                    mode=ask_mode,
+                    tools=openai_tools,
+                )
+            else:
+                result = self.router.complete(
+                    messages=messages,
+                    task="reason",
+                    tools=openai_tools,
+                )
             models_used.append(result.model)
             draft = result.content
             calls = (
@@ -368,6 +387,7 @@ class NarnaAgent:
                 "channel": channel,
                 "priors": len(priors),
                 "challenge": bool(challenge),
+                "mode": ask_mode,
             },
             evidence=evidence_objs,
             options=[
@@ -392,6 +412,14 @@ class NarnaAgent:
             skill_saved = self.skills.maybe_capture_from_answer(
                 question=msg, answer=draft, dqs=adqa.get("dqs")
             )
+        # Persist high-quality lessons into MEMORY.md (Honcho-lite)
+        try:
+            dqs_val = int(adqa.get("dqs") or 0)
+            if dqs_val >= 70:
+                lesson_line = draft.strip().split("\n")[0][:300]
+                self.memory_md.append_lesson(lesson_line or msg[:200], dqs=dqs_val)
+        except Exception:
+            pass
 
         self.sessions.append(
             sid,
@@ -429,6 +457,7 @@ class NarnaAgent:
             "toolsUsed": tool_trace,
             "skillSaved": skill_saved,
             "channel": channel,
+            "mode": ask_mode,
             "verdict": {"recommend": "ACT", "defer": "REVIEW", "reject": "REJECT"}.get(
                 chosen, "ACT"
             ),
@@ -466,6 +495,11 @@ class NarnaAgent:
                 row["traceId"] = tr.get("traceId")
         except Exception:
             pass
+        if lesson:
+            try:
+                self.memory_md.append_lesson(lesson, dqs=None)
+            except Exception:
+                pass
         improved = None
         if lesson:
             improved = self.skills.improve_from_outcome(

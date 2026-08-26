@@ -1,43 +1,43 @@
-/** NARNA — Decision Quality Infrastructure. ADQA = Autonomous Decision Quality Assurance. */
+/** NARNA — AI agent that gets better at making decisions. */
 
 export const BRAND = {
   name: "NARNA",
   expand: "Neural Autonomous Rules Native Architecture",
   letters: ["Neural", "Autonomous", "Rules", "Native", "Architecture"] as const,
   /** Public category */
-  tagline: "The Trust Layer for AI Decisions.",
+  tagline: "An AI agent that gets better at making decisions.",
   categoryFull: "Decision Quality Infrastructure for AI Agents",
   productCore: "ADQA",
   productCoreExpand: "Autonomous Decision Quality Assurance",
-  altTagline: "Decision Quality Infrastructure for autonomous systems.",
+  altTagline: "Borrow the agent runtime. Own the decision layer.",
   heroTitle: "NARNA",
-  heroLead: "The Trust Layer for AI Decisions.",
+  heroLead: "An AI agent that gets better at making decisions.",
   heroSub:
-    "NARNA does not create decisions — it assures their quality and learns from outcomes. Memory layers remember; NARNA scores decisions (DQS) and compounds lessons over time.",
+    "Chat, tools, and BYOK models — plus ADQA, Decision Traces, and outcome learning so every answer can be scored and improved.",
   northStar:
     "Every autonomous decision is evidence-based, policy-compliant, risk-aware, and human-aligned.",
-  primary: "Govern Once. Run Anywhere.",
-  oneLiner: "NARNA is the Decision Quality Infrastructure for AI Agents.",
+  primary: "Borrow Runtime. Own Decision Quality.",
+  oneLiner: "NARNA is the AI agent that checks — and learns from — its own decisions.",
   mission:
-    "Assure the quality of every consequential AI decision — agents, models, robots, and enterprise decision engines.",
+    "Make Decision Quality the standard for AI agents — the way CI became the standard for shipping code.",
   vision:
     "Make ADQA the quality standard for autonomous decisions — the way SSL became the security standard for the Internet.",
   elevator:
-    "Like CI for code and Stripe for payments, NARNA is ADQA for AI decisions — and Decision Memory so agents learn from outcomes, not only recall events. Complements memory layers (e.g. CMEM); does not replace them.",
+    "NARNA Agent does the work. NARNA ADQA scores whether the decision was good enough to act on. Decision Memory compounds lessons. Complements Hermes and other runtimes — does not replace them.",
   contrast:
-    "Memory layers remember. Models generate. NARNA assures decision quality and learns from outcomes.",
+    "Other agents optimize for tool count. NARNA optimizes for decision quality.",
   cognitive:
-    "Remember better inputs. Decide better. Learn continuously.",
-  adqa: "Autonomous Decision Quality Assurance — the product you sell.",
-  decisionIntelligence: "Decision Intelligence OS — memory is feedstock; DQS is the KPI.",
+    "Ask. Score. Trace. Outcome. Learn. Replay.",
+  adqa: "Autonomous Decision Quality Assurance — wrap any agent.",
+  decisionIntelligence: "Decision Intelligence — DQS is the KPI.",
   enterprise: "Trust Every Agentic Decision.",
   decisionOs: "Connect data. Score decisions. Keep humans in control.",
-  guardian: "Decision Guardian: approve · revise · escalate · reject.",
+  guardian: "Decision Guardian: ACT · REVIEW · REJECT.",
   technical:
     "Evidence. Policy. Context. Memory. Risk. Alignment. Capability. Compliance. Confidence. Explanation.",
   community: "Open quality standard for autonomous decisions.",
   category:
-    "Decision Intelligence OS — ADQA · Decision Memory · Guardian Network.",
+    "AI Agent + ADQA + Decision Memory — Trace · Replay · Learn.",
   github: "https://github.com/hanyangkai/narna",
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
@@ -173,28 +173,29 @@ export const COMPATIBILITY = [
   "Kubernetes",
 ] as const;
 
-/** Pricing — Agent-first: Free Ask · Personal $20 · Team. See docs/BUSINESS-MODEL.md */
+/** Pricing — Agent free forever · Cloud ADQA · Team. See docs/NARNA-MARKET-PLAN.md */
 export const PRICING = {
-  tagline: "Ask NARNA free. Upgrade for Decision Memory everywhere.",
+  tagline: "Agent free forever. ADQA and Decision Memory when you scale.",
   subline:
-    "NARNA Agent is free on the web. Personal unlocks BYO models and Cloud ADQA — Team shares one Decision Brain.",
-  philosophy: "Ask is the funnel. ADQA Cloud is quality. Team is shared Decision Intelligence.",
+    "Open-source agent with BYOK. Upgrade for hosted traces, ADQA API, and a shared Decision Brain.",
+  philosophy: "Agent is distribution. ADQA + Trace + Replay is the moat.",
   unit: "agent turns",
   plans: [
     {
       id: "free",
-      name: "Free Ask",
+      name: "Free Agent",
       price: "Free",
       period: "",
       limit: "50 agent turns / month",
-      retention: "Short session memory",
+      retention: "Local MEMORY.md · Decision Traces",
       features: [
         "Ask NARNA on the web — no install",
-        "Basic ADQA · Decision Quality Score",
-        "Hosted LLM (NARNA-routed)",
-        "pip install narna for local OSS",
+        "BYOK OpenRouter / OpenAI / Ollama",
+        "Basic ADQA · DQS · ACT/REVIEW/REJECT",
+        "Decision Traces · Replay (local)",
+        "pip install narna for OSS runtime",
       ],
-      cta: "Ask NARNA",
+      cta: "Try Agent",
       ctaTo: "/ask",
       featured: false,
     },
@@ -204,12 +205,12 @@ export const PRICING = {
       price: "$20",
       period: "/month",
       limit: "Cancel anytime · USDC/USDT",
-      retention: "Cloud Decision Memory + DQS history",
+      retention: "Cloud Decision Memory + Trace history",
       features: [
-        "Higher Ask quota",
-        "Bring Your Own LLM (OpenAI · Claude · OpenRouter · Ollama)",
-        "ADQA API (api.narna.org)",
-        "Decision Memory sync · Outcome Learning",
+        "Higher Ask quota · Quality / Critical modes",
+        "ADQA evaluate API for any agent",
+        "Cloud Decision Traces · Outcome Learning",
+        "Replay with hosted memory",
       ],
       cta: "Get Personal",
       ctaTo: "/billing",
@@ -223,18 +224,17 @@ export const PRICING = {
       limit: "3–50 seats",
       retention: "Shared Decision Brain",
       features: [
-        "One Decision Brain for the team",
-        "Shared policies & approvals",
-        "Per-project scopes",
-        "Roles · access · audit",
-        "MCP / agent fleet hooks",
+        "Shared traces · policies · approvals",
+        "Multi-agent fleet hooks",
+        "Per-project scopes · roles",
+        "MCP evaluate for the whole team",
       ],
       cta: "Talk to us",
       ctaTo: "/enterprise",
       featured: false,
     },
   ],
-  enterpriseNote: "Enterprise / on-prem · industry packages · SSO · SLA — custom ($10k–100k/yr).",
+  enterpriseNote: "Enterprise / on-prem · industry packages · SSO · SLA — custom.",
   revenueStreams: [
     "Personal ($20/mo)",
     "Team seats",

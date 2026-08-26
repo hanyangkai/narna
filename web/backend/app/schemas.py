@@ -113,6 +113,8 @@ class AgentAskRequest(BaseModel):
     llmApiKey: str | None = None
     llmBaseUrl: str | None = None
     llmModel: str | None = None
+    # cheap | quality | critical — multi-model consensus (NGS-0028 modes)
+    mode: str | None = None
 
 
 class AgentOutcomeRequest(BaseModel):

@@ -3,11 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { BRAND } from "../brand";
 
 const links = [
-  { to: "/ask", label: "Ask" },
-  { to: "/compatibility", label: "Integrations" },
-  { to: "/docs/drop-in-saas", label: "Cloud" },
-  { to: "/console/decision", label: "Console" },
+  { to: "/ask", label: "Agent" },
+  { to: "/docs", label: "Docs" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/compatibility", label: "Integrations" },
 ];
 
 export default function Nav() {
@@ -54,7 +53,7 @@ export default function Nav() {
             </div>
             <div className="nav-actions">
               <Link to="/ask" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Ask NARNA
+                Try Agent
               </Link>
               <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
                 GitHub

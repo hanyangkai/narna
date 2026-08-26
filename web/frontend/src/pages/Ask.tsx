@@ -43,6 +43,9 @@ export default function Ask() {
   );
   const [llmApiKey, setLlmApiKey] = useState(() => localStorage.getItem("narna_llm_key") || "");
   const [llmModel, setLlmModel] = useState(() => localStorage.getItem("narna_llm_model") || "");
+  const [askMode, setAskMode] = useState(
+    () => localStorage.getItem("narna_ask_mode") || "cheap"
+  );
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const deferredPrompt = useRef<{ prompt: () => Promise<void> } | null>(null);
 
@@ -254,6 +257,7 @@ export default function Ask() {
       localStorage.setItem("narna_llm_provider", llmProvider);
       if (llmApiKey) localStorage.setItem("narna_llm_key", llmApiKey);
       if (llmModel) localStorage.setItem("narna_llm_model", llmModel);
+      localStorage.setItem("narna_ask_mode", askMode);
       const apiKey = localStorage.getItem("uap_api_key") || undefined;
       const resp = await askNarna(message, {
         apiKey,
@@ -261,6 +265,7 @@ export default function Ask() {
         files,
         showModels,
         challenge: false,
+        mode: askMode,
         llmProvider: llmApiKey ? llmProvider : undefined,
         llmApiKey: llmApiKey || undefined,
         llmModel: llmApiKey && llmModel ? llmModel : undefined,
@@ -300,10 +305,18 @@ export default function Ask() {
           <p className="pill-label">Ask NARNA</p>
           <h1>{BRAND.name}</h1>
           <p>
-            Ask in plain language. Bring your own LLM key (OpenRouter / OpenAI / Ollama) — like
-            Hermes. NARNA scores every answer with ADQA.
+            An AI agent that scores its own decisions. Bring your own LLM key — NARNA adds ADQA,
+            Decision Traces, and outcome learning.
           </p>
           <div className="ask-header-actions">
+            <label className="ask-mode-label">
+              Mode
+              <select value={askMode} onChange={(e) => setAskMode(e.target.value)}>
+                <option value="cheap">Cheap · 1 model</option>
+                <option value="quality">Quality · 2-model merge</option>
+                <option value="critical">Critical · 3 + critic</option>
+              </select>
+            </label>
             {installHint && (
               <button type="button" className="btn btn-secondary ask-install" onClick={onInstall}>
                 Install on phone

@@ -167,6 +167,89 @@ class ModelRouter:
             **kwargs,
         )
 
+    def complete_mode(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        mode: str = "cheap",
+        temperature: float = 0.2,
+        max_tokens: int = 1024,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+    ) -> RouterResult:
+        """Cheap (1 model) · quality (2-model merge) · critical (3 + critic)."""
+        m = (mode or "cheap").strip().lower()
+        if m in {"cheap", "fast", "reason"}:
+            return self.complete(
+                messages=messages,
+                task="reason" if m != "cheap" else "cheap",
+                temperature=temperature,
+                max_tokens=max_tokens,
+                tools=tools,
+                tool_choice=tool_choice,
+            )
+
+        # Quality: two drafts, then synthesize
+        a = self.complete(
+            messages=messages,
+            task="reason",
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=tools if m == "quality" else None,
+            tool_choice=tool_choice if m == "quality" else None,
+        )
+        b = self.complete(
+            messages=messages,
+            task="challenge" if m == "critical" else "reason",
+            temperature=min(0.4, temperature + 0.1),
+            max_tokens=max_tokens,
+            tools=None,
+        )
+        drafts = [a, b]
+        if m == "critical":
+            c = self.complete(
+                messages=messages,
+                task="cheap",
+                temperature=0.3,
+                max_tokens=max_tokens,
+            )
+            drafts.append(c)
+
+        merge_prompt = (
+            "You are a decision synthesizer. Merge the following draft answers into one "
+            "careful recommendation. Note agreements, disagreements, and missing evidence.\n\n"
+        )
+        for i, d in enumerate(drafts, 1):
+            merge_prompt += f"--- Draft {i} ({d.model}) ---\n{d.content}\n\n"
+        merge_prompt += "Produce the final recommendation now."
+        merged = self.complete(
+            messages=[{"role": "user", "content": merge_prompt}],
+            task="decide" if m == "critical" else "reason",
+            temperature=0.2,
+            max_tokens=max_tokens,
+        )
+        # Preserve first-pass tool_calls if any (quality path with tools)
+        if a.tool_calls and not merged.tool_calls:
+            merged.tool_calls = a.tool_calls
+            if not (merged.content or "").strip() or merged.content.startswith("(tool"):
+                merged.content = a.content
+        models = "→".join(d.model for d in drafts) + f"→{merged.model}"
+        return RouterResult(
+            content=merged.content,
+            model=models,
+            provider=self.provider,
+            task=m,
+            usage={
+                "promptTokens": sum(int((d.usage or {}).get("promptTokens") or 0) for d in drafts)
+                + int((merged.usage or {}).get("promptTokens") or 0),
+                "completionTokens": sum(
+                    int((d.usage or {}).get("completionTokens") or 0) for d in drafts
+                )
+                + int((merged.usage or {}).get("completionTokens") or 0),
+            },
+            tool_calls=merged.tool_calls,
+        )
+
     def _mock_complete(
         self,
         *,

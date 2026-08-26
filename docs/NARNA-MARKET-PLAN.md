@@ -124,6 +124,8 @@ Schema `DecisionTrace` (store in `.uap/decision-traces/{id}.json`):
 
 ### B4 — Model Router modes: Cheap / Quality / Critical (3 days)
 
+**Status:** ✅ Shipped — `complete_mode()` · Ask `mode=` · UI Mode selector
+
 Map to existing router tasks:
 
 | Mode | Behavior |

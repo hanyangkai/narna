@@ -4,31 +4,40 @@ import { BRAND, PRICING, SPEC } from "../brand";
 const steps = [
   {
     n: "01",
-    title: "Ask NARNA",
-    desc: "Type a question in plain language. No MCP, no RAG jargon, no model picker.",
+    title: "Ask the agent",
+    desc: "Chat in plain language. Tools, memory, skills, and BYOK models — like Hermes, with decision quality built in.",
     code: "narna.org/ask",
   },
   {
     n: "02",
-    title: "It reasons and checks quality",
-    desc: "Model Router picks an LLM. ADQA scores the proposed answer — evidence, risk, policy, DQS.",
-    code: "POST /v1/agent/ask → dqs + guardian",
+    title: "ADQA scores the decision",
+    desc: "Before you act: evidence, risk, policy, and confidence collapse into one Decision Quality Score + ACT / REVIEW / REJECT.",
+    code: "POST /v1/adqa/evaluate → dqs + verdict",
   },
   {
     n: "03",
-    title: "It remembers outcomes",
-    desc: "Decision Memory stores what was decided and what happened — so the next ask is sharper.",
-    code: "POST /v1/dmemory/{id}/outcome",
+    title: "Trace · outcome · learn",
+    desc: "Every answer becomes a Decision Trace. Record what happened. Replay with today's knowledge. The agent gets better.",
+    code: "narna replay <traceId>",
   },
 ];
 
-const whyDiy = [
-  "Policy engine + risk scoring",
-  "Evidence & approval graphs",
-  "Decision Memory store",
-  "Outcome learning loop",
-  "Model-agnostic router",
-  "Cloud sync & API keys",
+const layers = [
+  {
+    title: "NARNA Agent",
+    role: "Do the work",
+    points: ["Chat · tools · browser · code", "Skills · cron · multi-channel", "BYOK OpenRouter / OpenAI / Ollama"],
+  },
+  {
+    title: "NARNA ADQA",
+    role: "Make it better",
+    points: ["Decision Quality Score", "Guardian verdicts", "Wrap Hermes / LangGraph / custom agents"],
+  },
+  {
+    title: "Decision Memory",
+    role: "Compound learning",
+    points: ["Decision Traces", "Outcome learning", "Replay past decisions"],
+  },
 ];
 
 const attributes = [
@@ -49,23 +58,23 @@ export default function Landing() {
     <>
       <section className="hero hero-navy land-hero">
         <div className="layout-wide land-hero-inner">
-          <p className="land-kicker">New · Ask NARNA is live</p>
+          <p className="land-kicker">Open-source AI agent · Decision quality built in</p>
           <h1 className="land-brand">{BRAND.name}</h1>
-          <p className="land-headline">Your AI agent that checks its own decisions.</p>
+          <p className="land-headline">An AI agent that gets better at making decisions.</p>
           <p className="land-lede">
-            Ask anything. NARNA routes models, scores decision quality, and learns from outcomes —
-            without making you install anything.
+            Borrow the agent runtime. Own the decision layer. NARNA routes models, runs tools, scores
+            every answer with ADQA, and learns from outcomes — free, BYOK, no install required.
           </p>
           <div className="land-cta">
             <Link className="btn btn-primary" to="/ask">
-              Ask NARNA
+              Try the agent
             </Link>
-            <Link className="btn land-btn-ghost" to="/docs/install">
-              {SPEC.install}
-            </Link>
+            <a className="btn land-btn-ghost" href={BRAND.github} target="_blank" rel="noreferrer">
+              Star on GitHub
+            </a>
           </div>
           <p className="land-hero-meta">
-            Free Ask · Personal $20/mo · Decision Quality Score
+            Free forever · Bring your own key · Decision Trace + Replay
           </p>
         </div>
       </section>
@@ -73,22 +82,43 @@ export default function Landing() {
       <section className="land-strip">
         <div className="layout-wide land-strip-grid">
           <div>
-            <p className="land-strip-label">Chatbots</p>
-            <p className="land-strip-q">Generate an answer.</p>
+            <p className="land-strip-label">Typical agents</p>
+            <p className="land-strip-q">More tools. More models. More chat.</p>
           </div>
           <div className="land-strip-vs" aria-hidden>
             →
           </div>
           <div>
-            <p className="land-strip-label">NARNA Agent</p>
+            <p className="land-strip-label">NARNA</p>
             <p className="land-strip-q land-strip-q-accent">
-              Answer — then prove it is good enough to act on.
+              Was this decision actually good enough to act on?
             </p>
           </div>
         </div>
       </section>
 
       <div className="layout-wide">
+        <section className="land-section">
+          <p className="section-label">Three layers</p>
+          <h2 className="land-h2">Agent · ADQA · Memory</h2>
+          <p className="land-desc">
+            The agent is distribution. ADQA + Decision Traces + Outcome Learning are the moat.
+          </p>
+          <div className="land-layers">
+            {layers.map((L) => (
+              <div key={L.title} className="land-layer">
+                <p className="land-strip-label">{L.role}</p>
+                <h3>{L.title}</h3>
+                <ul>
+                  {L.points.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="land-section">
           <p className="section-label">How it works</p>
           <h2 className="land-h2">Ask. Score. Learn.</h2>
@@ -108,10 +138,10 @@ export default function Landing() {
 
         <section className="land-section">
           <p className="section-label">ADQA</p>
-          <h2 className="land-h2">Ten checks. One score.</h2>
+          <h2 className="land-h2">Ten checks. One score. One verdict.</h2>
           <p className="land-desc">
-            Behind Ask NARNA is Autonomous Decision Quality Assurance — the trust layer, not another
-            chatbot.
+            Wrap any agent — Hermes, Claude, LangGraph, or your own — with{" "}
+            <code>narna.evaluate()</code>. You keep your stack. NARNA checks the decision.
           </p>
           <div className="land-attr-row">
             {attributes.map((a) => (
@@ -120,43 +150,41 @@ export default function Landing() {
               </span>
             ))}
           </div>
-          <pre className="code-block">{`{
-  "dqs": 89,
-  "guardian": "escalate",
-  "attributes": { "evidence": 92, "policy": 100, "risk": 65 }
-}`}</pre>
+          <pre className="code-block">{`from narna import evaluate
+out = evaluate(action="contract.sign", evidence=["contract.reviewed"])
+# → { "dqs": 89, "verdict": "ACT" | "REVIEW" | "REJECT" }`}</pre>
         </section>
 
         <section className="land-section land-split">
           <div>
             <p className="section-label">Why NARNA</p>
-            <h2 className="land-h2">Model-agnostic. Quality-obsessed.</h2>
+            <h2 className="land-h2">Not another Hermes clone.</h2>
             <p className="land-desc">
-              Bring your own LLM or use ours. NARNA owns routing, ADQA, and Decision Memory — not the
-              foundation model.
+              Hermes already wins on tools and gateways. NARNA wins on whether the decision was good
+              — and whether next time is better. Bring your own intelligence. We own quality.
             </p>
           </div>
           <div className="land-compare">
             <div>
-              <p className="land-strip-label">Roll it yourself</p>
+              <p className="land-strip-label">You bring</p>
               <ul className="land-diy">
-                {whyDiy.map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
+                <li>OpenRouter / OpenAI / Ollama keys</li>
+                <li>Your existing agent stack (optional)</li>
+                <li>Outcomes: did it work?</li>
               </ul>
             </div>
             <div className="land-compare-win">
-              <p className="land-strip-label">narna.org</p>
-              <pre className="code-block">{`Ask NARNA → DQS
-# or ${SPEC.install}
-# ADQA · Decision Memory · Cloud`}</pre>
+              <p className="land-strip-label">NARNA adds</p>
+              <pre className="code-block">{`Ask → tools → ADQA → Trace
+Outcome → Learn → Replay
+${SPEC.install}`}</pre>
             </div>
           </div>
         </section>
 
         <section className="land-section" id="pricing">
           <p className="section-label">Pricing</p>
-          <h2 className="land-h2">Start free on the web</h2>
+          <h2 className="land-h2">Agent free forever. Quality scales.</h2>
           <p className="land-desc">{PRICING.subline}</p>
           <div className="land-price-row land-price-row-3">
             {PRICING.plans.map((p) => (
@@ -188,17 +216,17 @@ export default function Landing() {
         </section>
 
         <section className="land-section land-final">
-          <h2 className="land-h2">Decision quality is your agent&apos;s superpower.</h2>
+          <h2 className="land-h2">Decision quality is the agent&apos;s superpower.</h2>
           <p className="land-desc">
-            Ask once. See the DQS. Upgrade when you need memory everywhere and your own models.
+            Use Hermes to work. Use Claude to think. Use NARNA to check whether the decision was good.
           </p>
           <div className="land-cta">
             <Link className="btn btn-primary" to="/ask">
-              Ask NARNA — free
+              Try Ask NARNA
             </Link>
-            <a className="btn btn-secondary" href={BRAND.github} target="_blank" rel="noreferrer">
-              Star on GitHub
-            </a>
+            <Link className="btn btn-secondary" to="/docs">
+              Read the docs
+            </Link>
           </div>
         </section>
       </div>

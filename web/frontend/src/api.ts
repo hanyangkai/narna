@@ -259,6 +259,7 @@ export type AgentAskResponse = {
   guardian: string | null;
   decisionId: string;
   traceId?: string;
+  mode?: string;
   verdict?: string;
   modelsUsed: string[];
   sources: Array<{ type: string; name: string }>;
@@ -296,6 +297,7 @@ export async function askNarna(
     llmApiKey?: string;
     llmBaseUrl?: string;
     llmModel?: string;
+    mode?: string;
   }
 ): Promise<AgentAskResponse> {
   const headers: Record<string, string> = {
@@ -310,6 +312,7 @@ export async function askNarna(
     challenge: opts?.challenge ?? false,
     files: opts?.files ?? [],
   };
+  if (opts?.mode) payload.mode = opts.mode;
   if (opts?.llmApiKey) {
     payload.llmApiKey = opts.llmApiKey;
     payload.llmProvider = opts.llmProvider || "openrouter";
