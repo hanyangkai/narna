@@ -1,8 +1,11 @@
 FROM python:3.12-slim
 WORKDIR /app
+ARG INSTALL_BROWSER=0
 COPY web/backend/requirements.txt /app/web/backend/requirements.txt
 RUN pip install --no-cache-dir -r /app/web/backend/requirements.txt \
-    && pip install --no-cache-dir PyYAML jsonschema cryptography
+    && pip install --no-cache-dir PyYAML jsonschema cryptography \
+    && if [ "$INSTALL_BROWSER" = "1" ]; then pip install --no-cache-dir playwright \
+    && playwright install chromium --with-deps; fi
 COPY src/uap /app/src/uap
 COPY src/narna /app/src/narna
 COPY specs/schemas /app/specs/schemas

@@ -465,6 +465,58 @@ def tool_browser_screenshot(args: dict[str, Any], *, workspace: Path | None = No
         return {"ok": False, "error": str(e)}
 
 
+def tool_browser_vision(args: dict[str, Any], *, workspace: Path | None = None, belt: Any = None) -> dict[str, Any]:
+    """Screenshot current browser page (or URL) and describe with vision model (BYOK)."""
+    import base64
+
+    ws = Path(workspace) if workspace else Path.cwd()
+    question = str(args.get("question") or "Describe this page and list actionable elements.").strip()
+    url = str(args.get("url") or "").strip()
+    if url:
+        nav = tool_browser_navigate({"url": url}, workspace=ws)
+        if not nav.get("ok"):
+            return nav
+    shot = tool_browser_screenshot({"name": str(args.get("name") or "vision.png")}, workspace=ws)
+    if not shot.get("ok"):
+        return shot
+    path = Path(str(shot.get("path") or ""))
+    if not path.is_file():
+        return {"ok": False, "error": "screenshot missing", "shot": shot}
+    raw = path.read_bytes()
+    if len(raw) > 4_000_000:
+        return {"ok": False, "error": "screenshot too large for vision"}
+    b64 = base64.standard_b64encode(raw).decode("ascii")
+    data_url = f"data:image/png;base64,{b64}"
+    if belt is not None and hasattr(belt, "_vision_describe"):
+        vis = belt._vision_describe({"url": data_url, "question": question})
+    else:
+        return {
+            "ok": False,
+            "error": "vision requires AgentToolbelt with BYOK credentials",
+            "screenshot": str(path),
+        }
+    if not vis.get("ok"):
+        return {**vis, "screenshot": str(path)}
+    return {
+        "ok": True,
+        "description": vis.get("description"),
+        "screenshot": str(path),
+        "pageUrl": shot.get("url"),
+        "model": vis.get("model"),
+    }
+
+
+def tool_execute_code(args: dict[str, Any], *, call_tool: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Hermes RPC: run Python that calls call_tool(name, args) for nested tool use."""
+    from .agent_rpc import run_execute_code
+
+    code = str(args.get("code") or args.get("source") or "").strip()
+    if call_tool is None:
+        return {"ok": False, "error": "execute_code RPC not configured"}
+    max_calls = int(args.get("maxCalls") or 3)
+    return run_execute_code(code, call_tool, max_calls=max_calls)
+
+
 _CODE_FORBIDDEN = {
     ast.Import,
     ast.ImportFrom,
@@ -652,6 +704,19 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "parameters": {"name": "string"},
     },
     {
+        "name": "browser_vision",
+        "description": "Screenshot + vision describe (computer-use loop). Optional url to navigate first.",
+        "parameters": {"url": "string", "question": "string"},
+    },
+    {
+        "name": "execute_code",
+        "description": (
+            "Run Python with call_tool(name, args) to chain tools in one turn (Hermes RPC). "
+            "Set result=... to return."
+        ),
+        "parameters": {"code": "string", "maxCalls": "int"},
+    },
+    {
         "name": "datetime_now",
         "description": "Current UTC time.",
         "parameters": {},
@@ -798,6 +863,8 @@ class AgentToolbelt:
             "browser_type": self._browser_type,
             "browser_wait": self._browser_wait,
             "browser_screenshot": self._browser_screenshot,
+            "browser_vision": self._browser_vision,
+            "execute_code": self._execute_code,
             "datetime_now": tool_datetime_now,
             "workspace_list": self._workspace_list,
             "workspace_read": self._workspace_read,
@@ -829,8 +896,20 @@ class AgentToolbelt:
         if not fn:
             return {"ok": False, "error": f"unknown tool: {name}"}
         timeout = 25
-        if name in {"web_search", "web_fetch", "browser_navigate", "browser_snapshot", "browser_click", "browser_type", "browser_wait", "browser_screenshot"}:
+        if name in {
+            "web_search",
+            "web_fetch",
+            "browser_navigate",
+            "browser_snapshot",
+            "browser_click",
+            "browser_type",
+            "browser_wait",
+            "browser_screenshot",
+            "browser_vision",
+        }:
             timeout = 30
+        if name == "execute_code":
+            timeout = 20
         if name == "code_exec":
             timeout = 5
         if name == "shell_exec":
@@ -871,6 +950,12 @@ class AgentToolbelt:
 
     def _browser_screenshot(self, args: dict[str, Any]) -> dict[str, Any]:
         return tool_browser_screenshot(args, workspace=self.workspace)
+
+    def _browser_vision(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_browser_vision(args, workspace=self.workspace, belt=self)
+
+    def _execute_code(self, args: dict[str, Any]) -> dict[str, Any]:
+        return tool_execute_code(args, call_tool=self.call)
 
     def _parallel_delegate(self, args: dict[str, Any]) -> dict[str, Any]:
         tasks = args.get("tasks")
@@ -1003,8 +1088,8 @@ class AgentToolbelt:
     def _vision_describe(self, args: dict[str, Any]) -> dict[str, Any]:
         url = str(args.get("url") or "").strip()
         question = str(args.get("question") or "Describe this image briefly.").strip()
-        if not url.startswith(("http://", "https://")):
-            return {"ok": False, "error": "url must be http(s)"}
+        if not url.startswith(("http://", "https://", "data:")):
+            return {"ok": False, "error": "url must be http(s) or data:image"}
         key, provider, base = self._llm_creds()
         if not key or not base:
             return {"ok": False, "error": "BYOK API key required for vision_describe"}

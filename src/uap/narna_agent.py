@@ -171,8 +171,8 @@ class NarnaAgent:
             "Prefer native function/tool calling when the API supports it. "
             "Otherwise output ONLY a JSON block like:\n"
             '```json\n{"tool":"web_search","args":{"query":"..."}}\n```\n'
-            "You may use code_exec / shell_exec / browser_navigate / browser_click / browser_type / "
-            "parallel_delegate when useful. "
+            "You may use code_exec / execute_code / shell_exec / browser_navigate / browser_click / "
+            "browser_type / browser_vision / parallel_delegate when useful. "
             "If shell_exec returns needsApproval, ask the user before re-calling with approved=true. "
             "After tools return, give a final recommendation with risks and missing evidence. "
             "Do not claim absolute certainty. Prefer Decision Memory lessons and user profile notes."

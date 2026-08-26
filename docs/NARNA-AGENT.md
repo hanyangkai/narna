@@ -11,8 +11,10 @@
 
 | Product | Who | Why pay |
 |---------|-----|---------|
-| **NARNA Agent** | Everyone | Quota, BYO LLM, Team Decision Brain |
-| **NARNA ADQA Cloud** | Developers / agents | API metering, Decision Memory sync |
+| **NARNA Agent** | Everyone | Distribution — Ask, tools, BYOK |
+| **NARNA ADQA** | Developers / agents | **Moat** — evaluate any agent's decisions |
+
+**Market plan:** [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) · **Runtime gaps:** [`HERMES-GAP-PLAN.md`](./HERMES-GAP-PLAN.md)
 
 Users should not need to “install NARNA to use AI.” They **Ask NARNA**; models are chosen underneath.
 
