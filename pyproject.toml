@@ -28,6 +28,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["jsonschema>=4.23.0", "build>=1.0.0"]
 tui = ["textual>=0.80.0"]
+desktop = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "pydantic>=2.10.0",
+]
 cloud = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
@@ -41,6 +46,7 @@ cloud = [
 Homepage = "https://narna.org"
 Documentation = "https://narna.org/docs"
 Repository = "https://github.com/hanyangkai/narna"
+Download = "https://narna.org/download"
 
 [project.scripts]
 narna = "narna.cli:main"
@@ -49,11 +55,15 @@ uap = "uap.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/narna", "src/uap", "src/uap_cloud"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"src/uap/desktop_static" = "uap/desktop_static"
+
 [tool.hatch.build.targets.sdist]
 include = [
   "/src",
   "/policies",
   "/specs",
+  "/desktop",
   "/README.md",
   "/pyproject.toml",
 ]

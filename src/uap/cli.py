@@ -944,6 +944,20 @@ def cmd_tui(args: argparse.Namespace) -> int:
     )
 
 
+def cmd_desktop(args: argparse.Namespace) -> int:
+    """Run NARNA Desktop on this PC (local Ask UI or --tui)."""
+    from .desktop_app import run_desktop
+
+    return run_desktop(
+        host=getattr(args, "host", None) or "127.0.0.1",
+        port=getattr(args, "port", None),
+        workspace=getattr(args, "workspace", None),
+        open_browser=not getattr(args, "no_browser", False),
+        tui=bool(getattr(args, "tui", False)),
+        provider=getattr(args, "provider", None),
+    )
+
+
 def cmd_skills(args: argparse.Namespace) -> int:
     from .skill_hub import SkillHub
 
@@ -2076,6 +2090,15 @@ def build_parser() -> argparse.ArgumentParser:
     tui = sub.add_parser("tui", help="Fullscreen TUI (requires: pip install 'narna[tui]')")
     tui.add_argument("--provider", default=None)
     tui.set_defaults(func=cmd_tui)
+
+    desk = sub.add_parser("desktop", help="NARNA Desktop on your PC (local Ask UI)")
+    desk.add_argument("--host", default="127.0.0.1")
+    desk.add_argument("--port", type=int, default=None)
+    desk.add_argument("--workspace", default=None, help="Default: ~/.narna")
+    desk.add_argument("--no-browser", action="store_true")
+    desk.add_argument("--tui", action="store_true", help="Use fullscreen TUI instead of browser")
+    desk.add_argument("--provider", default=None)
+    desk.set_defaults(func=cmd_desktop)
 
     skills_p = sub.add_parser("skills", help="Local skills + Skill Hub (zip / sync)")
     skills_sub = skills_p.add_subparsers(dest="skills_cmd", required=True)

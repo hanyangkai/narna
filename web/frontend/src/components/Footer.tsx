@@ -20,6 +20,7 @@ export default function Footer() {
         <div className="footer-col">
           <h4>Product</h4>
           <Link to="/ask">Ask Agent</Link>
+          <Link to="/download">Desktop PC</Link>
           <Link to="/pricing">Pricing</Link>
           <Link to="/settings/models">BYOK Models</Link>
           <Link to="/billing">Billing</Link>

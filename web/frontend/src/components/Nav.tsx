@@ -4,9 +4,9 @@ import { BRAND } from "../brand";
 
 const links = [
   { to: "/ask", label: "Agent" },
+  { to: "/download", label: "Desktop" },
   { to: "/docs", label: "Docs" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/compatibility", label: "Integrations" },
 ];
 
 export default function Nav() {

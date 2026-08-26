@@ -43,10 +43,11 @@ BYO LLM (all plans, Hermes-style): user pastes OpenRouter / OpenAI / Ollama key 
 
 See [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) for repo-level gaps vs Hermes Agent.
 
-### Mobile
+### Mobile / Desktop
 
-1. **PWA:** open https://narna.org/ask → Add to Home Screen (standalone Ask UX).
-2. **Telegram:** set `UAP_TELEGRAM_BOT_TOKEN` and webhook to `/v1/agent/telegram/webhook`.
+1. **PWA:** open https://narna.org/ask → Add to Home Screen.
+2. **Desktop PC:** https://narna.org/download → `narna desktop` (local Ask on 127.0.0.1).
+3. **Telegram:** set `UAP_TELEGRAM_BOT_TOKEN` and webhook to `/v1/agent/telegram/webhook`.
 
 ### Hermes / OpenClaw gap matrix (honest)
 

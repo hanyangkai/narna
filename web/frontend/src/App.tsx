@@ -8,6 +8,7 @@ import Compatibility from "./pages/Compatibility";
 import Console from "./pages/Console";
 import DecisionConsole from "./pages/DecisionConsole";
 import Docs from "./pages/Docs";
+import Download from "./pages/Download";
 import Enterprise from "./pages/Enterprise";
 import GuardianConsole from "./pages/GuardianConsole";
 import Landing from "./pages/Landing";
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/settings/models" element={<ModelsSettings />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/:slug" element={<Docs />} />
+          <Route path="/download" element={<Download />} />
           <Route path="/specification" element={<Specification />} />
           <Route path="/sdk" element={<Sdk />} />
           <Route path="/compatibility" element={<Compatibility />} />

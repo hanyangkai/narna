@@ -38,7 +38,11 @@ Product: [`docs/DECISION-OS.md`](./docs/DECISION-OS.md) · Differentiation: [`do
 
 ```bash
 pip install narna
+# Desktop on your PC:
+pip install "narna[desktop]" && narna desktop
 ```
+
+**Download for Windows / Mac / Linux:** [narna.org/download](https://narna.org/download) · [`desktop/`](./desktop/)
 
 ```python
 from narna import wrap

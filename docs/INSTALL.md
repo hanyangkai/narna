@@ -1,5 +1,18 @@
 # Install NARNA
 
+## Desktop PC
+
+Install the local agent and open Ask in your browser:
+
+```bash
+pip install "narna[desktop]"
+narna desktop
+```
+
+Windows: see [`DESKTOP.md`](./DESKTOP.md) or https://narna.org/download
+
+---
+
 ## PyPI (recommended)
 
 ```bash

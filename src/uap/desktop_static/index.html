@@ -1,0 +1,216 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NARNA Desktop</title>
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #07131a;
+      --panel: #0c1c26;
+      --line: #1e3a4a;
+      --text: #e8f2f7;
+      --muted: #8eacbc;
+      --accent: #3db8a0;
+      --font: "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: radial-gradient(1200px 600px at 10% -10%, #123447, transparent),
+        radial-gradient(900px 500px at 100% 0%, #1a2f28, transparent), var(--bg);
+      color: var(--text); font-family: var(--font);
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem; }
+    header h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0.04em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .badge { font-size: 0.75rem; color: var(--accent); border: 1px solid var(--line); padding: 0.2rem 0.5rem; border-radius: 999px; }
+    .panel {
+      background: #0a1820; border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
+    }
+    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    label { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+    input, select, textarea {
+      width: 100%; background: #061018; color: var(--text); border: 1px solid var(--line);
+      border-radius: 8px; padding: 0.65rem 0.75rem; font: inherit;
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    button {
+      background: var(--accent); color: #042018; border: 0; border-radius: 8px;
+      padding: 0.65rem 1rem; font-weight: 650; cursor: pointer; font: inherit;
+    }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    #log { display: flex; flex-direction: column; gap: 0.75rem; min-height: 220px; }
+    .msg { padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid var(--line); white-space: pre-wrap; line-height: 1.45; }
+    .msg.user { background: #0a2430; }
+    .msg.bot { background: #0a1f1c; border-color: #24584c; }
+    .meta { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .meta strong { color: var(--accent); font-weight: 600; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+    .hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>NARNA Desktop</h1>
+        <p>Local AI agent · Decision quality on your PC · BYOK</p>
+      </div>
+      <span class="badge" id="health">starting…</span>
+    </header>
+
+    <section class="panel" id="settings">
+      <div class="grid2">
+        <div>
+          <label for="provider">LLM provider</label>
+          <select id="provider">
+            <option value="openrouter">OpenRouter</option>
+            <option value="openai">OpenAI</option>
+            <option value="ollama">Ollama</option>
+            <option value="mock">Mock (offline demo)</option>
+          </select>
+        </div>
+        <div>
+          <label for="model">Model (optional)</label>
+          <input id="model" placeholder="e.g. openai/gpt-4o-mini" />
+        </div>
+      </div>
+      <div style="margin-top:0.75rem">
+        <label for="apiKey">API key (saved in ~/.narna — never uploaded)</label>
+        <input id="apiKey" type="password" placeholder="sk-… or OpenRouter key" autocomplete="off" />
+      </div>
+      <div class="row" style="margin-top:0.75rem">
+        <button type="button" class="secondary" id="saveCfg">Save key</button>
+        <span class="hint" id="cfgStatus"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div id="log"></div>
+      <div style="margin-top:0.75rem">
+        <label for="prompt">Ask NARNA</label>
+        <textarea id="prompt" placeholder="Should I sign this contract? What evidence do I need?"></textarea>
+      </div>
+      <div class="row" style="margin-top:0.75rem">
+        <select id="mode" style="width:auto">
+          <option value="cheap">Mode: cheap</option>
+          <option value="quality">Mode: quality</option>
+          <option value="critical">Mode: critical</option>
+        </select>
+        <button type="button" id="send">Ask</button>
+        <button type="button" class="secondary" id="newSession">New session</button>
+      </div>
+    </section>
+  </div>
+  <script>
+    const state = { sessionId: null };
+    const logEl = document.getElementById("log");
+    const healthEl = document.getElementById("health");
+
+    function addMsg(role, text, meta) {
+      const d = document.createElement("div");
+      d.className = "msg " + (role === "user" ? "user" : "bot");
+      d.textContent = text;
+      if (meta) {
+        const m = document.createElement("div");
+        m.className = "meta";
+        m.innerHTML = meta;
+        d.appendChild(m);
+      }
+      logEl.appendChild(d);
+      d.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    async function refreshHealth() {
+      try {
+        const r = await fetch("/v1/health");
+        const j = await r.json();
+        healthEl.textContent = j.ok ? "local · ready" : "error";
+      } catch {
+        healthEl.textContent = "offline";
+      }
+    }
+
+    async function loadCfg() {
+      const r = await fetch("/v1/desktop/config");
+      const j = await r.json();
+      document.getElementById("provider").value = j.provider || "openrouter";
+      document.getElementById("model").value = j.model || "";
+      document.getElementById("cfgStatus").textContent = j.hasKey
+        ? "Key on disk (" + (j.maskedKey || "set") + ")"
+        : "No key — Ask will use mock";
+    }
+
+    document.getElementById("saveCfg").onclick = async () => {
+      const body = {
+        provider: document.getElementById("provider").value,
+        apiKey: document.getElementById("apiKey").value || undefined,
+        model: document.getElementById("model").value || null,
+      };
+      const r = await fetch("/v1/desktop/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      document.getElementById("apiKey").value = "";
+      document.getElementById("cfgStatus").textContent = j.hasKey ? "Saved" : "Cleared";
+      await loadCfg();
+    };
+
+    document.getElementById("newSession").onclick = () => {
+      state.sessionId = null;
+      logEl.innerHTML = "";
+      addMsg("bot", "New session. Ask anything — ADQA will score the decision.");
+    };
+
+    async function ask() {
+      const prompt = document.getElementById("prompt").value.trim();
+      if (!prompt) return;
+      const send = document.getElementById("send");
+      send.disabled = true;
+      addMsg("user", prompt);
+      document.getElementById("prompt").value = "";
+      try {
+        const r = await fetch("/v1/agent/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: prompt,
+            sessionId: state.sessionId,
+            mode: document.getElementById("mode").value,
+          }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || r.statusText);
+        state.sessionId = j.sessionId || state.sessionId;
+        const tools = (j.toolsUsed || []).map((t) => t.tool).filter(Boolean);
+        const meta =
+          "<strong>DQS " + (j.dqs ?? "—") + "</strong> · " +
+          (j.guardian || j.verdict || "—") +
+          (j.traceId ? " · " + j.traceId : "") +
+          (tools.length ? " · tools: " + tools.join(", ") : "");
+        addMsg("bot", j.answer || "(empty)", meta);
+      } catch (e) {
+        addMsg("bot", "Error: " + e.message);
+      } finally {
+        send.disabled = false;
+      }
+    }
+
+    document.getElementById("send").onclick = ask;
+    document.getElementById("prompt").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) ask();
+    });
+
+    refreshHealth();
+    loadCfg();
+    addMsg("bot", "Welcome to NARNA Desktop. Paste a BYOK key above, then ask a decision question.");
+  </script>
+</body>
+</html>

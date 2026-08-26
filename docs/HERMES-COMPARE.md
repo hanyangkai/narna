@@ -17,14 +17,14 @@
 | Terminal backends | 7 | local/docker/ssh/modal/daytona | Near |
 | Memory | Honcho | FTS5 + MEMORY.md/USER.md | Near |
 | Subagent RPC | ✓ | `execute_code` + delegate ≤3 | Near |
-| Fullscreen TUI / Desktop | ✓ | `narna tui` (textual opt) + PWA | Near |
+| Fullscreen TUI / Desktop | ✓ | `narna desktop` + `narna tui` + PWA | **Near** |
 | Network Skills Hub | ✓ | zip + sync URL + local hub | Near |
 | Nous Portal Tool Gateway | ✓ | intentionally no | Skip |
 | Trajectory / RL | ✓ | — | Out of scope |
 
 ## Still not end-to-end Hermes
 
-1. Native desktop app  
+1. Native signed .msi / .dmg installer (zip + pip launcher shipped)  
 2. Richer Modal/Daytona (stubs + env-gated HTTP; needs real credentials)  
 3. Honcho-depth dialectic memory  
 

@@ -69,12 +69,12 @@ export default function Landing() {
             <Link className="btn btn-primary" to="/ask">
               Try the agent
             </Link>
-            <a className="btn land-btn-ghost" href={BRAND.github} target="_blank" rel="noreferrer">
-              Star on GitHub
-            </a>
+            <Link className="btn land-btn-ghost" to="/download">
+              Download for PC
+            </Link>
           </div>
           <p className="land-hero-meta">
-            Free forever · Bring your own key · Decision Trace + Replay
+            Free forever · Bring your own key · Web or Desktop
           </p>
         </div>
       </section>
