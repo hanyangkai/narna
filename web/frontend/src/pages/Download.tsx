@@ -38,7 +38,7 @@ export default function Download() {
         <div className="land-cta" style={{ marginBottom: "1.5rem" }}>
           <a
             className="btn btn-primary"
-            href="https://github.com/hanyangkai/narna/releases"
+            href="https://github.com/hanyangkai/narna/releases/latest/download/NARNA-Desktop-windows.zip"
             target="_blank"
             rel="noreferrer"
           >
@@ -51,11 +51,15 @@ export default function Download() {
 
         <h2>Windows — portable (no Python)</h2>
         <p className="section-desc">
-          From{" "}
-          <a href="https://github.com/hanyangkai/narna/releases" target="_blank" rel="noreferrer">
+          Latest release:{" "}
+          <a
+            href="https://github.com/hanyangkai/narna/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+          >
             GitHub Releases
           </a>
-          : download <code>NARNA-Desktop-windows.zip</code>, unzip, run{" "}
+          — download <code>NARNA-Desktop-windows.zip</code>, unzip, run{" "}
           <code>NARNA-Desktop.exe</code>.
         </p>
         <pre className="code-block">{`# Or build from source (maintainers)

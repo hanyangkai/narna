@@ -53,7 +53,7 @@ export default function Nav() {
             </div>
             <div className="nav-actions">
               <Link to="/ask" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Try Agent
+                Try NARNA Free
               </Link>
               <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
                 GitHub
