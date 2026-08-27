@@ -19,13 +19,6 @@ jobs:
         with:
           name: narna-desktop-scripts
           path: dist/narna-desktop.zip
-      - name: Attach scripts zip to release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/narna-desktop.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-exe:
     runs-on: windows-latest
@@ -41,10 +34,28 @@ jobs:
         with:
           name: NARNA-Desktop-windows
           path: dist/NARNA-Desktop-windows.zip
-      - name: Attach Windows zip to release
-        if: startsWith(github.ref, 'refs/tags/')
+
+  release:
+    needs: [zip-scripts, windows-exe]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          merge-multiple: true
+          path: release-assets
+      - name: List release assets
+        run: find release-assets -type f -ls
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/NARNA-Desktop-windows.zip
+          generate_release_notes: true
+          files: |
+            release-assets/narna-desktop.zip
+            release-assets/NARNA-Desktop-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

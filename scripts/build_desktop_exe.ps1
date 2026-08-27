@@ -15,9 +15,9 @@ Push-Location desktop
 python -m PyInstaller --noconfirm --clean narna-desktop.spec
 Pop-Location
 
-$out = Join-Path $Root "dist\NARNA-Desktop"
+$out = Join-Path $Root "desktop\dist\NARNA-Desktop"
 if (-not (Test-Path (Join-Path $out "NARNA-Desktop.exe"))) {
-  Write-Host "Build failed — exe missing" -ForegroundColor Red
+  Write-Host "Build failed — exe missing at $out" -ForegroundColor Red
   exit 1
 }
 
@@ -32,7 +32,9 @@ NARNA Desktop (portable)
 No Python install required.
 "@ | Set-Content -Encoding utf8 (Join-Path $out "START-HERE.txt")
 
-$zip = Join-Path $Root "dist\NARNA-Desktop-windows.zip"
+$zipDir = Join-Path $Root "dist"
+New-Item -ItemType Directory -Force -Path $zipDir | Out-Null
+$zip = Join-Path $zipDir "NARNA-Desktop-windows.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path $out -DestinationPath $zip -Force
 Write-Host "OK: $zip" -ForegroundColor Green

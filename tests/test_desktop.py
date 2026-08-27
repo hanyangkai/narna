@@ -24,6 +24,7 @@ class DesktopServerTests(unittest.TestCase):
             self.assertEqual(h.status_code, 200)
             self.assertTrue(h.json()["ok"])
             self.assertEqual(h.json()["mode"], "desktop")
+            self.assertIn("version", h.json())
             page = client.get("/")
             self.assertEqual(page.status_code, 200)
             self.assertIn("NARNA Desktop", page.text)

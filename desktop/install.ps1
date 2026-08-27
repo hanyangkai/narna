@@ -1,7 +1,9 @@
 ﻿#Requires -Version 5.1
-# NARNA Desktop installer for Windows
+# NARNA Desktop installer for Windows (pip path — needs Python 3.11+)
+# For no-Python install: download NARNA-Desktop-windows.zip from GitHub Releases.
 $ErrorActionPreference = "Stop"
-Write-Host "==> NARNA Desktop install" -ForegroundColor Cyan
+Write-Host "==> NARNA Desktop install (pip)" -ForegroundColor Cyan
+Write-Host "    No Python? Get portable zip: https://github.com/hanyangkai/narna/releases" -ForegroundColor DarkGray
 
 $py = Get-Command python -ErrorAction SilentlyContinue
 if (-not $py) { $py = Get-Command py -ErrorAction SilentlyContinue }

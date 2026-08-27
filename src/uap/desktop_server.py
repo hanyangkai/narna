@@ -89,11 +89,20 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
 
     @app.get("/v1/health")
     def health() -> dict[str, Any]:
+        try:
+            from narna import __version__ as app_version
+        except Exception:
+            app_version = "0.2.0"
         return {
             "ok": True,
             "mode": "desktop",
+            "version": app_version,
             "workspace": str(ws),
             "frozen": bool(getattr(sys, "frozen", False)),
+            "skillsIndexDefault": os.environ.get(
+                "UAP_SKILL_HUB_INDEX_URL",
+                "https://raw.githubusercontent.com/hanyangkai/narna/main/skills/public-index.json",
+            ),
             "standard": "NGS-0029-desktop",
         }
 
