@@ -4,15 +4,15 @@ import { BRAND, SPEC } from "../brand";
 const steps = [
   {
     title: "Install",
-    win: "irm …/desktop/install.ps1 | iex",
-    unix: "curl -fsSL …/desktop/install.sh | bash",
+    win: "Portable zip (no Python) or PowerShell installer",
+    unix: "curl install.sh · or pip",
     alt: `pip install "narna[desktop]"`,
   },
   {
     title: "Launch",
-    win: "narna desktop",
+    win: "NARNA-Desktop.exe  or  narna desktop",
     unix: "narna desktop",
-    alt: "Double-click NARNA Desktop (Windows shortcut)",
+    alt: "Opens http://127.0.0.1:8765/",
   },
   {
     title: "Bring your key",
@@ -29,8 +29,8 @@ export default function Download() {
         <p className="pill-label">Desktop</p>
         <h1>NARNA on your PC</h1>
         <p>
-          Download the local agent — Ask, tools, ADQA, and Decision Memory run on{" "}
-          <strong>127.0.0.1</strong>. Your API keys never leave the machine.
+          Local agent on <strong>127.0.0.1</strong> — Ask, tools, ADQA, Decision Memory. Keys stay on
+          disk. No cloud account required for the runtime.
         </p>
       </header>
 
@@ -38,18 +38,30 @@ export default function Download() {
         <div className="land-cta" style={{ marginBottom: "1.5rem" }}>
           <a
             className="btn btn-primary"
-            href="https://github.com/hanyangkai/narna/tree/main/desktop"
+            href="https://github.com/hanyangkai/narna/releases"
             target="_blank"
             rel="noreferrer"
           >
-            Get Desktop pack
+            Download Windows zip
           </a>
           <Link className="btn btn-secondary" to="/ask">
-            Use in browser instead
+            Use in browser
           </Link>
         </div>
 
-        <h2>Windows</h2>
+        <h2>Windows — portable (no Python)</h2>
+        <p className="section-desc">
+          From{" "}
+          <a href="https://github.com/hanyangkai/narna/releases" target="_blank" rel="noreferrer">
+            GitHub Releases
+          </a>
+          : download <code>NARNA-Desktop-windows.zip</code>, unzip, run{" "}
+          <code>NARNA-Desktop.exe</code>.
+        </p>
+        <pre className="code-block">{`# Or build from source (maintainers)
+.\\scripts\\build_desktop_exe.ps1`}</pre>
+
+        <h2>Windows — with Python</h2>
         <pre className="code-block">{`# PowerShell
 irm https://raw.githubusercontent.com/hanyangkai/narna/main/desktop/install.ps1 | iex
 narna desktop`}</pre>
@@ -94,13 +106,13 @@ narna desktop
             <code>narna chat</code> — simple REPL
           </li>
           <li>
-            <a href={BRAND.github} target="_blank" rel="noreferrer">
-              Source on GitHub
+            <a href={`${BRAND.github}/tree/main/desktop`} target="_blank" rel="noreferrer">
+              desktop/ on GitHub
             </a>
           </li>
         </ul>
         <p style={{ color: "var(--muted)", marginTop: "1rem" }}>
-          Requires Python 3.11+. Data lives in <code>~/.narna</code>.
+          Portable exe needs no Python. Pip path needs Python 3.11+. Data: <code>~/.narna</code>.
         </p>
       </section>
     </div>

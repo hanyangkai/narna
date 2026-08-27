@@ -7,22 +7,44 @@ on:
       - "v*"
 
 jobs:
-  zip:
+  zip-scripts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build desktop zip
+      - name: Build desktop scripts zip
         run: |
           bash scripts/package_desktop.sh
           ls -la dist/
       - uses: actions/upload-artifact@v4
         with:
-          name: narna-desktop
+          name: narna-desktop-scripts
           path: dist/narna-desktop.zip
-      - name: Attach to release
+      - name: Attach scripts zip to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/narna-desktop.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build portable exe
+        shell: pwsh
+        run: .\scripts\build_desktop_exe.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NARNA-Desktop-windows
+          path: dist/NARNA-Desktop-windows.zip
+      - name: Attach Windows zip to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/NARNA-Desktop-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

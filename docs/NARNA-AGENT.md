@@ -1,9 +1,9 @@
 # NARNA Agent — Ask NARNA
 
-**Status:** Active (VNext)  
-**Date:** 2026-08-25  
-**Specs:** NGS-0028 Model Router · NGS-0029 Agent Runtime  
-**Surface:** https://narna.org/ask
+**Status:** Active  
+**Date:** 2026-08-27  
+**Specs:** NGS-0028 Model Router · NGS-0029 Agent Runtime · NGS-0030 Decision Trace  
+**Surfaces:** https://narna.org/ask · https://narna.org/download · `narna desktop`
 
 ---
 
@@ -11,12 +11,12 @@
 
 | Product | Who | Why pay |
 |---------|-----|---------|
-| **NARNA Agent** | Everyone | Distribution — Ask, tools, BYOK |
+| **NARNA Agent** | Everyone | Distribution — Ask, tools, BYOK, Desktop |
 | **NARNA ADQA** | Developers / agents | **Moat** — evaluate any agent's decisions |
 
 **Market plan:** [`NARNA-MARKET-PLAN.md`](./NARNA-MARKET-PLAN.md) · **Runtime gaps:** [`HERMES-GAP-PLAN.md`](./HERMES-GAP-PLAN.md)
 
-Users should not need to “install NARNA to use AI.” They **Ask NARNA**; models are chosen underneath.
+Users can **Ask on the web** or **download Desktop** for PC. Models are BYOK underneath.
 
 ---
 
@@ -32,52 +32,37 @@ Users should not need to “install NARNA to use AI.” They **Ask NARNA**; mode
 ## Architecture
 
 ```text
-Ask UI / PWA / Telegram
-    →  /v1/agent/ask  (or telegram webhook)
-    →  Tools loop (search, fetch, calc, memory, skills)
-    →  Model Router  →  ADQA  →  Decision Memory + Skill capture
+Ask UI / PWA / Desktop / Telegram
+    →  /v1/agent/ask  (or local desktop server / webhook)
+    →  Tools loop (~44 tools)
+    →  Model Router  →  ADQA  →  Decision Trace + Memory + Skills
 ```
 
-BYO LLM (all plans, Hermes-style): user pastes OpenRouter / OpenAI / Ollama key in Ask or `/settings/models`.  
+BYO LLM (all plans, Hermes-style): OpenRouter / OpenAI / Ollama.  
 **No hosted LLM** — without a key, Ask runs **mock** (still ADQA-scored).
 
-See [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) for repo-level gaps vs Hermes Agent.
+### Surfaces
 
-### Mobile / Desktop
+1. **Web / PWA:** https://narna.org/ask  
+2. **Desktop PC:** https://narna.org/download — `narna desktop` or portable Windows zip  
+3. **CLI:** `narna chat` · `narna tui` · `narna gateway run`  
+4. **Channels:** Telegram · Discord · Slack · WhatsApp · Signal · Email  
 
-1. **PWA:** open https://narna.org/ask → Add to Home Screen.
-2. **Desktop PC:** https://narna.org/download → `narna desktop` (local Ask on 127.0.0.1).
-3. **Telegram:** set `UAP_TELEGRAM_BOT_TOKEN` and webhook to `/v1/agent/telegram/webhook`.
+### Honest capability matrix
 
-### Hermes / OpenClaw gap matrix (honest)
+| Capability | Hermes | NARNA now |
+|------------|--------|-----------|
+| Tools | 40–60+ | **44** (web, shell, browser, execute_code, skills, TTS, …) |
+| Terminal | Docker/SSH/Modal/… | local · docker · ssh · modal · daytona (env-gated) |
+| Browser | Playwright | navigate/click/type/wait/screenshot/vision (opt-in Playwright) |
+| Skills | Hub | Skill Hub + SKILL.md zip + public index sync |
+| Memory | Honcho | FTS5 + MEMORY.md / USER.md |
+| Desktop | Native app | `narna desktop` + portable exe build |
+| Decision quality | — | **ADQA · Trace · Replay · Benchmark** (moat) |
 
-NARNA is **not** a clone of Hermes or OpenClaw. It is a **decision-quality agent**
-(ADQA + Decision Memory) with a Hermes-like tool/skills loop and OpenClaw-like chat surfaces.
+Still intentionally skipped: Nous Portal clone, RL/trajectory, signed .msi/.dmg notarization.
 
-| Capability | Hermes | OpenClaw | NARNA now |
-|------------|--------|----------|-----------|
-| Tool loop | 40–60+ tools | 50+ skills/tools | ~20 tools (web, **shell_exec**, **browser_***, code_exec, workspace, memory, skills, hub, parallel_delegate) |
-| Terminal / OS shell | Docker/SSH/Modal sandboxes | Gateway approvals | **Allowlisted shell** in agent workspace |
-| Browser automation | Playwright-class | Via skills | **browser_navigate/snapshot** (Playwright if installed, else fetch) |
-| Skills | Auto-create + curator | ClawHub marketplace | Auto-capture + **Skill Hub** publish/install |
-| Memory | FTS5 sessions + Honcho | Markdown + vectors | Decision Memory + memory_search |
-| Channels | Many | **20+** | Web + TG + Discord + Slack + WhatsApp + **Signal** + **Email** |
-| Memory | FTS5 + Honcho | Markdown/vector | Decision Memory + **SQLite FTS5** + profile notes |
-| Shell | Docker/SSH/Modal | Approvals | Allowlist local + **optional docker backend** |
-
-See also: [`docs/SECRETS.md`](./SECRETS.md) for keys to set.
-
-
-### Hermes gap (v1.5 → v1.6)
-
-| Hermes-like | NARNA |
-|-------------|-------|
-| Tool loop | web, calc, **code_exec**, workspace, memory, **memory_search**, skills, **delegate_task** |
-| Channels | Web PWA + Telegram + **Discord** |
-| Cron | Agent jobs + background ticker |
-| Phone | PWA + chat gateways + SSE |
-
-Still not: full OS shell, Playwright browser bot, WhatsApp/Slack, unsupervised self-modify of runtime.
+See [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) · [`SECRETS.md`](./SECRETS.md) · [`DESKTOP.md`](./DESKTOP.md).
 
 ---
 
@@ -85,5 +70,5 @@ Still not: full OS shell, Playwright browser bot, WhatsApp/Slack, unsupervised s
 
 - Train a foundation model  
 - Replace ChatGPT via browser MITM (Guardian extension is separate)  
-- Absolute correctness claims
-- Full Hermes Agent clone (execution sandbox + every channel)
+- Absolute correctness claims  
+- Full Hermes Agent clone

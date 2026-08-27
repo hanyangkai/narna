@@ -2,26 +2,20 @@
 
 Run the decision-quality agent entirely on your PC.
 
-## Install
+## Options
 
-See [`desktop/README.md`](../desktop/README.md) or https://narna.org/download
+| Path | Needs Python? | Command |
+|------|---------------|---------|
+| **Portable Windows zip** | No | Unzip → `NARNA-Desktop.exe` ([Releases](https://github.com/hanyangkai/narna/releases)) |
+| **pip** | Yes 3.11+ | `pip install "narna[desktop]" && narna desktop` |
+| **install.ps1 / install.sh** | Yes | See [`desktop/README.md`](../desktop/README.md) |
 
-```bash
-pip install "narna[desktop]"
-narna desktop
-```
-
-Windows one-liner:
+Build portable exe (maintainers):
 
 ```powershell
-irm https://raw.githubusercontent.com/hanyangkai/narna/main/desktop/install.ps1 | iex
+.\scripts\build_desktop_exe.ps1
 ```
 
-## What you get
+Browser opens at `http://127.0.0.1:8765/`. BYOK keys → `~/.narna/config.json`.
 
-- Local Ask UI at `http://127.0.0.1:8765/`
-- BYOK OpenRouter / OpenAI / Ollama (`~/.narna/config.json`)
-- Full tool loop + ADQA + Decision Trace on disk
-- Optional `narna desktop --tui`
-
-No cloud account required for the runtime.
+Also: `narna desktop --tui` · https://narna.org/download

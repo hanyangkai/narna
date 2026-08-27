@@ -1,0 +1,35 @@
+{
+  "standard": "NGS-0029-skill-hub-index",
+  "name": "NARNA public skills (sample)",
+  "updatedAt": "2026-08-27T00:00:00Z",
+  "skills": [
+    {
+      "skillId": "hub_public_nda_review",
+      "name": "NDA quick review",
+      "author": "narna",
+      "tags": ["legal", "nda"],
+      "body": "# NDA quick review\n\n## Trigger\nUser asks whether to sign an NDA or what to check.\n\n## Procedure\n1. Identify parties, term, and governing law.\n2. Flag liability caps, non-solicit, and IP assignment.\n3. Require human.review + contract.hash before contract.sign.\n4. Return ACT/REVIEW/REJECT with missing evidence listed.\n"
+    },
+    {
+      "skillId": "hub_public_deploy_gate",
+      "name": "Prod deploy gate",
+      "author": "narna",
+      "tags": ["ops", "deploy"],
+      "body": "# Prod deploy gate\n\n## Trigger\nUser wants to ship to production.\n\n## Procedure\n1. Confirm tests.passed and rollback.plan evidence.\n2. Prefer REVIEW if riskBand is high.\n3. Never ACT without change ticket when env=prod.\n"
+    },
+    {
+      "skillId": "hub_public_vendor_award",
+      "name": "Vendor award checklist",
+      "author": "narna",
+      "tags": ["procurement"],
+      "body": "# Vendor award checklist\n\n## Trigger\nChoosing or awarding a vendor.\n\n## Procedure\n1. Need policy.decision, human.review, vendor.diligence.\n2. Block single-bid awards above threshold without waiver.\n3. Score with ADQA before recommending award.\n"
+    },
+    {
+      "skillId": "hub_public_research_cite",
+      "name": "Research with citations",
+      "author": "narna",
+      "tags": ["research"],
+      "body": "# Research with citations\n\n## Trigger\nUser asks for research or a brief.\n\n## Procedure\n1. Use web_search / web_fetch.\n2. Cite sources in the answer.\n3. Prefer tool.receipt evidence before treating claims as ACT-ready.\n"
+    }
+  ]
+}

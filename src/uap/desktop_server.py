@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 def default_workspace() -> Path:
@@ -40,6 +41,20 @@ def save_config(workspace: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def static_dir() -> Path:
+    """Resolve UI assets for source install and PyInstaller freeze."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        base = Path(getattr(sys, "_MEIPASS"))
+        for candidate in (
+            base / "uap" / "desktop_static",
+            base / "desktop_static",
+            base / "src" / "uap" / "desktop_static",
+        ):
+            if candidate.is_dir():
+                return candidate
+    return Path(__file__).resolve().parent / "desktop_static"
+
+
 class AskBody(BaseModel):
     message: str
     sessionId: str | None = None
@@ -61,7 +76,7 @@ class ConfigBody(BaseModel):
 def create_app(*, workspace: Path | None = None) -> FastAPI:
     ws = Path(workspace) if workspace else default_workspace()
     ws.mkdir(parents=True, exist_ok=True)
-    static_dir = Path(__file__).resolve().parent / "desktop_static"
+    assets = static_dir()
 
     app = FastAPI(title="NARNA Desktop", version="0.1.0")
     app.add_middleware(
@@ -78,6 +93,7 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
             "ok": True,
             "mode": "desktop",
             "workspace": str(ws),
+            "frozen": bool(getattr(sys, "frozen", False)),
             "standard": "NGS-0029-desktop",
         }
 
@@ -120,10 +136,10 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
         base_url = body.llmBaseUrl or cfg.get("baseUrl") or None
         if not api_key:
             provider = "mock"
-        models = {}
+        models: dict[str, str] = {}
         model = body.model or cfg.get("model")
         if model:
-            models = {"cheap": model, "reason": model, "challenge": model}
+            models = {"cheap": str(model), "reason": str(model), "challenge": str(model)}
         try:
             router = ModelRouter(
                 provider=provider,
@@ -146,7 +162,7 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
 
     @app.get("/")
     def index() -> HTMLResponse:
-        html = static_dir / "index.html"
+        html = assets / "index.html"
         if html.is_file():
             return HTMLResponse(html.read_text(encoding="utf-8"))
         return HTMLResponse("<h1>NARNA Desktop</h1><p>UI missing.</p>")
@@ -157,7 +173,7 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
 
     @app.get("/favicon.ico")
     def favicon() -> Any:
-        icon = static_dir / "favicon.svg"
+        icon = assets / "favicon.svg"
         if icon.is_file():
             return FileResponse(icon, media_type="image/svg+xml")
         return JSONResponse({"ok": False}, status_code=404)

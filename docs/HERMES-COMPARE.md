@@ -24,16 +24,14 @@
 
 ## Still not end-to-end Hermes
 
-1. Native signed .msi / .dmg installer (zip + pip launcher shipped)  
-2. Richer Modal/Daytona (stubs + env-gated HTTP; needs real credentials)  
-3. Honcho-depth dialectic memory  
+1. Apple/Microsoft **notarized** .msi / .dmg (portable Windows zip + PyInstaller build shipped)  
+2. Live Modal/Daytona credentials in prod (stubs work with BYOK env)  
+3. Honcho-depth dialectic memory (MEMORY.md lite is enough for moat path)
 
 ## Shipped this pass
 
-- Browser session: click/type/wait/screenshot/vision  
-- Job delivery fan-out + optional Telegram voice  
-- Gateway poll + pairing (`UAP_GATEWAY_PAIRING`) + compose profile  
-- Shell backends: local/docker/ssh/modal/daytona  
-- Tool batch ≥40 · Decision Benchmark · `narna tui` · Skills Hub zip/sync
+- `narna desktop` + portable Windows build (`scripts/build_desktop_exe.ps1`)  
+- Public skills index (`skills/public-index.json`)  
+- Browser · gateway · 44 tools · Trace/Replay/Benchmark · TUI  
 
-Last updated: 2026-08-26
+Last updated: 2026-08-27
