@@ -207,7 +207,8 @@ FREE NARNA AGENT → developers → decisions → traces → outcomes
 
 ```
 DONE    Track A P1–P9 Hermes runtime · Track B1–B6 (layout = docs/aliases)
-NOW     GTM / polish · Skills Hub public index (optional URL)
+DONE    Desktop PC download (v0.2.0) · Prod agent parity 80–90% (v0.2.1)
+NOW     GTM — landing / Download polish · OpenClaw skill adoption · paying users
 ```
 
 ---
@@ -220,4 +221,4 @@ NOW     GTM / polish · Skills Hub public index (optional URL)
 - ❌ Agent as moat — Agent is **distribution**
 - ✅ ADQA + Trace + Replay + Benchmark as moat
 
-Last updated: 2026-08-26
+Last updated: 2026-08-27

@@ -125,13 +125,11 @@ function DecisionTracePanel() {
   const done = step > TRACE_STEPS.length;
 
   const panel = (
-    <div className="land-trace fx-hud-panel" aria-label="Live decision trace demonstration">
+    <div className="land-trace" aria-label="Live decision trace demonstration">
       <div className="land-trace-bar">
         <span className="land-trace-dot" />
         <span>NARNA AGENT</span>
-        <GlitchText className="land-trace-live" hover>
-          LIVE
-        </GlitchText>
+        <span className="land-trace-live">LIVE</span>
       </div>
       <div className="land-trace-body">
         <p className="land-trace-user-label">User</p>
@@ -165,8 +163,8 @@ function DecisionTracePanel() {
           </p>
           <p className="land-conf">Confidence: {done ? "94%" : "—"}</p>
           <div className="land-trace-actions">
-            <span className="land-chip fx-neon-chip">View reasoning</span>
-            <span className="land-chip land-chip-accent fx-neon-chip">Execute</span>
+            <span className="land-chip">View reasoning</span>
+            <span className="land-chip land-chip-accent">Execute</span>
           </div>
         </motion.div>
       </div>
@@ -275,9 +273,7 @@ function AdqaDemo() {
           <p className="land-dqs land-dqs-sm">
             Decision Quality: <strong>87</strong> / 100
           </p>
-          <GlitchText className="land-verdict-badge review" hover>
-            REVIEW REQUIRED
-          </GlitchText>
+          <p className="land-verdict-badge review">REVIEW REQUIRED</p>
           <p className="land-demo-note">High risk due to unusual bank-account change.</p>
         </motion.div>
       ) : (
@@ -337,37 +333,33 @@ export default function Landing() {
     <>
       {/* 1. Hero — Decision first + live trace */}
       <section className="hero hero-navy land-hero fx-hero">
-        <AuroraOrbs />
-        <DataStream className="fx-hero-stream" density={0.35} />
-        <ScanGrid className="fx-hero-scan" />
+        <ParticleNetwork className="fx-hero-particles" />
         <div className="layout-wide land-hero-grid fx-hero-content">
           <motion.div
             className="land-hero-copy"
-            initial={reduce ? false : { opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduce ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="fx-status-pill">
               <span className="fx-status-dot" />
-              DECISION SYSTEMS ONLINE · THREE.JS
+              Decision quality infrastructure
             </p>
             <h1 className="land-headline-main">
               AI Agents can act.
               <br />
-              <GlitchText className="land-headline-accent fx-holo-text" as="span">
-                NARNA makes them decide better.
-              </GlitchText>
+              <span className="land-headline-accent">NARNA makes them decide better.</span>
             </h1>
             <p className="land-lede">
               NARNA is an open-source AI Agent and Decision Quality Assurance infrastructure that helps
               AI agents reason, verify, evaluate risk, and learn from outcomes.
             </p>
             <div className="land-cta">
-              <Link className="btn btn-primary fx-btn-neon" to="/ask">
+              <Link className="btn btn-primary" to="/ask">
                 Try NARNA Free
               </Link>
               <a
-                className="btn land-btn-ghost fx-btn-neon-ghost"
+                className="btn land-btn-ghost"
                 href={BRAND.github}
                 target="_blank"
                 rel="noreferrer"
@@ -376,7 +368,7 @@ export default function Landing() {
               </a>
             </div>
             <p className="land-hero-meta">Works with the AI models you already use.</p>
-            <p className="land-model-row fx-matrix-text">
+            <p className="land-model-row">
               GPT · Claude · Gemini · DeepSeek · Qwen · Local Models
             </p>
           </motion.div>
@@ -407,7 +399,7 @@ export default function Landing() {
               <ProblemFlow />
             </Reveal>
             <Reveal delay={0.2}>
-              <div className="land-problem-fix fx-hud-panel">
+              <div className="land-problem-fix">
                 <h3 className="land-h3">That&apos;s where NARNA comes in.</h3>
                 <ol className="land-flow-list">
                   <li>Agent</li>
@@ -431,34 +423,30 @@ export default function Landing() {
           </Reveal>
           <RevealStagger className="land-products" stagger={0.12}>
             <RevealItem>
-              <div className="land-product fx-card-glow">
+              <div className="land-product">
                 <p className="land-strip-label">NARNA Agent</p>
                 <h3>An agent that works.</h3>
                 <div className="land-cap-cloud">
                   {AGENT_CAPS.map((c) => (
-                    <span key={c} className="fx-cap-chip">
-                      {c}
-                    </span>
+                    <span key={c}>{c}</span>
                   ))}
                 </div>
-                <Link className="btn btn-primary fx-btn-neon" to="/ask">
+                <Link className="btn btn-primary" to="/ask">
                   Try NARNA Agent →
                 </Link>
               </div>
             </RevealItem>
             <p className="land-products-bridge">Use NARNA Agent. Or bring your own agent.</p>
             <RevealItem>
-              <div className="land-product land-product-adqa fx-card-glow">
+              <div className="land-product land-product-adqa">
                 <p className="land-strip-label">NARNA ADQA</p>
                 <h3>A decision layer for every agent.</h3>
                 <div className="land-cap-cloud">
                   {ADQA_CAPS.map((c) => (
-                    <span key={c} className="fx-cap-chip">
-                      {c}
-                    </span>
+                    <span key={c}>{c}</span>
                   ))}
                 </div>
-                <Link className="btn btn-secondary fx-btn-neon-ghost-dark" to="/console/decision">
+                <Link className="btn btn-secondary" to="/console/decision">
                   Explore ADQA →
                 </Link>
               </div>
@@ -468,16 +456,8 @@ export default function Landing() {
       </section>
 
       {/* 5. Architecture diagram */}
-      <section className="land-arch-section fx-arch-sec">
-        <AuroraOrbs className="fx-aurora-dim" />
-        {!reduce ? (
-          <Suspense fallback={null}>
-            <HeroDecision3D className="fx-arch-3d" />
-          </Suspense>
-        ) : null}
-        <DataStream density={0.3} />
-        <ScanGrid />
-        <div className="layout-wide fx-arch-content">
+      <section className="land-arch-section">
+        <div className="layout-wide">
           <Reveal>
             <p className="section-label">How NARNA works</p>
             <h2 className="land-h2 land-h2-wide">Think → Verify → Decide → Learn</h2>
@@ -515,21 +495,19 @@ export default function Landing() {
           <RevealStagger className="land-logo-grid" stagger={0.05}>
             {MODELS.map((m) => (
               <RevealItem key={m}>
-                <span className="land-logo-cell fx-logo-cell">{m}</span>
+                <span className="land-logo-cell">{m}</span>
               </RevealItem>
             ))}
           </RevealStagger>
           <Reveal delay={0.15}>
-            <div className="land-stack-arrow fx-pulse-arrow" aria-hidden>
+            <div className="land-stack-arrow" aria-hidden>
               ↓
             </div>
             <p className="land-stack-mid">NARNA ADQA</p>
-            <div className="land-stack-arrow fx-pulse-arrow" aria-hidden>
+            <div className="land-stack-arrow" aria-hidden>
               ↓
             </div>
-            <p className="land-stack-end">
-              <GlitchText hover>Better Decisions</GlitchText>
-            </p>
+            <p className="land-stack-end">Better Decisions</p>
           </Reveal>
         </div>
       </section>
@@ -545,12 +523,12 @@ export default function Landing() {
               {EXTERNAL_AGENTS.map((a) => (
                 <RevealItem key={a} as="li">
                   <span>{a}</span>
-                  <span className="land-bya-line fx-flow-line" aria-hidden />
+                  <span className="land-bya-line" aria-hidden />
                 </RevealItem>
               ))}
             </RevealStagger>
             <Reveal delay={0.2}>
-              <div className="land-bya-target fx-hud-panel">
+              <div className="land-bya-target">
                 <strong>NARNA ADQA</strong>
                 <p>One API. Any Agent. Better Decisions.</p>
               </div>
@@ -622,21 +600,21 @@ export default function Landing() {
           </Reveal>
           <RevealStagger className="land-dev-grid" stagger={0.1}>
             <RevealItem>
-              <pre className="code-block fx-code-glow">{SPEC.install}</pre>
+              <pre className="code-block">{SPEC.install}</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block fx-code-glow">Connect via MCP</pre>
+              <pre className="code-block">Connect via MCP</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block fx-code-glow">NARNA API · /v1/adqa/evaluate</pre>
+              <pre className="code-block">NARNA API · /v1/adqa/evaluate</pre>
             </RevealItem>
           </RevealStagger>
           <Reveal delay={0.15}>
             <div className="land-cta">
-              <Link className="btn btn-secondary fx-btn-neon-ghost-dark" to="/docs">
+              <Link className="btn btn-secondary" to="/docs">
                 Read the Docs
               </Link>
-              <a className="btn btn-primary fx-btn-neon" href={BRAND.github} target="_blank" rel="noreferrer">
+              <a className="btn btn-primary" href={BRAND.github} target="_blank" rel="noreferrer">
                 Star on GitHub
               </a>
             </div>
@@ -656,7 +634,7 @@ export default function Landing() {
             {PRICING.plans.map((p) => (
               <RevealItem
                 key={p.id}
-                className={`land-price fx-card-glow${p.featured ? " land-price-featured" : ""}`}
+                className={`land-price${p.featured ? " land-price-featured" : ""}`}
               >
                 <h3>{p.name}</h3>
                 <p className="land-price-amt">
@@ -671,13 +649,13 @@ export default function Landing() {
                 </ul>
                 <Link
                   to={p.ctaTo}
-                  className={`btn ${p.featured ? "btn-primary fx-btn-neon" : "btn-secondary"}`}
+                  className={`btn ${p.featured ? "btn-primary" : "btn-secondary"}`}
                 >
                   {p.cta}
                 </Link>
               </RevealItem>
             ))}
-            <RevealItem className="land-price fx-card-glow">
+            <RevealItem className="land-price">
               <h3>Enterprise</h3>
               <p className="land-price-amt">Custom</p>
               <p className="land-price-limit">Private deployment</p>
@@ -695,26 +673,21 @@ export default function Landing() {
       </section>
 
       {/* 13. Final CTA */}
-      <section className="land-final-strong fx-final">
-        <AuroraOrbs />
+      <section className="land-final-strong">
         <ParticleNetwork className="fx-final-particles" />
-        <DataStream density={0.45} />
-        <ScanGrid />
         <div className="layout-wide land-center fx-final-content">
-          <Reveal y={20}>
+          <Reveal y={16}>
             <h2 className="land-final-h">
               The next generation of AI won&apos;t just act.
               <br />
-              <GlitchText className="land-final-accent fx-holo-text" hover>
-                It will know when it should.
-              </GlitchText>
+              <span className="land-final-accent">It will know when it should.</span>
             </h2>
             <p className="land-final-cta-label">Build with NARNA.</p>
             <div className="land-cta land-center-cta">
-              <Link className="btn btn-primary fx-btn-neon" to="/ask">
+              <Link className="btn btn-primary" to="/ask">
                 Try NARNA Free
               </Link>
-              <Link className="btn land-btn-ghost fx-btn-neon-ghost" to="/docs">
+              <Link className="btn land-btn-ghost" to="/docs">
                 Read the Docs
               </Link>
             </div>

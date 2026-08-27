@@ -1,26 +1,12 @@
 import { useEffect, useRef } from "react";
 
-type Pt = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  c: number; // color index
-};
+type Pt = { x: number; y: number; vx: number; vy: number; r: number };
 
-const COUNT = 72;
-const LINK = 140;
-const MOUSE = 180;
+const COUNT = 42;
+const LINK = 110;
+const MOUSE = 140;
 
-const COLORS = [
-  { r: 0, g: 220, b: 255 }, // cyan
-  { r: 52, g: 211, b: 153 }, // lime
-  { r: 167, g: 139, b: 250 }, // violet
-  { r: 56, g: 189, b: 248 }, // sky
-  { r: 244, g: 114, b: 182 }, // pink
-];
-
+/** Quiet monochrome particle field — professional, not festive. */
 export default function ParticleNetwork({ className = "" }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouse = useRef({ x: -9999, y: -9999, active: false });
@@ -49,10 +35,9 @@ export default function ParticleNetwork({ className = "" }: { className?: string
         pts = Array.from({ length: COUNT }, () => ({
           x: Math.random() * w,
           y: Math.random() * h,
-          vx: (Math.random() - 0.5) * 0.45,
-          vy: (Math.random() - 0.5) * 0.45,
-          r: Math.random() * 1.8 + 0.9,
-          c: Math.floor(Math.random() * COLORS.length),
+          vx: (Math.random() - 0.5) * 0.22,
+          vy: (Math.random() - 0.5) * 0.22,
+          r: Math.random() * 1.1 + 0.5,
         }));
       }
     }
@@ -69,14 +54,14 @@ export default function ParticleNetwork({ className = "" }: { className?: string
           const dist = Math.hypot(dx, dy);
           if (dist < MOUSE && dist > 0) {
             const f = (MOUSE - dist) / MOUSE;
-            p.vx += (dx / dist) * f * 0.05;
-            p.vy += (dy / dist) * f * 0.05;
+            p.vx += (dx / dist) * f * 0.025;
+            p.vy += (dy / dist) * f * 0.025;
           }
         }
         p.x += p.vx;
         p.y += p.vy;
-        p.vx *= 0.994;
-        p.vy *= 0.994;
+        p.vx *= 0.996;
+        p.vy *= 0.996;
         if (p.x < 0 || p.x > w) p.vx *= -1;
         if (p.y < 0 || p.y > h) p.vy *= -1;
         p.x = Math.max(0, Math.min(w, p.x));
@@ -87,18 +72,11 @@ export default function ParticleNetwork({ className = "" }: { className?: string
         for (let j = i + 1; j < pts.length; j++) {
           const a = pts[i];
           const b = pts[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d = Math.hypot(dx, dy);
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < LINK) {
-            const alpha = (1 - d / LINK) * 0.45;
-            const ca = COLORS[a.c];
-            const cb = COLORS[b.c];
-            const r = Math.round((ca.r + cb.r) / 2);
-            const g = Math.round((ca.g + cb.g) / 2);
-            const bl = Math.round((ca.b + cb.b) / 2);
-            ctx!.strokeStyle = `rgba(${r}, ${g}, ${bl}, ${alpha})`;
-            ctx!.lineWidth = 1.1;
+            const alpha = (1 - d / LINK) * 0.18;
+            ctx!.strokeStyle = `rgba(148, 163, 184, ${alpha})`;
+            ctx!.lineWidth = 1;
             ctx!.beginPath();
             ctx!.moveTo(a.x, a.y);
             ctx!.lineTo(b.x, b.y);
@@ -108,15 +86,11 @@ export default function ParticleNetwork({ className = "" }: { className?: string
       }
 
       for (const p of pts) {
-        const c = COLORS[p.c];
-        ctx!.shadowBlur = 8;
-        ctx!.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, 0.8)`;
-        ctx!.fillStyle = `rgba(${c.r}, ${c.g}, ${c.b}, 0.9)`;
+        ctx!.fillStyle = "rgba(148, 163, 184, 0.55)";
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx!.fill();
       }
-      ctx!.shadowBlur = 0;
 
       raf = requestAnimationFrame(draw);
     }
@@ -143,11 +117,5 @@ export default function ParticleNetwork({ className = "" }: { className?: string
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`fx-particles ${className}`.trim()}
-      aria-hidden
-    />
-  );
+  return <canvas ref={canvasRef} className={`fx-particles ${className}`.trim()} aria-hidden />;
 }
