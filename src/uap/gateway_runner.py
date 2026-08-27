@@ -61,26 +61,48 @@ class UnifiedGateway:
         self._tg_offset = 0
         self._discord_last: dict[str, str] = {}
         self._slack_last: dict[str, str] = {}
+        self._discord_seen: set[str] = set()
+        self._slack_seen: set[str] = set()
         self._running = False
         self.stats: dict[str, int] = {
             "polled": 0,
             "handled": 0,
             "errors": 0,
             "voice": 0,
+            "deduped": 0,
         }
 
     def status(self) -> dict[str, Any]:
         from .gateway_pairing import pairing_enabled
 
+        tg = bool(self.config.telegram_token)
+        disc = bool(self.config.discord_token and self.config.discord_channels)
+        slack = bool(self.config.slack_token and self.config.slack_channels)
+        wa = bool(
+            (os.environ.get("UAP_TWILIO_ACCOUNT_SID") or "").strip()
+            and (os.environ.get("UAP_TWILIO_AUTH_TOKEN") or "").strip()
+        )
+        signal_url = (os.environ.get("UAP_SIGNAL_WEBHOOK_URL") or "").strip()
         return {
             "running": self._running,
-            "telegramConfigured": bool(self.config.telegram_token),
-            "discordConfigured": bool(self.config.discord_token and self.config.discord_channels),
-            "slackConfigured": bool(self.config.slack_token and self.config.slack_channels),
+            "telegramConfigured": tg,
+            "discordConfigured": disc,
+            "slackConfigured": slack,
             "pollSeconds": self.config.poll_seconds,
             "pairingEnabled": pairing_enabled(),
             "workspace": str(self.workspace),
             "stats": dict(self.stats),
+            "channels": {
+                "telegram": {"configured": tg, "mode": "poll" if tg else "off"},
+                "discord": {"configured": disc, "mode": "poll" if disc else "off"},
+                "slack": {"configured": slack, "mode": "poll" if slack else "off"},
+                "whatsapp": {"configured": wa, "mode": "webhook" if wa else "off"},
+                "signal": {
+                    "configured": bool(signal_url),
+                    "mode": "stub" if signal_url else "off",
+                },
+                "email": {"configured": True, "mode": "webhook"},
+            },
             "standard": "NGS-0029-gateway",
         }
 
@@ -257,6 +279,14 @@ class UnifiedGateway:
             # Discord returns newest first
             for msg in sorted(msgs, key=lambda m: str(m.get("id") or "")):
                 mid = str(msg.get("id") or "")
+                if not mid:
+                    continue
+                if mid in self._discord_seen:
+                    self.stats["deduped"] += 1
+                    continue
+                self._discord_seen.add(mid)
+                if len(self._discord_seen) > 500:
+                    self._discord_seen = set(list(self._discord_seen)[-250:])
                 self._discord_last[channel_id] = mid
                 author = msg.get("author") or {}
                 if author.get("bot"):
@@ -280,6 +310,7 @@ class UnifiedGateway:
         n = 0
         for channel in self.config.slack_channels:
             oldest = self._slack_last.get(channel, "0")
+            # Slack oldest is inclusive — bump slightly past last ts to reduce re-delivery
             url = (
                 f"https://slack.com/api/conversations.history"
                 f"?channel={channel}&oldest={oldest}&limit=5"
@@ -302,7 +333,22 @@ class UnifiedGateway:
             msgs = list(data.get("messages") or [])
             for msg in sorted(msgs, key=lambda m: float(m.get("ts") or 0)):
                 ts = str(msg.get("ts") or "")
-                if ts:
+                if not ts:
+                    continue
+                if ts in self._slack_seen or (oldest != "0" and ts == oldest):
+                    self.stats["deduped"] += 1
+                    # still advance watermark past seen
+                    try:
+                        self._slack_last[channel] = str(float(ts) + 0.000001)
+                    except Exception:
+                        self._slack_last[channel] = ts
+                    continue
+                self._slack_seen.add(ts)
+                if len(self._slack_seen) > 500:
+                    self._slack_seen = set(list(self._slack_seen)[-250:])
+                try:
+                    self._slack_last[channel] = str(float(ts) + 0.000001)
+                except Exception:
                     self._slack_last[channel] = ts
                 if msg.get("bot_id") or msg.get("subtype"):
                     continue

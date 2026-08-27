@@ -4,6 +4,8 @@ services:
     build:
       context: ../../..
       dockerfile: web/backend/Dockerfile
+      args:
+        INSTALL_BROWSER: ${INSTALL_BROWSER:-1}
     restart: unless-stopped
     env_file:
       - .env
@@ -39,8 +41,10 @@ services:
       UAP_TWILIO_AUTH_TOKEN: ${UAP_TWILIO_AUTH_TOKEN:-}
       UAP_TWILIO_WHATSAPP_FROM: ${UAP_TWILIO_WHATSAPP_FROM:-}
       UAP_SIGNAL_WEBHOOK_URL: ${UAP_SIGNAL_WEBHOOK_URL:-}
-      UAP_SHELL_BACKEND: ${UAP_SHELL_BACKEND:-local}
+      UAP_SHELL_BACKEND: ${UAP_SHELL_BACKEND:-docker}
       UAP_SHELL_DOCKER_IMAGE: ${UAP_SHELL_DOCKER_IMAGE:-python:3.12-alpine}
+      UAP_SHELL_FALLBACK_LOCAL: ${UAP_SHELL_FALLBACK_LOCAL:-0}
+      UAP_BROWSER_ENABLED: ${UAP_BROWSER_ENABLED:-1}
       UAP_AGENT_JOBS_TICKER: ${UAP_AGENT_JOBS_TICKER:-1}
       UAP_AGENT_JOBS_TICK_SEC: ${UAP_AGENT_JOBS_TICK_SEC:-300}
       UAP_JOBS_TICK_SECRET: ${UAP_JOBS_TICK_SECRET:-}
@@ -48,6 +52,8 @@ services:
       UAP_GATEWAY_VOICE_REPLY: ${UAP_GATEWAY_VOICE_REPLY:-0}
     volumes:
       - narna_tenants:/data/tenants
+      # Opt-in Docker-in-Docker shell: set UAP_SHELL_DOCKER=1 and uncomment:
+      # - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,9 +88,10 @@ services:
       UAP_DISCORD_CHANNELS: ${UAP_DISCORD_CHANNELS:-}
       UAP_SLACK_BOT_TOKEN: ${UAP_SLACK_BOT_TOKEN:-}
       UAP_SLACK_CHANNELS: ${UAP_SLACK_CHANNELS:-}
-      UAP_GATEWAY_PAIRING: ${UAP_GATEWAY_PAIRING:-0}
+      UAP_GATEWAY_PAIRING: ${UAP_GATEWAY_PAIRING:-1}
       UAP_GATEWAY_VOICE_REPLY: ${UAP_GATEWAY_VOICE_REPLY:-0}
-      UAP_SHELL_BACKEND: ${UAP_SHELL_BACKEND:-local}
+      UAP_SHELL_BACKEND: ${UAP_SHELL_BACKEND:-docker}
+      UAP_BROWSER_ENABLED: ${UAP_BROWSER_ENABLED:-1}
     volumes:
       - narna_tenants:/data/tenants
     depends_on:

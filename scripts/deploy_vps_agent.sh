@@ -60,7 +60,7 @@ echo "==> wait health"
   sleep 3
 done; exit 1'
 
-echo "==> smoke Ask + gateway status"
+echo "==> smoke Ask + gateway status + browser health"
 "${SSH[@]}" "$HOST" 'python3 - <<"PY"
 import json, urllib.request
 req = urllib.request.Request(
@@ -73,10 +73,15 @@ with urllib.request.urlopen(req, timeout=60) as r:
     body = json.loads(r.read().decode())
 print("dqs", body.get("dqs"), "tools", len(body.get("toolsUsed") or []), "session", body.get("sessionId"))
 assert body.get("answer")
+with urllib.request.urlopen("http://127.0.0.1:8100/v1/health", timeout=15) as r:
+    health = json.loads(r.read().decode())
+print("health", health.get("status"), "browser", health.get("browser"), "shell", health.get("shellBackend"))
+assert "browser" in health
 with urllib.request.urlopen("http://127.0.0.1:8100/v1/agent/gateway/status", timeout=15) as r:
     gw = json.loads(r.read().decode())
-print("gateway tools", gw.get("toolCount"), "pairing", gw.get("pairingEnabled"), "tg", gw.get("telegramConfigured"))
+print("gateway tools", gw.get("toolCount"), "pairing", gw.get("pairingEnabled"), "channels", list((gw.get("channels") or {}).keys()))
 assert int(gw.get("toolCount") or 0) >= 40
+assert "channels" in gw
 print("OK")
 PY'
 

@@ -250,8 +250,39 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
     cwd.mkdir(parents=True, exist_ok=True)
     timeout = int(args.get("timeout") or 15)
     backend = (os.environ.get("UAP_SHELL_BACKEND") or "local").strip().lower()
+    fallback_local = str(os.environ.get("UAP_SHELL_FALLBACK_LOCAL") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    def _run_local() -> dict[str, Any]:
+        try:
+            proc = subprocess.run(  # noqa: S603 — allowlisted argv
+                parts,
+                cwd=str(cwd),
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                shell=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "timeout", "backend": "local"}
+        except Exception as e:
+            return {"ok": False, "error": str(e), "backend": "local"}
+        return {
+            "ok": proc.returncode == 0,
+            "exitCode": proc.returncode,
+            "stdout": (proc.stdout or "")[:8000],
+            "stderr": (proc.stderr or "")[:2000],
+            "cwd": str(cwd),
+            "backend": "local",
+        }
+
     if backend == "docker":
         # Opt-in isolated container with workspace bind-mount (read-write).
+        # On VPS: mount /var/run/docker.sock only when UAP_SHELL_DOCKER=1 (documented risk).
         image = os.environ.get("UAP_SHELL_DOCKER_IMAGE") or "python:3.12-alpine"
         docker_cmd = [
             "docker",
@@ -275,16 +306,54 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
                 shell=False,
             )
         except FileNotFoundError:
-            return {"ok": False, "error": "docker binary not found on host"}
+            err = {
+                "ok": False,
+                "error": "docker binary not found — install Docker or set UAP_SHELL_BACKEND=local",
+                "backend": "docker",
+            }
+            if fallback_local:
+                out = _run_local()
+                out["fellBackFrom"] = "docker"
+                out["dockerError"] = err["error"]
+                return out
+            return err
         except subprocess.TimeoutExpired:
-            return {"ok": False, "error": "timeout"}
+            return {"ok": False, "error": "timeout", "backend": "docker"}
         except Exception as e:
-            return {"ok": False, "error": str(e)}
+            err_msg = str(e)
+            if fallback_local:
+                out = _run_local()
+                out["fellBackFrom"] = "docker"
+                out["dockerError"] = err_msg
+                return out
+            return {"ok": False, "error": err_msg, "backend": "docker"}
+        # Daemon missing / permission denied often returns non-zero with stderr
+        stderr = (proc.stderr or "")[:2000]
+        if proc.returncode != 0 and (
+            "Cannot connect to the Docker daemon" in stderr
+            or "permission denied" in stderr.lower()
+            or "Is the docker daemon running" in stderr
+        ):
+            err = {
+                "ok": False,
+                "error": (
+                    "docker daemon unavailable — mount /var/run/docker.sock "
+                    "(UAP_SHELL_DOCKER=1) or set UAP_SHELL_FALLBACK_LOCAL=1 / UAP_SHELL_BACKEND=local"
+                ),
+                "stderr": stderr,
+                "backend": "docker",
+            }
+            if fallback_local:
+                out = _run_local()
+                out["fellBackFrom"] = "docker"
+                out["dockerError"] = err["error"]
+                return out
+            return err
         return {
             "ok": proc.returncode == 0,
             "exitCode": proc.returncode,
             "stdout": (proc.stdout or "")[:8000],
-            "stderr": (proc.stderr or "")[:2000],
+            "stderr": stderr,
             "cwd": str(cwd),
             "backend": "docker",
             "image": image,
@@ -332,27 +401,7 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
 
         remote = " ".join(shlex.quote(p) for p in parts)
         return exec_daytona(command=remote, timeout=timeout, cwd=str(cwd))
-    try:
-        proc = subprocess.run(  # noqa: S603 — allowlisted argv
-            parts,
-            cwd=str(cwd),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            shell=False,
-        )
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "timeout"}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-    return {
-        "ok": proc.returncode == 0,
-        "exitCode": proc.returncode,
-        "stdout": (proc.stdout or "")[:8000],
-        "stderr": (proc.stderr or "")[:2000],
-        "cwd": str(cwd),
-        "backend": "local",
-    }
+    return _run_local()
 
 
 def tool_browser_navigate(args: dict[str, Any], *, workspace: Path | None = None) -> dict[str, Any]:

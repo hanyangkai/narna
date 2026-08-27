@@ -469,11 +469,22 @@ def health() -> dict[str, Any]:
     return {
         "status": status,
         "service": "narna-cloud",
-        "version": "0.2.0",
+        "version": "0.2.1",
         "api": "https://api.narna.org",
         "mcp": "https://api.narna.org/mcp",
         "checks": checks,
+        "browser": _browser_health(),
+        "shellBackend": (os.environ.get("UAP_SHELL_BACKEND") or "local").strip().lower(),
     }
+
+
+def _browser_health() -> dict[str, Any]:
+    try:
+        from uap.browser_session import browser_ready
+
+        return browser_ready()
+    except Exception as e:
+        return {"ready": False, "error": str(e)[:200]}
 
 
 @app.get("/v1/ready")

@@ -947,15 +947,44 @@ def cmd_tui(args: argparse.Namespace) -> int:
 def cmd_desktop(args: argparse.Namespace) -> int:
     """Run NARNA Desktop on this PC (local Ask UI or --tui)."""
     from .desktop_app import run_desktop
+    from .narna_config import apply_config_to_env, default_home
+
+    ws = getattr(args, "workspace", None) or str(default_home())
+    apply_config_to_env(ws)
 
     return run_desktop(
         host=getattr(args, "host", None) or "127.0.0.1",
         port=getattr(args, "port", None),
-        workspace=getattr(args, "workspace", None),
+        workspace=ws,
         open_browser=not getattr(args, "no_browser", False),
         tui=bool(getattr(args, "tui", False)),
         provider=getattr(args, "provider", None),
     )
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    """Show / set ~/.narna config (json or yaml)."""
+    from .narna_config import config_set, config_show, default_home
+
+    home = getattr(args, "home", None) or str(default_home())
+    sub = getattr(args, "config_cmd", None)
+    if sub == "show":
+        _print_json(config_show(home))
+        return 0
+    if sub == "set":
+        key = getattr(args, "key", None)
+        value = getattr(args, "value", None)
+        if not key or value is None:
+            print("usage: narna config set KEY VALUE", file=sys.stderr)
+            return 2
+        try:
+            _print_json(config_set(key, value, home))
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            return 2
+        return 0
+    print("unknown config subcommand", file=sys.stderr)
+    return 2
 
 
 def cmd_skills(args: argparse.Namespace) -> int:
@@ -2099,6 +2128,17 @@ def build_parser() -> argparse.ArgumentParser:
     desk.add_argument("--tui", action="store_true", help="Use fullscreen TUI instead of browser")
     desk.add_argument("--provider", default=None)
     desk.set_defaults(func=cmd_desktop)
+
+    cfg_p = sub.add_parser("config", help="Show/set ~/.narna config (json or yaml)")
+    cfg_sub = cfg_p.add_subparsers(dest="config_cmd", required=True)
+    cfg_show = cfg_sub.add_parser("show", help="Print masked config")
+    cfg_show.add_argument("--home", default=None, help="Default: ~/.narna")
+    cfg_show.set_defaults(func=cmd_config)
+    cfg_set = cfg_sub.add_parser("set", help="Set provider|apiKey|model|shellBackend|browserEnabled")
+    cfg_set.add_argument("key")
+    cfg_set.add_argument("value")
+    cfg_set.add_argument("--home", default=None)
+    cfg_set.set_defaults(func=cmd_config)
 
     skills_p = sub.add_parser("skills", help="Local skills + Skill Hub (zip / sync)")
     skills_sub = skills_p.add_subparsers(dest="skills_cmd", required=True)

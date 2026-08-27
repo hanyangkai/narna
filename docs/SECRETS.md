@@ -32,20 +32,23 @@ Optional channel bot tokens (only if you run NARNA’s shared Telegram/Discord b
 
 | Env | Purpose |
 |-----|---------|
-| `UAP_SHELL_BACKEND` | `local` (default) · `docker` · `ssh` · `modal` · `daytona` |
+| `UAP_SHELL_BACKEND` | `local` (desktop default) · `docker` (VPS default) · `ssh` · `modal` · `daytona` |
+| `UAP_SHELL_FALLBACK_LOCAL` | `1` — if docker daemon missing, fall back to local (off by default) |
+| `UAP_SHELL_DOCKER` | Operator flag: mount `/var/run/docker.sock` for docker shell (security risk — documented) |
 | `UAP_SHELL_REQUIRE_APPROVAL` | `1` to require `approved=true` on `shell_exec` |
 | `UAP_SHELL_SSH_HOST` / `UAP_SHELL_SSH_USER` | SSH backend |
-| `UAP_MODAL_TOKEN` / `UAP_MODAL_APP` | Modal sandbox exec (opt-in) |
-| `UAP_MODAL_EXEC_URL` | Override Modal exec HTTP endpoint |
-| `UAP_DAYTONA_API_KEY` / `UAP_DAYTONA_WORKSPACE_ID` | Daytona exec (opt-in) |
+| `UAP_MODAL_TOKEN` / `UAP_MODAL_APP` | Modal sandbox exec stub (opt-in BYOK URL) |
+| `UAP_MODAL_EXEC_URL` | Override Modal exec HTTP endpoint — **required for real Modal** |
+| `UAP_DAYTONA_API_KEY` / `UAP_DAYTONA_WORKSPACE_ID` | Daytona exec stub (opt-in) |
 | `UAP_DAYTONA_API_URL` | Default `https://api.daytona.io` |
 | `UAP_OPENAI_API_KEY` | Whisper STT + TTS outbound (BYOK) |
 | `UAP_GATEWAY_VOICE_REPLY` | `1` — reply to Telegram voice memos with TTS voice notes |
-| `UAP_GATEWAY_PAIRING` | `1` — unknown DMs must `/pair CODE` before Ask |
+| `UAP_GATEWAY_PAIRING` | Gateway profile defaults `1`; API process may keep `0` for webhooks |
 | `UAP_SKILL_HUB_INDEX_URL` | Public skill index JSON URL (or local path) for `hub-sync` |
 | `UAP_SKILL_HUB_AUTOPUBLISH` | `1` — publish skill to local hub when Ask DQS≥80 |
 | `UAP_JOB_DELIVER_AUDIO` | `1` — job delivery prefers Telegram `sendVoice` when `audioPath` set |
-| `UAP_BROWSER_ENABLED` | Playwright browser tools |
+| `UAP_BROWSER_ENABLED` | `1` on VPS — Playwright browser tools |
+| `INSTALL_BROWSER` | Docker build arg `1` — install Chromium in API image |
 
 TUI: `pip install 'narna[tui]'` then `narna tui`. Compose gateway: `docker compose --profile gateway up -d`.
 

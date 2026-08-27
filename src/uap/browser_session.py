@@ -149,3 +149,41 @@ def get_browser_session(workspace: Path | str) -> BrowserSession:
             sess = BrowserSession(Path(key))
             _sessions[key] = sess
         return sess
+
+
+def browser_ready() -> dict[str, Any]:
+    """Probe Playwright + Chromium availability without launching a long session."""
+    import os
+
+    enabled = str(os.environ.get("UAP_BROWSER_ENABLED") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    try:
+        from playwright.sync_api import sync_playwright  # type: ignore
+    except Exception as e:
+        return {
+            "ready": False,
+            "enabled": enabled,
+            "engine": None,
+            "error": f"playwright import failed: {e}",
+        }
+    try:
+        with sync_playwright() as p:
+            # executable_path raises if browser not installed
+            path = p.chromium.executable_path
+            return {
+                "ready": True,
+                "enabled": enabled,
+                "engine": "playwright",
+                "chromium": str(path),
+            }
+    except Exception as e:
+        return {
+            "ready": False,
+            "enabled": enabled,
+            "engine": "playwright",
+            "error": str(e)[:300],
+        }

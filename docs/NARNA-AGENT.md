@@ -46,23 +46,25 @@ BYO LLM (all plans, Hermes-style): OpenRouter / OpenAI / Ollama.
 1. **Web / PWA:** https://narna.org/ask  
 2. **Desktop PC:** https://narna.org/download — `narna desktop` or portable Windows zip  
 3. **CLI:** `narna chat` · `narna tui` · `narna gateway run`  
-4. **Channels:** Telegram · Discord · Slack · WhatsApp · Signal · Email  
+4. **Channels:** Telegram · Discord · Slack · WhatsApp (Twilio) · Signal/Email (bridge)  
 
 ### Honest capability matrix
 
 | Capability | Hermes | NARNA now |
 |------------|--------|-----------|
 | Tools | 40–60+ | **44** (web, shell, browser, execute_code, skills, TTS, …) |
-| Terminal | Docker/SSH/Modal/… | local · docker · ssh · modal · daytona (env-gated) |
-| Browser | Playwright | navigate/click/type/wait/screenshot/vision (opt-in Playwright) |
+| Terminal | Docker/SSH/Modal/… | local · docker · ssh · modal/daytona stubs (BYOK URL) |
+| Browser | Playwright | navigate/click/type/wait/screenshot/vision (on VPS with Playwright) |
 | Skills | Hub | Skill Hub + SKILL.md zip + public index sync |
 | Memory | Honcho | FTS5 + MEMORY.md / USER.md |
 | Desktop | Native app | `narna desktop` + portable exe build |
 | Decision quality | — | **ADQA · Trace · Replay · Benchmark** (moat) |
 
+**Channels (honest):** Telegram = gold; Discord/Slack = poll when channel IDs set; WhatsApp = Twilio webhook; Signal = outbound webhook stub; Email = inbound Ask (SMTP mainly via job delivery).
+
 Still intentionally skipped: Nous Portal clone, RL/trajectory, signed .msi/.dmg notarization.
 
-See [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) · [`SECRETS.md`](./SECRETS.md) · [`DESKTOP.md`](./DESKTOP.md).
+See [`PROD-AGENT-PARITY.md`](./PROD-AGENT-PARITY.md) · [`HERMES-COMPARE.md`](./HERMES-COMPARE.md) · [`SECRETS.md`](./SECRETS.md) · [`DESKTOP.md`](./DESKTOP.md).
 
 ---
 

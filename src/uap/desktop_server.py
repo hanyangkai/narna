@@ -26,19 +26,15 @@ def config_path(workspace: Path) -> Path:
 
 
 def load_config(workspace: Path) -> dict[str, Any]:
-    path = config_path(workspace)
-    if not path.exists():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    from .narna_config import load_narna_config
+
+    return load_narna_config(workspace)
 
 
 def save_config(workspace: Path, data: dict[str, Any]) -> None:
-    workspace.mkdir(parents=True, exist_ok=True)
-    path = config_path(workspace)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    from .narna_config import save_narna_config
+
+    save_narna_config(data, workspace)
 
 
 def static_dir() -> Path:
@@ -92,13 +88,28 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
         try:
             from narna import __version__ as app_version
         except Exception:
-            app_version = "0.2.0"
+            app_version = "0.2.1"
+        cfg = load_config(ws)
+        browser_cfg = cfg.get("browserEnabled")
+        if browser_cfg is None:
+            browser_on = str(os.environ.get("UAP_BROWSER_ENABLED") or "").lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+        else:
+            browser_on = bool(browser_cfg)
         return {
             "ok": True,
             "mode": "desktop",
             "version": app_version,
             "workspace": str(ws),
             "frozen": bool(getattr(sys, "frozen", False)),
+            "shellBackend": (
+                os.environ.get("UAP_SHELL_BACKEND") or cfg.get("shellBackend") or "local"
+            ),
+            "browserEnabled": browser_on,
             "skillsIndexDefault": os.environ.get(
                 "UAP_SKILL_HUB_INDEX_URL",
                 "https://raw.githubusercontent.com/hanyangkai/narna/main/skills/public-index.json",

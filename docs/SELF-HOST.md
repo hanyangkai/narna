@@ -328,13 +328,17 @@ Bot polls every ~20s, scans ERC-20 `Transfer` logs, confirms ≥3 blocks, upgrad
 
 ## Agent shell backends (optional)
 
+`UAP_SHELL_BACKEND=local|docker|ssh|modal|daytona`
 
+- **Desktop / local CLI:** default `local`
+- **VPS compose:** default `docker`. Mount Docker socket only when you explicitly opt in (`UAP_SHELL_DOCKER=1` + uncomment volume in `docker-compose.vps.yml`). Without the socket, `shell_exec` returns a clear error unless `UAP_SHELL_FALLBACK_LOCAL=1`.
+- **Modal/Daytona:** stubs — set `UAP_MODAL_EXEC_URL` / Daytona keys for your own BYOK endpoint. Not live Hermes cloud.
 
-`UAP_SHELL_BACKEND=local|docker|ssh|modal|daytona` — default `local`. Modal/Daytona need BYOK tokens (`UAP_MODAL_*`, `UAP_DAYTONA_*`); see [`SECRETS.md`](./SECRETS.md). No company cloud keys.
-
-
+Browser on VPS: build with `INSTALL_BROWSER=1` (compose default) and `UAP_BROWSER_ENABLED=1`. Check `GET /v1/health` → `browser.ready`.
 
 TTS outbound: set `UAP_OPENAI_API_KEY` + optionally `UAP_GATEWAY_VOICE_REPLY=1`.
+
+See [`PROD-AGENT-PARITY.md`](./PROD-AGENT-PARITY.md) · [`SECRETS.md`](./SECRETS.md).
 
 
 

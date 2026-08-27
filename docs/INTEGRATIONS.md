@@ -52,6 +52,32 @@ export NARNA_ADQA=1
 Cursor · Claude Code · Codex · Gemini CLI · OpenClaw can call:
 
 1. CMEM MCP — recall observations  
-2. NARNA MCP tools — `narna_adqa_check` before irreversible actions  
+2. NARNA MCP — decision quality:
 
-Catalog API: `GET /v1/integrations`
+| Tool | Use |
+|------|-----|
+| `narna_adqa_check` | Score proposed action (DQS) |
+| `narna_evaluate_action` | ACT / REVIEW / REJECT |
+| `narna_agent_ask` | Ask + ADQA (BYOK on server/org) |
+| `narna_runtime_status` | version · toolCount · browser · shell |
+| `narna_trace_*` / `narna_replay` | Decision Trace |
+
+**Honest:** MCP is ADQA + ask, **not** the full 44-tool Hermes runtime.
+
+OpenClaw skill: [`plugins/narna-openclaw/SKILL.md`](../plugins/narna-openclaw/SKILL.md)
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "narna": {
+        "url": "https://api.narna.org/mcp",
+        "headers": { "Authorization": "Bearer uap_live_YOUR_KEY" }
+      }
+    }
+  }
+}
+```
+
+Catalog API: `GET /v1/integrations`  
+Prod parity: [`PROD-AGENT-PARITY.md`](./PROD-AGENT-PARITY.md)

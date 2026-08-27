@@ -114,6 +114,15 @@ TOOL_DEFS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "name": "narna_runtime_status",
+        "description": (
+            "Probe NARNA runtime readiness for OpenClaw/Cursor: version, toolCount, "
+            "browser, shell backend. Does NOT expose the full 44-tool Ask loop over MCP — "
+            "use narna_agent_ask / narna_adqa_check for decisions."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 ]
 
 
@@ -138,11 +147,40 @@ class NarnaMcpTools:
             "narna_trace_get": self._trace_get,
             "narna_trace_list": self._trace_list,
             "narna_replay": self._replay,
+            "narna_runtime_status": self._runtime_status,
         }
         fn = handlers.get(name)
         if not fn:
             return {"ok": False, "error": f"unknown tool: {name}"}
         return fn(args)
+
+    def _runtime_status(self, args: dict[str, Any]) -> dict[str, Any]:
+        import os
+
+        from uap.agent_tools import TOOL_SPECS
+
+        try:
+            from narna import __version__ as ver
+        except Exception:
+            ver = "0.2.1"
+        browser: dict[str, Any]
+        try:
+            from uap.browser_session import browser_ready
+
+            browser = browser_ready()
+        except Exception as e:
+            browser = {"ready": False, "error": str(e)[:200]}
+        return {
+            "ok": True,
+            "version": ver,
+            "toolCount": len(TOOL_SPECS),
+            "mcpSurface": "adqa+ask+status",
+            "note": "MCP exposes decision tools, not the full 44-tool Hermes runtime",
+            "shellBackend": (os.environ.get("UAP_SHELL_BACKEND") or "local").strip().lower(),
+            "browser": browser,
+            "workspace": str(self.workspace),
+            "standard": "NGS-0029-mcp",
+        }
 
     def _adqa_check(self, args: dict[str, Any]) -> dict[str, Any]:
         from uap.adqa import ADQAEngine
@@ -188,12 +226,34 @@ class NarnaMcpTools:
         from uap.model_router import ModelRouter
         from uap.narna_agent import NarnaAgent
 
-        out = NarnaAgent(self.workspace, router=ModelRouter()).ask(
-            str(args.get("message") or ""),
-            session_id=args.get("sessionId") or args.get("session_id"),
-            challenge=bool(args.get("challenge")),
-        )
-        return {"ok": True, **out}
+        message = str(args.get("message") or "").strip()
+        if not message:
+            return {"ok": False, "error": "message required"}
+        try:
+            out = NarnaAgent(self.workspace, router=ModelRouter()).ask(
+                message,
+                session_id=args.get("sessionId") or args.get("session_id"),
+                challenge=bool(args.get("challenge")),
+            )
+        except Exception as e:
+            return {
+                "ok": False,
+                "error": str(e)[:500],
+                "hint": "BYOK: set UAP_OPENROUTER_API_KEY / UAP_OPENAI_API_KEY or pass org API key",
+            }
+        if not isinstance(out, dict):
+            return {"ok": True, "answer": str(out)}
+        # Mock path still returns ADQA — surface clearly when no live model
+        mockish = str(out.get("provider") or out.get("model") or "").lower() in {
+            "mock",
+            "",
+        } and not out.get("answer")
+        if out.get("error"):
+            return {"ok": False, **out}
+        result = {"ok": True, **out}
+        if mockish or out.get("mock"):
+            result["hint"] = "Running mock/BYOK-missing path — paste an LLM key for live answers"
+        return result
 
     def _evaluate_action(self, args: dict[str, Any]) -> dict[str, Any]:
         from narna.evaluate import evaluate
