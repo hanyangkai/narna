@@ -25,7 +25,7 @@
 | Landing + Download + Pricing | ✅ | GTM pass 2026-08-28 |
 | OpenClaw integration docs | ✅ | `plugins/narna-openclaw/SKILL.md` + `/docs/integrations` |
 | Crypto billing (USDC/USDT) | 🟡 | Live bot on VPS · needs first paid E2E |
-| PyPI **0.2.x** published | 🟡 | tag `v0.2.2` + CI `publish-pypi.yml` |
+| PyPI **0.2.x** published | ✅ | `narna==0.2.3` on PyPI (CI `publish-pypi.yml`) |
 | `@narna/client` npm | ❌ |
 | **≥1 paying customer** | ❌ | north-star KPI |
 | Ship log / outbound rhythm | 🟡 | [`ship-log/2026-08-28.md`](./ship-log/2026-08-28.md) |
