@@ -469,7 +469,7 @@ def health() -> dict[str, Any]:
     return {
         "status": status,
         "service": "narna-cloud",
-        "version": "0.2.2",
+        "version": "0.2.3",
         "api": "https://api.narna.org",
         "mcp": "https://api.narna.org/mcp",
         "checks": checks,
