@@ -97,6 +97,7 @@ from .schemas import (
     BillingCryptoCheckoutRequest,
     BillingCryptoCheckoutResponse,
     BillingCryptoNetworkResponse,
+    BillingCryptoConfigResponse,
     BillingInvoiceResponse,
     BillingMockSetPlanRequest,
     BillingStatusResponse,
@@ -1139,6 +1140,14 @@ def crypto_checkout_session(
 @app.get("/v1/billing/crypto/networks", response_model=list[BillingCryptoNetworkResponse])
 def crypto_networks() -> list[BillingCryptoNetworkResponse]:
     return [BillingCryptoNetworkResponse(**n) for n in list_supported_networks()]
+
+
+@app.get("/v1/billing/crypto/config", response_model=BillingCryptoConfigResponse)
+def crypto_config() -> BillingCryptoConfigResponse:
+    return BillingCryptoConfigResponse(
+        receiverWallet=get_crypto_receiver_wallet(),
+        cryptoMode=get_crypto_mode(),
+    )
 
 
 @app.get("/v1/billing/crypto/invoices", response_model=list[BillingInvoiceResponse])

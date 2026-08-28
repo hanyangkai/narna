@@ -69,6 +69,13 @@ export type BillingCryptoNetwork = {
   rpcConfigured: boolean;
 };
 
+export type BillingCryptoConfig = {
+  receiverWallet: string;
+  cryptoMode: string;
+  assets: string[];
+  note?: string;
+};
+
 export type BillingCryptoCheckoutResponse = {
   ok: boolean;
   url: string;
@@ -202,6 +209,12 @@ export async function fetchBillingStatus(apiKey: string): Promise<BillingStatus>
 
 export async function fetchCryptoNetworks(): Promise<BillingCryptoNetwork[]> {
   const res = await fetch(`${API_BASE}/v1/billing/crypto/networks`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchCryptoConfig(): Promise<BillingCryptoConfig> {
+  const res = await fetch(`${API_BASE}/v1/billing/crypto/config`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

@@ -218,6 +218,16 @@ class BillingCryptoNetworkResponse(BaseModel):
     rpcConfigured: bool
 
 
+class BillingCryptoConfigResponse(BaseModel):
+    receiverWallet: str
+    cryptoMode: str
+    assets: list[str] = Field(default_factory=lambda: ["usdc", "usdt"])
+    note: str = (
+        "EVM address — same on Ethereum, Base, Polygon, Arbitrum, BSC. "
+        "Customers send USDC/USDT here for NARNA Cloud plans."
+    )
+
+
 class RegistryPublishRequest(BaseModel):
     agentId: str
     name: str

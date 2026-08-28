@@ -29,7 +29,7 @@
 | `@narna/client` npm | ❌ |
 | **≥1 paying customer** | ❌ | north-star KPI |
 | Ship log / outbound rhythm | 🟡 | [`ship-log/2026-08-28.md`](./ship-log/2026-08-28.md) |
-| Telegram gateway demo | ❌ | needs `UAP_TELEGRAM_BOT_TOKEN` on VPS |
+| Telegram gateway demo | 🟡 | Bot live on VPS — DM bot to verify |
 | Second UGS implementer | ❌ |
 
 ## Quick verify

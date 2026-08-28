@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import PaymentQr from "../components/PaymentQr";
+import PageHero from "../components/PageHero";
 import {
   DEFAULT_DEV_KEY,
   PLAN_PRICES,
@@ -7,12 +8,15 @@ import {
   fetchBillingStatus,
   fetchCryptoInvoices,
   fetchCryptoNetworks,
+  fetchCryptoConfig,
   setBillingPlanMock,
   type BillingCryptoCheckoutResponse,
+  type BillingCryptoConfig,
   type BillingCryptoNetwork,
   type BillingInvoice,
   type BillingStatus,
 } from "../api";
+import { getApiKey, setApiKey } from "../lib/storage";
 
 const payablePlans = ["cloud", "team", "business"] as const;
 
@@ -30,9 +34,10 @@ function teamPriceLabel(seats: number): string {
 }
 
 export default function Billing() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey, setApiKeyState] = useState(() => getApiKey(DEFAULT_DEV_KEY));
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [networks, setNetworks] = useState<BillingCryptoNetwork[]>([]);
+  const [cryptoConfig, setCryptoConfig] = useState<BillingCryptoConfig | null>(null);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [lastCheckout, setLastCheckout] = useState<BillingCryptoCheckoutResponse | null>(null);
   const [countdown, setCountdown] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export default function Billing() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    localStorage.setItem("uap_api_key", apiKey);
+    setApiKey(apiKey);
     try {
       const [s, inv] = await Promise.all([
         fetchBillingStatus(apiKey),
@@ -62,6 +67,7 @@ export default function Billing() {
   };
 
   useEffect(() => {
+    fetchCryptoConfig().then(setCryptoConfig).catch(() => undefined);
     fetchCryptoNetworks()
       .then((rows) => {
         setNetworks(rows);
@@ -156,24 +162,45 @@ export default function Billing() {
   return (
     <div className="layout-wide">
       <section>
-        <header className="page-header" style={{ paddingTop: "1rem" }}>
-          <p className="pill-label">Billing</p>
-          <h1>Subscribe with USDC / USDT</h1>
+        <PageHero label="Billing" title="Subscribe with USDC / USDT">
           <p>
             NARNA Cloud accepts stablecoins only — USDC or USDT on Ethereum, Polygon, Base, Arbitrum, or
-            BSC. On-chain bot confirms the exact amount and upgrades your plan for 30 days. No Stripe / card.
+            BSC. On-chain bot confirms the exact amount and upgrades your plan for 30 days. No card.
           </p>
-          <ol style={{ color: "var(--muted)", marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem" }}>
-            <li>Pick plan, chain, and USDC or USDT.</li>
+          <ol style={{ marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem" }}>
+            <li>Pick Pro or Team, chain, and USDC or USDT.</li>
             <li>Send the <strong>exact</strong> amount to the wallet shown (QR included).</li>
             <li>Bot watches the chain — plan upgrades automatically within a few minutes.</li>
           </ol>
-        </header>
+        </PageHero>
+
+        {cryptoConfig && (
+          <div className="card" style={{ marginBottom: "1rem" }}>
+            <p>
+              <strong>NARNA treasury wallet</strong> — khách gửi USDC/USDT subscription vào đây (
+              {cryptoConfig.cryptoMode} · cùng địa chỉ trên 5 chain EVM):
+            </p>
+            <p className="mono" style={{ wordBreak: "break-all", marginTop: "0.5rem" }}>
+              {cryptoConfig.receiverWallet}
+            </p>
+            <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginTop: "0.5rem" }}>
+              {cryptoConfig.note}
+              {" "}
+              <a
+                href={`https://basescan.org/address/${cryptoConfig.receiverWallet}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View on BaseScan →
+              </a>
+            </p>
+          </div>
+        )}
 
         <div className="console-bar">
           <label>
             API Key
-            <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} className="mono" />
+            <input value={apiKey} onChange={(e) => setApiKeyState(e.target.value)} className="mono" />
           </label>
           <button type="button" className="btn btn-primary" onClick={load} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
@@ -241,7 +268,7 @@ export default function Billing() {
         <div className="pricing-grid">
           {payablePlans.map((p) => (
             <div key={p} className={`card ${status?.plan === p ? "featured" : ""}`}>
-              <h3 style={{ textTransform: "capitalize" }}>{p === "cloud" ? "Personal" : p}</h3>
+              <h3>{p === "cloud" ? "Pro" : p}</h3>
               <p className="price">
                 {p === "team" ? teamPriceLabel(seats) : PLAN_PRICES[p]}
                 <span style={{ fontSize: "1rem" }}>/mo</span>
