@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,7 +19,24 @@ jobs:
           python-version: "3.12"
       - name: Build
         run: pip install build && python -m build
-      - name: Publish
+      - name: Prepare PyPI credentials
+        id: pypi_token
+        env:
+          RAW_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          TOKEN=$(python -c "import os; print(os.environ.get('RAW_TOKEN', '').lstrip('\ufeff').strip())")
+          if [ -n "$TOKEN" ]; then
+            echo "::add-mask::$TOKEN"
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+            echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish (Trusted Publisher)
+        if: steps.pypi_token.outputs.has_token != 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish (API token)
+        if: steps.pypi_token.outputs.has_token == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ steps.pypi_token.outputs.token }}

@@ -63,14 +63,18 @@ python examples/e2e_otel.py
 
 ## Publish (maintainers)
 
-1. Create PyPI API token at https://pypi.org/manage/account/#api-tokens (`pypi-…`)
-2. GitHub → Settings → Secrets → `PYPI_API_TOKEN`
-3. Tag and push:
+**Option A — Trusted Publisher (recommended):** PyPI → Project `narna` → Publishing → add GitHub Actions publisher for `hanyangkai/narna` / `publish-pypi.yml`. No token secret needed.
+
+**Option B — API token:** Create token at https://pypi.org/manage/account/#api-tokens (`pypi-…`, no BOM/whitespace). GitHub → Settings → Secrets → `PYPI_API_TOKEN`.
+
+Tag and push:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.3
+git push origin v0.2.3
 ```
+
+Or re-run manually: `gh workflow run publish-pypi.yml`
 
 Workflow: `.github/workflows/publish-pypi.yml`
 
