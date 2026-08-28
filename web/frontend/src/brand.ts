@@ -234,6 +234,12 @@ export const PRICING = {
     },
   ],
   enterpriseNote: "Enterprise — private deployment · SSO · audit · SLA — custom.",
+  whyUpgrade: [
+    "Free: local MEMORY.md + basic ADQA — great for trying Ask and Desktop.",
+    "Pro ($19/mo): cloud Decision Memory, full ADQA API, Decision Replay, higher limits.",
+    "Pay with USDC/USDT on 5 chains — no card required.",
+    "Hermes/OpenClaw for work; NARNA scores whether the decision was good enough to act.",
+  ],
   revenueStreams: [
     "Pro ($19/mo)",
     "Team seats",

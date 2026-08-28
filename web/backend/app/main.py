@@ -469,7 +469,7 @@ def health() -> dict[str, Any]:
     return {
         "status": status,
         "service": "narna-cloud",
-        "version": "0.2.1",
+        "version": "0.2.2",
         "api": "https://api.narna.org",
         "mcp": "https://api.narna.org/mcp",
         "checks": checks,
@@ -1943,10 +1943,11 @@ def agent_ask(
         }
 
     ws = tenant_workspace(resolved.id)
+    router = _router_for_org(resolved, override=override)
     agent = NarnaAgent(
         workspace=ws,
         tenant_id=tenant_id_for_org(resolved.id),
-        router=_router_for_org(resolved, override=override),
+        router=router,
     )
     try:
         out = agent.ask(
@@ -1969,6 +1970,8 @@ def agent_ask(
     out["agentTurnsHardCap"] = plan_agent_turns_hard_cap(resolved.plan)
     if warn:
         out["quota"] = warn
+    if getattr(router, "provider", None) == "mock":
+        out["mockMode"] = True
     # Hide model ids for free UX unless power header set
     if request.headers.get("x-narna-show-models", "").lower() not in {"1", "true", "yes"}:
         if normalize_plan(resolved.plan) == "free":
@@ -2591,6 +2594,8 @@ def agent_ask_stream(
         out["agentTurnsHardCap"] = plan_agent_turns_hard_cap(resolved.plan)
         if warn:
             out["quota"] = warn
+        if getattr(agent.router, "provider", None) == "mock":
+            out["mockMode"] = True
         if request.headers.get("x-narna-show-models", "").lower() not in {"1", "true", "yes"}:
             if normalize_plan(resolved.plan) == "free":
                 out["modelsUsed"] = []

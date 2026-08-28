@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2] — 2026-08-28
+
+### GTM
+- Ask: BYOK banner, `mockMode` in API when no LLM key, removed silent mock dropdown
+- Landing: Hermes/OpenClaw positioning, OpenClaw MCP snippet, Desktop CTA
+- Pricing: “Why upgrade” section
+- Docs: OpenClaw 2-min MCP setup
+- PyPI publish workflow: `workflow_dispatch` + version align
+
 ## [0.2.1] — 2026-08-27
 
 ### Prod agent parity (Hermes + OpenClaw)

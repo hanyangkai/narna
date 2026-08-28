@@ -38,6 +38,15 @@ export default function Pricing() {
       <p style={{ color: "var(--muted)" }}>{PRICING.enterpriseNote}</p>
 
       <section className="section">
+        <h2>Why upgrade?</h2>
+        <ul className="land-price-features" style={{ maxWidth: "42rem" }}>
+          {PRICING.whyUpgrade.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="section">
         <h2>Same shape as modern infra</h2>
         <p className="section-desc">
           Free engine on your machine. Paid cloud so every agent and console shares Decision Memory and

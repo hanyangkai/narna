@@ -358,6 +358,9 @@ export default function Landing() {
               <Link className="btn btn-primary" to="/ask">
                 Try NARNA Free
               </Link>
+              <Link className="btn btn-secondary" to="/download">
+                Download Desktop
+              </Link>
               <a
                 className="btn land-btn-ghost"
                 href={BRAND.github}
@@ -367,7 +370,9 @@ export default function Landing() {
                 GitHub →
               </a>
             </div>
-            <p className="land-hero-meta">Works with the AI models you already use.</p>
+            <p className="land-hero-meta">
+              Hermes / OpenClaw for work — NARNA scores whether the decision was good.
+            </p>
             <p className="land-model-row">
               GPT · Claude · Gemini · DeepSeek · Qwen · Local Models
             </p>
@@ -603,12 +608,24 @@ export default function Landing() {
               <pre className="code-block">{SPEC.install}</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block">Connect via MCP</pre>
+              <pre className="code-block">{`// OpenClaw ~/.openclaw/openclaw.json
+"mcp": { "servers": { "narna": {
+  "url": "https://api.narna.org/mcp",
+  "headers": { "Authorization": "Bearer uap_live_…" }
+}}}}`}</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block">NARNA API · /v1/adqa/evaluate</pre>
+              <pre className="code-block">narna evaluate · narna_agent_ask (MCP)</pre>
             </RevealItem>
           </RevealStagger>
+          <Reveal delay={0.12}>
+            <p className="land-desc" style={{ marginTop: "1rem" }}>
+              OpenClaw skill:{" "}
+              <a href={`${BRAND.github}/blob/main/plugins/narna-openclaw/SKILL.md`} target="_blank" rel="noreferrer">
+                plugins/narna-openclaw
+              </a>
+            </p>
+          </Reveal>
           <Reveal delay={0.15}>
             <div className="land-cta">
               <Link className="btn btn-secondary" to="/docs">

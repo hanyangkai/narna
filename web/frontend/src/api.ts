@@ -272,6 +272,7 @@ export type AgentAskResponse = {
   toolsUsed?: Array<{ tool: string; args?: Record<string, unknown>; result?: unknown }>;
   skillSaved?: { skillId?: string; name?: string } | null;
   challenge?: string | null;
+  mockMode?: boolean;
 };
 
 function deviceId(): string {

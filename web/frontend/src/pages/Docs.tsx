@@ -53,7 +53,7 @@ print(ADAPTER_CATALOG)`,
   },
   integrations: {
     title: "Integrations + CMEM",
-    lead: "CMEM remembers. NARNA scores decisions. Same MCP world.",
+    lead: "CMEM remembers. NARNA scores decisions. OpenClaw / Cursor via MCP.",
     sections: [
       {
         body: "Set NARNA_CMEM_URL to your private CMEM link. DecisionEngine and ADQA auto-enrich memory feedstock. Optional NARNA_ADQA=1 gates every adapter call.",
@@ -61,6 +61,22 @@ print(ADAPTER_CATALOG)`,
 export NARNA_ADQA=1
 narna cmem status
 narna integrations`,
+      },
+      {
+        heading: "OpenClaw (2 min)",
+        body: "Add NARNA MCP to OpenClaw — evaluate before irreversible actions, or Ask NARNA with DQS. Full skill: plugins/narna-openclaw/SKILL.md",
+        code: `{
+  "mcp": {
+    "servers": {
+      "narna": {
+        "url": "https://api.narna.org/mcp",
+        "headers": { "Authorization": "Bearer uap_live_YOUR_KEY" }
+      }
+    }
+  }
+}
+
+# Tools: narna_adqa_check · narna_agent_ask · narna_runtime_status`,
       },
       {
         heading: "MCP tools",

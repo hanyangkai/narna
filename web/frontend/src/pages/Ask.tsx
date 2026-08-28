@@ -37,7 +37,7 @@ export default function Ask() {
   const [installHint, setInstallHint] = useState(false);
   const [skills, setSkills] = useState<Array<{ skillId: string; name: string }>>([]);
   const [showSkills, setShowSkills] = useState(false);
-  const [showLlm, setShowLlm] = useState(false);
+  const [showLlm, setShowLlm] = useState(() => !localStorage.getItem("narna_llm_key"));
   const [llmProvider, setLlmProvider] = useState(
     () => localStorage.getItem("narna_llm_provider") || "openrouter"
   );
@@ -252,6 +252,9 @@ export default function Ask() {
       return;
     }
     setError(null);
+    if (!llmApiKey) {
+      setShowLlm(true);
+    }
     setInput("");
     setItems((prev) => [...prev, { role: "user", text: message }]);
     setLoading(true);
@@ -349,6 +352,18 @@ export default function Ask() {
               /new
             </button>
           </div>
+          {!llmApiKey && (
+            <div className="ask-byok-banner" role="status">
+              <strong>Bring your own LLM key</strong> — without a key, answers run in{" "}
+              <em>mock mode</em> (ADQA still scores). Paste OpenRouter / OpenAI / Ollama below.
+              <button type="button" className="btn btn-secondary ask-byok-btn" onClick={() => setShowLlm(true)}>
+                Add key
+              </button>
+              <Link to="/download" className="ask-byok-link">
+                Or use Desktop →
+              </Link>
+            </div>
+          )}
           {showLlm && (
             <div className="ask-llm-box">
               <p className="ask-mobile-tip">
@@ -361,7 +376,6 @@ export default function Ask() {
                   <option value="openrouter">OpenRouter</option>
                   <option value="openai">OpenAI</option>
                   <option value="ollama">Ollama</option>
-                  <option value="mock">Mock (no key)</option>
                 </select>
               </label>
               <label>
@@ -409,6 +423,11 @@ export default function Ask() {
               <div className="ask-bubble-body">{item.text}</div>
               {item.meta && (
                 <div className="ask-meta">
+                  {item.meta.mockMode && (
+                    <span className="ask-mock-badge">
+                      Mock answer — add your LLM key for live models
+                    </span>
+                  )}
                   <span className="ask-dqs">
                     Verified by ADQA · DQS {item.meta.dqs ?? "—"} · {item.meta.guardian}
                     {item.meta.verdict ? ` · ${item.meta.verdict}` : ""}

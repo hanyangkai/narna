@@ -163,6 +163,11 @@ export default function Billing() {
             NARNA Cloud accepts stablecoins only — USDC or USDT on Ethereum, Polygon, Base, Arbitrum, or
             BSC. On-chain bot confirms the exact amount and upgrades your plan for 30 days. No Stripe / card.
           </p>
+          <ol style={{ color: "var(--muted)", marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem" }}>
+            <li>Pick plan, chain, and USDC or USDT.</li>
+            <li>Send the <strong>exact</strong> amount to the wallet shown (QR included).</li>
+            <li>Bot watches the chain — plan upgrades automatically within a few minutes.</li>
+          </ol>
         </header>
 
         <div className="console-bar">
