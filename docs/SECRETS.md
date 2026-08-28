@@ -17,6 +17,8 @@ NARNA does **not** require a company OpenRouter key. Users bring their own LLM k
 | `VPS_SSH_KEY` | Private key (`hetzner_963x_nopass`) |
 | `VPS_SSH_USER` | `root` (optional) |
 
+**P0 checklist:** [`docs/P0-NEEDS.md`](./P0-NEEDS.md) — Telegram token + crypto wallet confirm.
+
 Optional channel bot tokens (only if you run NARNA’s shared Telegram/Discord bots for users who chat there without the web UI):
 
 | Secret | Purpose |
