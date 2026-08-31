@@ -70,6 +70,31 @@ def deliver_job_result(
             return {"ok": True, "delivered": True, "channel": ch, "to": target}
         if ch == "email":
             return _send_email(target, text, job_id=job_id)
+        if ch == "whatsapp":
+            from .whatsapp_gateway import send_whatsapp_message
+
+            send_whatsapp_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "x":
+            from .x_gateway import deliver_x_reply
+
+            deliver_x_reply(to=target, text=text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch in {"facebook", "fb", "messenger"}:
+            from .facebook_gateway import send_facebook_message
+
+            send_facebook_message(target, text)
+            return {"ok": True, "delivered": True, "channel": "facebook", "to": target}
+        if ch == "youtube":
+            from .youtube_gateway import reply_youtube_comment
+
+            reply_youtube_comment(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "instagram":
+            from .instagram_gateway import send_instagram_message
+
+            send_instagram_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
         return {"ok": False, "delivered": False, "error": f"unsupported channel: {ch}"}
     except Exception as e:
         return {"ok": False, "delivered": False, "error": str(e), "channel": ch, "to": target}

@@ -23,6 +23,8 @@ HOT_STACKS = [
     {"id": "openai", "name": "OpenAI / Agents SDK", "layer": "LLM / agents"},
     {"id": "anthropic", "name": "Anthropic / Claude", "layer": "LLM / agents"},
     {"id": "google", "name": "Google Gemini / ADK", "layer": "LLM / agents"},
+    {"id": "hermes", "name": "Hermes Agent", "layer": "agent runtime"},
+    {"id": "openclaw", "name": "OpenClaw", "layer": "gateway + channels"},
     {"id": "langgraph", "name": "LangGraph", "layer": "orchestration"},
     {"id": "crewai", "name": "CrewAI", "layer": "multi-agent"},
     {"id": "autogen", "name": "AutoGen / AG2", "layer": "multi-agent"},
@@ -46,6 +48,9 @@ def integration_manifest() -> dict[str, Any]:
         "adapters": ADAPTER_CATALOG,
         "memoryPartners": MEMORY_PARTNERS,
         "hotStacks": HOT_STACKS,
+        "socialChannels": __import__(
+            "uap.channels.registry", fromlist=["channels_status"]
+        ).channels_status(),
         "mcpTools": [
             "narna_adqa_check",
             "narna_dmemory_query",

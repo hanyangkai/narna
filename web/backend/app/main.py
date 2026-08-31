@@ -2166,6 +2166,14 @@ def _org_for_device_key(db: Session, device_key: str) -> Organization:
     return row
 
 
+@app.get("/v1/agent/gateway/channels")
+def agent_gateway_channels() -> dict[str, Any]:
+    """Social channel registry — env keys and webhook paths."""
+    from uap.channels.registry import channels_status
+
+    return {"ok": True, **channels_status()}
+
+
 @app.get("/v1/agent/gateway/status")
 def agent_gateway_status() -> dict[str, Any]:
     """Gateway health + pairing posture (no side effects)."""
@@ -2542,6 +2550,221 @@ async def agent_email_webhook(
         "decisionId": out.get("decisionId"),
         "reply": format_agent_reply(out, subject=subject or ""),
     }
+
+
+@app.get("/v1/agent/x/webhook")
+@app.post("/v1/agent/x/webhook")
+async def agent_x_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+    crc_token: str | None = None,
+) -> Any:
+    """X Account Activity API — CRC (GET) and DM/mention events (POST)."""
+    from uap.x_gateway import (
+        deliver_x_reply,
+        extract_x_event,
+        format_agent_reply,
+        verify_crc,
+        x_enabled,
+    )
+    from .social_webhooks import handle_social_ask
+
+    if request.method == "GET" and crc_token:
+        if not x_enabled():
+            raise HTTPException(status_code=503, detail="X not configured")
+        return {"response_token": verify_crc(crc_token)}
+
+    if not x_enabled():
+        raise HTTPException(status_code=503, detail="X not configured")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    external_id, text, tweet_id = extract_x_event(payload if isinstance(payload, dict) else {})
+    if not external_id or not text:
+        return {"ok": True, "ignored": True}
+
+    def _send(to: str, reply: str) -> None:
+        deliver_x_reply(to=to, text=reply, tweet_id=tweet_id)
+
+    return await handle_social_ask(
+        db=db,
+        channel="x",
+        external_id=external_id,
+        text=text,
+        send_fn=_send,
+        format_fn=format_agent_reply,
+        org_for_device_key=_org_for_device_key,
+        enforce_plan_limit=enforce_plan_limit,
+        tenant_workspace=tenant_workspace,
+        tenant_id_for_org=tenant_id_for_org,
+        router_for_org=_router_for_org,
+        bump_agent_turns=bump_agent_turns,
+    )
+
+
+@app.get("/v1/agent/facebook/webhook")
+@app.post("/v1/agent/facebook/webhook")
+async def agent_facebook_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Any:
+    """Facebook Messenger — webhook verify (GET) and messages (POST)."""
+    from uap.facebook_gateway import (
+        extract_facebook_message,
+        format_agent_reply,
+        facebook_enabled,
+        send_facebook_message,
+        verify_webhook,
+    )
+    from .social_webhooks import handle_social_ask
+
+    if request.method == "GET":
+        params = dict(request.query_params)
+        challenge = verify_webhook(
+            params.get("hub.mode"),
+            params.get("hub.verify_token"),
+            params.get("hub.challenge"),
+        )
+        if challenge is None:
+            raise HTTPException(status_code=403, detail="invalid verify token")
+        return int(challenge) if challenge.isdigit() else challenge
+
+    if not facebook_enabled():
+        raise HTTPException(status_code=503, detail="Facebook not configured")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    psid, text = extract_facebook_message(payload if isinstance(payload, dict) else {})
+    if not psid or not text:
+        return {"ok": True, "ignored": True}
+
+    return await handle_social_ask(
+        db=db,
+        channel="facebook",
+        external_id=psid,
+        text=text,
+        send_fn=lambda to, reply: send_facebook_message(to, reply),
+        format_fn=format_agent_reply,
+        org_for_device_key=_org_for_device_key,
+        enforce_plan_limit=enforce_plan_limit,
+        tenant_workspace=tenant_workspace,
+        tenant_id_for_org=tenant_id_for_org,
+        router_for_org=_router_for_org,
+        bump_agent_turns=bump_agent_turns,
+    )
+
+
+@app.get("/v1/agent/instagram/webhook")
+@app.post("/v1/agent/instagram/webhook")
+async def agent_instagram_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Any:
+    """Instagram Messaging — same Meta verify flow as Facebook."""
+    from uap.facebook_gateway import verify_webhook
+    from uap.instagram_gateway import (
+        extract_instagram_message,
+        format_agent_reply,
+        instagram_enabled,
+        send_instagram_message,
+    )
+    from .social_webhooks import handle_social_ask
+
+    if request.method == "GET":
+        params = dict(request.query_params)
+        challenge = verify_webhook(
+            params.get("hub.mode"),
+            params.get("hub.verify_token"),
+            params.get("hub.challenge"),
+        )
+        if challenge is None:
+            raise HTTPException(status_code=403, detail="invalid verify token")
+        return int(challenge) if challenge.isdigit() else challenge
+
+    if not instagram_enabled():
+        raise HTTPException(status_code=503, detail="Instagram not configured")
+
+    try:
+        payload = await request.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="invalid JSON") from e
+
+    igid, text = extract_instagram_message(payload if isinstance(payload, dict) else {})
+    if not igid or not text:
+        return {"ok": True, "ignored": True}
+
+    return await handle_social_ask(
+        db=db,
+        channel="instagram",
+        external_id=igid,
+        text=text,
+        send_fn=lambda to, reply: send_instagram_message(to, reply),
+        format_fn=format_agent_reply,
+        org_for_device_key=_org_for_device_key,
+        enforce_plan_limit=enforce_plan_limit,
+        tenant_workspace=tenant_workspace,
+        tenant_id_for_org=tenant_id_for_org,
+        router_for_org=_router_for_org,
+        bump_agent_turns=bump_agent_turns,
+    )
+
+
+@app.post("/v1/agent/youtube/webhook")
+async def agent_youtube_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """YouTube comment relay webhook (PubSubHubbub bridge or manual JSON)."""
+    from uap.youtube_gateway import (
+        extract_youtube_webhook,
+        format_agent_reply,
+        reply_youtube_comment,
+        youtube_enabled,
+    )
+    from .social_webhooks import handle_social_ask
+
+    if not youtube_enabled():
+        raise HTTPException(status_code=503, detail="YouTube not configured")
+
+    ctype = (request.headers.get("content-type") or "").lower()
+    if "application/json" in ctype:
+        payload = await request.json()
+    else:
+        payload = {"text": (await request.body()).decode("utf-8", errors="ignore")}
+
+    author, text, thread_id = extract_youtube_webhook(
+        payload if isinstance(payload, dict) else {}
+    )
+    if not author or not text:
+        return {"ok": True, "ignored": True}
+
+    reply_target = thread_id or author
+
+    def _send(_to: str, reply: str) -> None:
+        if thread_id:
+            reply_youtube_comment(thread_id, reply)
+
+    return await handle_social_ask(
+        db=db,
+        channel="youtube",
+        external_id=author,
+        text=text,
+        send_fn=_send,
+        format_fn=format_agent_reply,
+        org_for_device_key=_org_for_device_key,
+        enforce_plan_limit=enforce_plan_limit,
+        tenant_workspace=tenant_workspace,
+        tenant_id_for_org=tenant_id_for_org,
+        router_for_org=_router_for_org,
+        bump_agent_turns=bump_agent_turns,
+        use_pairing=False,
+    )
 
 
 @app.get("/v1/agent/tools")

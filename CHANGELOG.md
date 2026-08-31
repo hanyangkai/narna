@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.4] — 2026-08-31
+
+### Agent + social gateway
+- README repositioned: **AI Agent first**, ADQA as unique moat (separate from 99X — `docs/ABOUT.md`)
+- **12-channel registry**: Telegram, WhatsApp, Discord, Slack, X, Facebook, YouTube, Instagram (+ TikTok/LinkedIn planned)
+- New gateways: `x_gateway`, `facebook_gateway`, `youtube_gateway`, `instagram_gateway`
+- Cloud webhooks: `/v1/agent/x|facebook|instagram|youtube/webhook`
+- `narna gateway channels` CLI · YouTube comment poll in `gateway run`
+- Docs: `SOCIAL-CHANNELS.md`, `PARITY-ROADMAP.md` · tests: `test_social_channels.py`
+
 ## [0.2.3] — 2026-08-28
 
 ### Fix

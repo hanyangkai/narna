@@ -4,13 +4,27 @@ build-backend = "hatchling.build"
 
 [project]
 name = "narna"
-version = "0.2.3"
-description = "NARNA — Governance Infrastructure for Agentic AI (UGS reference runtime)"
+version = "0.2.4"
+description = "NARNA — Open-source AI Agent with ADQA decision quality. Social gateway for Telegram, WhatsApp, X, Discord, and more."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "NARNA Contributors" }]
-keywords = ["ai-agents", "agentic-ai", "governance", "runtime", "trust", "uap", "ugs", "narna"]
+keywords = [
+  "ai-agent",
+  "ai-agents",
+  "agentic-ai",
+  "telegram-bot",
+  "whatsapp-bot",
+  "mcp",
+  "openclaw",
+  "decision-intelligence",
+  "governance",
+  "trust",
+  "uap",
+  "ugs",
+  "narna",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",

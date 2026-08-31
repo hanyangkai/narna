@@ -63,6 +63,7 @@ class UnifiedGateway:
         self._slack_last: dict[str, str] = {}
         self._discord_seen: set[str] = set()
         self._slack_seen: set[str] = set()
+        self._youtube_seen: set[str] = set()
         self._running = False
         self.stats: dict[str, int] = {
             "polled": 0,
@@ -73,37 +74,24 @@ class UnifiedGateway:
         }
 
     def status(self) -> dict[str, Any]:
+        from .channels.registry import channels_status
         from .gateway_pairing import pairing_enabled
 
-        tg = bool(self.config.telegram_token)
-        disc = bool(self.config.discord_token and self.config.discord_channels)
-        slack = bool(self.config.slack_token and self.config.slack_channels)
-        wa = bool(
-            (os.environ.get("UAP_TWILIO_ACCOUNT_SID") or "").strip()
-            and (os.environ.get("UAP_TWILIO_AUTH_TOKEN") or "").strip()
-        )
-        signal_url = (os.environ.get("UAP_SIGNAL_WEBHOOK_URL") or "").strip()
+        reg = channels_status()
         return {
             "running": self._running,
-            "telegramConfigured": tg,
-            "discordConfigured": disc,
-            "slackConfigured": slack,
+            "telegramConfigured": bool(self.config.telegram_token),
+            "discordConfigured": bool(
+                self.config.discord_token and self.config.discord_channels
+            ),
+            "slackConfigured": bool(
+                self.config.slack_token and self.config.slack_channels
+            ),
             "pollSeconds": self.config.poll_seconds,
             "pairingEnabled": pairing_enabled(),
             "workspace": str(self.workspace),
             "stats": dict(self.stats),
-            "channels": {
-                "telegram": {"configured": tg, "mode": "poll" if tg else "off"},
-                "discord": {"configured": disc, "mode": "poll" if disc else "off"},
-                "slack": {"configured": slack, "mode": "poll" if slack else "off"},
-                "whatsapp": {"configured": wa, "mode": "webhook" if wa else "off"},
-                "signal": {
-                    "configured": bool(signal_url),
-                    "mode": "stub" if signal_url else "off",
-                },
-                "email": {"configured": True, "mode": "webhook"},
-            },
-            "standard": "NGS-0029-gateway",
+            **reg,
         }
 
     def handle_inbound(
@@ -362,6 +350,57 @@ class UnifiedGateway:
                 n += 1
         return n
 
+    def _poll_youtube(self) -> int:
+        from .youtube_gateway import (
+            format_agent_reply,
+            list_recent_comments,
+            list_uploads,
+            poll_channel_ids,
+            reply_youtube_comment,
+            youtube_enabled,
+        )
+
+        if not youtube_enabled():
+            return 0
+        channel_ids = poll_channel_ids()
+        if not channel_ids:
+            return 0
+        n = 0
+        bot_channel = os.environ.get("UAP_YOUTUBE_BOT_CHANNEL_ID", "").strip()
+        for channel_id in channel_ids:
+            video_ids = list_uploads(channel_id, max_results=2)
+            for video_id in video_ids:
+                threads, _ = list_recent_comments(video_id)
+                for thread in threads:
+                    tid = str(thread.get("id") or "")
+                    if not tid or tid in self._youtube_seen:
+                        continue
+                    snippet = ((thread.get("snippet") or {}).get("topLevelComment") or {}).get(
+                        "snippet"
+                    ) or {}
+                    author = str((snippet.get("authorChannelId") or {}).get("value") or "")
+                    text = str(snippet.get("textDisplay") or snippet.get("textOriginal") or "").strip()
+                    if not text:
+                        continue
+                    if bot_channel and author == bot_channel:
+                        continue
+                    self._youtube_seen.add(tid)
+                    if len(self._youtube_seen) > 500:
+                        self._youtube_seen = set(list(self._youtube_seen)[-250:])
+                    out = self.handle_inbound(
+                        channel="youtube",
+                        text=text,
+                        external_id=author or tid,
+                    )
+                    reply_text = format_agent_reply(out)
+                    try:
+                        reply_youtube_comment(tid, reply_text)
+                    except Exception:
+                        self.stats["errors"] += 1
+                        continue
+                    n += 1
+        return n
+
     def poll_once(self) -> int:
         self.stats["polled"] += 1
         n = 0
@@ -372,6 +411,7 @@ class UnifiedGateway:
                 n += self._poll_discord()
             if self.config.slack_token:
                 n += self._poll_slack()
+            n += self._poll_youtube()
         except urllib.error.HTTPError as e:
             self.stats["errors"] += 1
             raise RuntimeError(f"gateway poll HTTP {e.code}") from e

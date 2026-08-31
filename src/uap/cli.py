@@ -1026,6 +1026,11 @@ def cmd_gateway(args: argparse.Namespace) -> int:
         out["pairing"] = GatewayPairingStore(Path.cwd()).status()
         _print_json(out)
         return 0
+    if args.gateway_cmd == "channels":
+        from .channels.registry import channels_status
+
+        _print_json(channels_status())
+        return 0
     if args.gateway_cmd == "pair":
         store = GatewayPairingStore(Path.cwd())
         code = getattr(args, "code", None) or ""
@@ -2154,8 +2159,10 @@ def build_parser() -> argparse.ArgumentParser:
     sk_sy.add_argument("--url", default=None)
     sk_sy.set_defaults(func=cmd_skills)
 
-    gw = sub.add_parser("gateway", help="Unified multi-channel gateway (Telegram poll)")
+    gw = sub.add_parser("gateway", help="Unified multi-channel social gateway")
     gw_sub = gw.add_subparsers(dest="gateway_cmd", required=True)
+    gw_ch = gw_sub.add_parser("channels", help="List all social channels and env keys")
+    gw_ch.set_defaults(func=cmd_gateway)
     gw_st = gw_sub.add_parser("status")
     gw_st.set_defaults(func=cmd_gateway)
     gw_once = gw_sub.add_parser("once", help="Poll channels once")

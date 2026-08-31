@@ -47,6 +47,14 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
           SIGNAL_WEBHOOK_URL: ${{ secrets.SIGNAL_WEBHOOK_URL }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_VERIFY_TOKEN: ${{ secrets.FB_VERIFY_TOKEN }}
+          IG_PAGE_ACCESS_TOKEN: ${{ secrets.IG_PAGE_ACCESS_TOKEN }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_OAUTH_TOKEN: ${{ secrets.YOUTUBE_OAUTH_TOKEN }}
+          YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
         run: |
           set -euo pipefail
           H="${{ secrets.VPS_HOST }}"
@@ -74,6 +82,14 @@ jobs:
              TWILIO_AUTH_TOKEN='$TWILIO_AUTH_TOKEN' \
              TWILIO_WHATSAPP_FROM='$TWILIO_WHATSAPP_FROM' \
              SIGNAL_WEBHOOK_URL='$SIGNAL_WEBHOOK_URL' \
+             X_BEARER_TOKEN='$X_BEARER_TOKEN' \
+             X_API_SECRET='$X_API_SECRET' \
+             FB_PAGE_ACCESS_TOKEN='$FB_PAGE_ACCESS_TOKEN' \
+             FB_VERIFY_TOKEN='$FB_VERIFY_TOKEN' \
+             IG_PAGE_ACCESS_TOKEN='$IG_PAGE_ACCESS_TOKEN' \
+             YOUTUBE_API_KEY='$YOUTUBE_API_KEY' \
+             YOUTUBE_OAUTH_TOKEN='$YOUTUBE_OAUTH_TOKEN' \
+             YOUTUBE_CHANNEL_ID='$YOUTUBE_CHANNEL_ID' \
              python3 /tmp/patch_vps_agent_env.py"
 
           ssh -i ~/.ssh/deploy_key "$TARGET" \

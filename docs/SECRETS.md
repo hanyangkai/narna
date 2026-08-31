@@ -27,6 +27,12 @@ Optional channel bot tokens (only if you run NARNA’s shared Telegram/Discord b
 | `DISCORD_BOT_TOKEN` | Shared Discord bot |
 | `SLACK_BOT_TOKEN` | Shared Slack bot |
 | Twilio trio | Shared WhatsApp |
+| `X_BEARER_TOKEN` / `X_API_SECRET` | X Account Activity API |
+| `FB_PAGE_ACCESS_TOKEN` / `FB_VERIFY_TOKEN` | Facebook Messenger |
+| `IG_PAGE_ACCESS_TOKEN` | Instagram Messaging (Meta) |
+| `YOUTUBE_API_KEY` / `YOUTUBE_OAUTH_TOKEN` | YouTube comment replies |
+
+Webhook URLs: `./scripts/vps_social_webhooks.sh`
 
 **Do not set `OPENROUTER_API_KEY` on the server** unless you explicitly want a company-paid demo model (not Hermes-default).
 
