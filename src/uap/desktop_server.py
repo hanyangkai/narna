@@ -279,17 +279,8 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
         from uap.agent_jobs import AgentJobStore
 
         store = AgentJobStore(ws)
-        row = store.get(job_id)
-        if not row:
+        if not store.delete(job_id):
             raise HTTPException(status_code=404, detail="job not found")
-        row["enabled"] = False
-        (store.root / f"{job_id}.json").write_text(
-            __import__("json").dumps(row, indent=2) + "\n",
-            encoding="utf-8",
-        )
-        idx = store._read()
-        idx["jobs"] = [j for j in (idx.get("jobs") or []) if j.get("jobId") != job_id]
-        store._write(idx)
         return {"ok": True, "jobId": job_id, "deleted": True}
 
     @app.get("/v1/gateway/status")
@@ -306,6 +297,12 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
             "runtime": {"gatewayThread": False},
         }
 
+    @app.post("/v1/gateway/restart")
+    def gateway_restart() -> dict[str, Any]:
+        if runtime is None:
+            raise HTTPException(status_code=503, detail="desktop runtime not attached")
+        return runtime.restart_gateway()
+
     @app.get("/v1/gateway/config")
     def gateway_config_get() -> dict[str, Any]:
         from uap.gateway_config import gateway_config_masked
@@ -319,7 +316,14 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
         data = body.model_dump(exclude_none=True)
         save_gateway_config(data, ws)
         apply_gateway_to_env(ws)
-        return {"ok": True, **gateway_config_masked(ws), "note": "Restart desktop --gateway to apply thread"}
+        note = "Saved"
+        if runtime is not None and data.get("gatewayEnabled"):
+            try:
+                runtime.restart_gateway()
+                note = "Saved + gateway restarted"
+            except Exception as e:
+                note = f"Saved (restart failed: {e})"
+        return {"ok": True, **gateway_config_masked(ws), "note": note}
 
     @app.get("/v1/browser/status")
     def browser_status() -> dict[str, Any]:

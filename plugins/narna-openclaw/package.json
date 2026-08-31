@@ -1,0 +1,22 @@
+{
+  "name": "@narna/openclaw",
+  "version": "0.2.8",
+  "description": "OpenClaw skill — connect to NARNA ADQA MCP (Decision Quality)",
+  "license": "MIT",
+  "keywords": ["openclaw", "narna", "adqa", "mcp", "ai-agent"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hanyangkai/narna.git",
+    "directory": "plugins/narna-openclaw"
+  },
+  "files": ["SKILL.md", "openclaw.plugin.json", "README.md"],
+  "narna": {
+    "mcpUrl": "https://api.narna.org/mcp",
+    "tools": [
+      "narna_adqa_check",
+      "narna_evaluate_action",
+      "narna_agent_ask",
+      "narna_runtime_status"
+    ]
+  }
+}

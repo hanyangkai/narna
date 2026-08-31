@@ -64,6 +64,8 @@ class UnifiedGateway:
         self._discord_seen: set[str] = set()
         self._slack_seen: set[str] = set()
         self._youtube_seen: set[str] = set()
+        self._x_seen: set[str] = set()
+        self._x_since_id: str | None = None
         self._running = False
         self.stats: dict[str, int] = {
             "polled": 0,
@@ -204,10 +206,9 @@ class UnifiedGateway:
             if not text:
                 continue
             out = self.handle_inbound(channel="telegram", text=text, external_id=str(chat))
-            reply = str(out.get("answer") or "")
-            dqs = out.get("dqs")
-            if dqs is not None:
-                reply = f"{reply}\n\n— ADQA DQS {dqs}"
+            from .telegram_gateway import format_agent_reply as tg_format
+
+            reply = tg_format(out)
             voice_reply = str(os.environ.get("UAP_GATEWAY_VOICE_REPLY") or "").lower() in {
                 "1",
                 "true",
@@ -401,6 +402,42 @@ class UnifiedGateway:
                     n += 1
         return n
 
+    def _poll_x(self) -> int:
+        from .x_gateway import (
+            deliver_x_reply,
+            format_agent_reply,
+            poll_mentions,
+            x_poll_ready,
+        )
+
+        if not x_poll_ready():
+            return 0
+        since = getattr(self, "_x_since_id", None)
+        mentions = poll_mentions(since_id=since, max_results=5)
+        if not hasattr(self, "_x_seen"):
+            self._x_seen: set[str] = set()
+        n = 0
+        for tw in mentions:
+            tid = str(tw.get("id") or "")
+            if not tid or tid in self._x_seen:
+                continue
+            self._x_seen.add(tid)
+            if len(self._x_seen) > 500:
+                self._x_seen = set(list(self._x_seen)[-250:])
+            self._x_since_id = tid
+            text = str(tw.get("text") or "").strip()
+            author = str(tw.get("author_id") or "")
+            if not text:
+                continue
+            out = self.handle_inbound(channel="x", text=text, external_id=author or tid)
+            try:
+                deliver_x_reply(to=author or tid, text=format_agent_reply(out), tweet_id=tid)
+            except Exception:
+                self.stats["errors"] += 1
+                continue
+            n += 1
+        return n
+
     def poll_once(self) -> int:
         self.stats["polled"] += 1
         n = 0
@@ -412,6 +449,7 @@ class UnifiedGateway:
             if self.config.slack_token:
                 n += self._poll_slack()
             n += self._poll_youtube()
+            n += self._poll_x()
         except urllib.error.HTTPError as e:
             self.stats["errors"] += 1
             raise RuntimeError(f"gateway poll HTTP {e.code}") from e

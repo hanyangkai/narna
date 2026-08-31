@@ -112,6 +112,31 @@ class DesktopRuntime:
             "gateway": gw_st,
         }
 
+    def restart_gateway(self) -> dict[str, Any]:
+        """Hot-restart social gateway thread without killing desktop process."""
+        from .gateway_config import apply_gateway_to_env, load_gateway_config, save_gateway_config
+
+        apply_gateway_to_env(self.workspace)
+        cfg = load_gateway_config(self.workspace)
+        if self._gateway is not None:
+            try:
+                self._gateway.stop()
+            except Exception:
+                pass
+        # Mark enabled so next loop starts
+        if not cfg.get("gatewayEnabled"):
+            save_gateway_config({**cfg, "gatewayEnabled": True}, self.workspace)
+        self.gateway_enabled = True
+        if self._gateway_thread and self._gateway_thread.is_alive():
+            # Previous run_forever will exit after stop(); start a new thread
+            pass
+        self._gateway_thread = threading.Thread(
+            target=self._gateway_loop, name="narna-gateway", daemon=True
+        )
+        self._gateway_thread.start()
+        self.stats["gateway"] = "restarting"
+        return {"ok": True, "gateway": "restarting"}
+
 
 def write_pid(workspace: Path) -> Path:
     pid_path = Path(workspace) / "desktop.pid"

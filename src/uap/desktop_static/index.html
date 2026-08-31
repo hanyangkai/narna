@@ -402,9 +402,17 @@
               "<li><code>" + (job.jobId || "").slice(0, 12) + "</code> — " +
               (job.prompt || "").slice(0, 80) +
               "<br><span style='color:var(--muted)'>next: " + (job.nextRunAt || "—") +
-              " · " + (job.enabled ? "on" : "off") + "</span></li>"
+              " · " + (job.enabled ? "on" : "off") +
+              " · <a href='#' data-del='" + job.jobId + "' style='color:#e88'>delete</a></span></li>"
             ).join("")
           : "<li>No jobs — try: every hour remind me to check portfolio</li>";
+        ul.querySelectorAll("a[data-del]").forEach((a) => {
+          a.onclick = async (e) => {
+            e.preventDefault();
+            await fetch("/v1/agent/jobs/" + a.getAttribute("data-del"), { method: "DELETE" });
+            loadJobs();
+          };
+        });
       } catch {
         ul.innerHTML = "<li>Failed to load jobs</li>";
       }
@@ -444,7 +452,7 @@
     }
 
     document.getElementById("saveGateway").onclick = async () => {
-      await fetch("/v1/gateway/config", {
+      const r = await fetch("/v1/gateway/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -452,10 +460,31 @@
           telegramBotToken: document.getElementById("tgToken").value || undefined,
         }),
       });
+      const j = await r.json();
       document.getElementById("tgToken").value = "";
       loadChannels();
-      alert("Saved. Restart with: narna desktop --gateway");
+      alert(j.note || "Saved");
     };
+
+    // Restart gateway button
+    (function () {
+      const panel = document.getElementById("tab-channels");
+      if (!panel) return;
+      const row = panel.querySelector(".row");
+      if (!row || document.getElementById("restartGateway")) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "secondary";
+      btn.id = "restartGateway";
+      btn.textContent = "Restart gateway";
+      btn.onclick = async () => {
+        const r = await fetch("/v1/gateway/restart", { method: "POST" });
+        const j = await r.json();
+        alert(j.gateway ? "Gateway: " + j.gateway : JSON.stringify(j));
+        loadChannels();
+      };
+      row.appendChild(btn);
+    })();
 
     async function refreshBrowser() {
       const hint = document.getElementById("browserHint");

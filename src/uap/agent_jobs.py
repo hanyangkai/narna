@@ -150,3 +150,14 @@ class AgentJobStore:
         idx["jobs"] = jobs
         self._write(idx)
         return row
+
+    def delete(self, job_id: str) -> bool:
+        row = self.get(job_id)
+        path = self.root / f"{job_id}.json"
+        if path.exists():
+            path.unlink(missing_ok=True)
+        idx = self._read()
+        before = len(idx.get("jobs") or [])
+        idx["jobs"] = [j for j in (idx.get("jobs") or []) if j.get("jobId") != job_id]
+        self._write(idx)
+        return bool(row) or before != len(idx["jobs"])

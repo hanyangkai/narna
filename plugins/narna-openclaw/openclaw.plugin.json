@@ -1,0 +1,12 @@
+{
+  "id": "narna-openclaw",
+  "name": "NARNA ADQA",
+  "version": "0.2.8",
+  "description": "Decision Quality Infrastructure for OpenClaw agents via MCP",
+  "mcp": {
+    "url": "https://api.narna.org/mcp",
+    "auth": "bearer"
+  },
+  "skill": "SKILL.md",
+  "homepage": "https://narna.org"
+}

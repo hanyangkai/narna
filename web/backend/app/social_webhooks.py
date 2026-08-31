@@ -34,7 +34,15 @@ async def handle_social_ask(
     from uap.narna_agent import NarnaAgent
 
     if use_pairing:
-        pair_ws = Path(os.environ.get("UAP_TENANT_ROOT") or "/data/tenants") / "_gateway"
+        # Isolate pairing state per channel:external (multi-tenant quick win)
+        safe_ext = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(external_id))[:64]
+        pair_ws = (
+            Path(os.environ.get("UAP_TENANT_ROOT") or "/data/tenants")
+            / "_gateway"
+            / channel
+            / (safe_ext or "anon")
+        )
+        pair_ws.mkdir(parents=True, exist_ok=True)
         blocked = gate_inbound(
             channel=channel,
             external_id=str(external_id),

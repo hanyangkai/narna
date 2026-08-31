@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.8] — 2026-08-31
+
+### Max remaining Hermes gaps
+- **X long-poll** mentions (`UAP_X_POLL=1`) wired into `gateway run`
+- TikTok / LinkedIn real outbound HTTP + cloud webhooks
+- LINE, WeChat, iMessage (BlueBubbles) gateways + registry (15+ channels)
+- Signal send + Email SMTP reply helpers; job delivery for new channels
+- ADQA badge on Telegram poll + TikTok/LinkedIn/LINE formatters
+- Desktop: Jobs **delete** UI, `POST /v1/gateway/restart` hot-restart
+- Multi-tenant pairing dirs per `channel/external_id`
+- OpenClaw plugin scaffold (`plugins/narna-openclaw/package.json`)
+
 ## [0.2.7] — 2026-08-31
 
 ### Max Hermes gap close

@@ -2798,6 +2798,151 @@ async def agent_youtube_webhook(
     )
 
 
+def _social_json_webhook(
+    *,
+    channel: str,
+    extract_fn,
+    send_fn,
+    format_fn,
+    enabled_fn,
+    db: Session,
+    request: Request,
+    use_pairing: bool = True,
+):
+    async def _inner() -> dict[str, Any]:
+        from .social_webhooks import handle_social_ask
+
+        if not enabled_fn():
+            raise HTTPException(status_code=503, detail=f"{channel} not configured")
+        try:
+            payload = await request.json()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="invalid JSON") from e
+        extracted = extract_fn(payload if isinstance(payload, dict) else {})
+        if len(extracted) == 2:
+            external_id, text = extracted
+        else:
+            external_id, text = extracted[0], extracted[1] if len(extracted) > 1 else None
+        if not external_id or not text:
+            return {"ok": True, "ignored": True}
+
+        def _send(to: str, reply: str) -> None:
+            send_fn(to, reply)
+
+        return await handle_social_ask(
+            db=db,
+            channel=channel,
+            external_id=str(external_id),
+            text=str(text),
+            send_fn=_send,
+            format_fn=format_fn,
+            org_for_device_key=_org_for_device_key,
+            enforce_plan_limit=enforce_plan_limit,
+            tenant_workspace=tenant_workspace,
+            tenant_id_for_org=tenant_id_for_org,
+            router_for_org=_router_for_org,
+            bump_agent_turns=bump_agent_turns,
+            use_pairing=use_pairing,
+        )
+
+    return _inner
+
+
+@app.post("/v1/agent/tiktok/webhook")
+async def agent_tiktok_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    from uap.tiktok_gateway import (
+        extract_tiktok_message,
+        format_agent_reply,
+        send_tiktok_message,
+        tiktok_enabled,
+    )
+
+    return await _social_json_webhook(
+        channel="tiktok",
+        extract_fn=extract_tiktok_message,
+        send_fn=send_tiktok_message,
+        format_fn=format_agent_reply,
+        enabled_fn=tiktok_enabled,
+        db=db,
+        request=request,
+    )()
+
+
+@app.post("/v1/agent/linkedin/webhook")
+async def agent_linkedin_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    from uap.linkedin_gateway import (
+        extract_linkedin_message,
+        format_agent_reply,
+        linkedin_enabled,
+        send_linkedin_message,
+    )
+
+    return await _social_json_webhook(
+        channel="linkedin",
+        extract_fn=extract_linkedin_message,
+        send_fn=send_linkedin_message,
+        format_fn=format_agent_reply,
+        enabled_fn=linkedin_enabled,
+        db=db,
+        request=request,
+    )()
+
+
+@app.post("/v1/agent/line/webhook")
+async def agent_line_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    from uap.line_gateway import extract_line_message, format_agent_reply, line_enabled, send_line_message
+
+    return await _social_json_webhook(
+        channel="line",
+        extract_fn=extract_line_message,
+        send_fn=send_line_message,
+        format_fn=format_agent_reply,
+        enabled_fn=line_enabled,
+        db=db,
+        request=request,
+    )()
+
+
+@app.post("/v1/agent/wechat/webhook")
+async def agent_wechat_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    from uap.wechat_gateway import (
+        extract_wechat_message,
+        format_agent_reply,
+        send_wechat_message,
+        wechat_enabled,
+    )
+
+    return await _social_json_webhook(
+        channel="wechat",
+        extract_fn=extract_wechat_message,
+        send_fn=send_wechat_message,
+        format_fn=format_agent_reply,
+        enabled_fn=wechat_enabled,
+        db=db,
+        request=request,
+    )()
+
+
+@app.post("/v1/agent/imessage/webhook")
+async def agent_imessage_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    from uap.imessage_gateway import (
+        extract_imessage,
+        format_agent_reply,
+        imessage_enabled,
+        send_imessage,
+    )
+
+    return await _social_json_webhook(
+        channel="imessage",
+        extract_fn=extract_imessage,
+        send_fn=send_imessage,
+        format_fn=format_agent_reply,
+        enabled_fn=imessage_enabled,
+        db=db,
+        request=request,
+    )()
+
+
 @app.get("/v1/agent/tools")
 def agent_tools_catalog() -> dict[str, Any]:
     from uap.agent_tools import TOOL_SPECS

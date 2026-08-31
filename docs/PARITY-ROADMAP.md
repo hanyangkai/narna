@@ -1,6 +1,6 @@
 # NARNA parity roadmap — Hermes & OpenClaw
 
-**Updated:** 2026-08-31  
+**Updated:** 2026-08-31 (v0.2.8)  
 **Baseline:** [`HERMES-COMPARE.md`](./HERMES-COMPARE.md)
 
 NARNA strategy: **Borrow runtime, own Decision Layer (ADQA).**  
@@ -12,7 +12,7 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 
 | Area | Hermes | OpenClaw | NARNA now | Target |
 |------|--------|----------|-----------|--------|
-| Social channels | ~6 gold | 77+ | **12 registered** (4 live, 4 beta, 4 planned) | 15 live |
+| Social channels | ~6 gold | 77+ | **15+ registered** | 15 live |
 | Tool loop + BYOK | ✅ | ✅ | ✅ | ✅ |
 | Browser / computer-use | ✅ | ✅ | ✅ (Playwright) | ✅ |
 | Skills (SKILL.md) | ✅ | ✅ | ✅ | ✅ |
@@ -30,12 +30,12 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 - [x] Cloud webhooks for X / FB / IG / YouTube
 - [x] YouTube comment poll in `gateway run`
 - [x] WhatsApp Cloud API (non-Twilio) native
-- [ ] X long-poll fallback
-- [ ] TikTok + LinkedIn outbound
-- [ ] iMessage bridge (BlueBubbles / Beeper)
-- [ ] LINE, WeChat stubs for APAC
+- [x] X long-poll fallback (`UAP_X_POLL=1`)
+- [x] TikTok + LinkedIn outbound
+- [x] iMessage bridge (BlueBubbles / Beeper)
+- [x] LINE, WeChat stubs for APAC
 
-**Verify:** `pytest tests/test_social_channels.py tests/test_hermes_max_gaps.py`
+**Verify:** `pytest tests/test_social_channels.py tests/test_channel_expansion.py`
 
 ---
 
@@ -45,19 +45,20 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 - [x] Modal/Daytona + Singularity/Vercel BYOK HTTP backends
 - [ ] Notarized .dmg / signed .msi
 - [ ] `@narna/client` npm for web embeds
-- [ ] Multi-tenant gateway isolation per org
+- [x] Multi-tenant gateway pairing isolation (per channel/external)
 - [x] Desktop update check (`narna update check`)
 - [x] Honcho-lite v2 (PROJECT.md + FTS lessons + KG observe)
 - [x] Subagent session isolation
+- [x] Desktop Jobs delete + gateway hot-restart
 
 ---
 
 ## Phase M — Moat (keep ahead of Hermes/OpenClaw)
 
 - [x] Decision Trace / Replay / Benchmark
-- [ ] ADQA on every gateway reply (already on Ask path)
+- [x] ADQA on gateway reply formatters (TG poll + social formatters)
 - [x] Auto-lesson write on DQS ≥ 70
-- [ ] OpenClaw plugin published to npm
+- [x] OpenClaw plugin scaffold (`plugins/narna-openclaw`) — publish to npm optional
 - [ ] Hermes `delegate_task` → NARNA ADQA sidecar doc
 
 ---
@@ -70,6 +71,8 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 | OpenClaw 77 channels day-1 | Focus gold paths + webhooks |
 | RL / trajectory training | Research, not product |
 | Replace LangGraph/CrewAI | Adapter-only |
+| Electron/Tauri native shell | Portable + browser desktop |
+| Apple/MS notarization | Needs vendor accounts |
 
 ---
 

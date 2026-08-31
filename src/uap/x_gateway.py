@@ -126,3 +126,72 @@ def format_agent_reply(out: dict[str, Any]) -> str:
         suffix += f" · {guardian}"
     limit = 280 if not os.environ.get("UAP_X_DM_MODE") else 10000
     return (answer + suffix)[:limit]
+
+
+def poll_mentions(*, since_id: str | None = None, max_results: int = 5) -> list[dict[str, Any]]:
+    """Long-poll fallback: recent mentions of the authenticated user (X API v2).
+
+    Env:
+      UAP_X_BEARER_TOKEN — required
+      UAP_X_USER_ID — optional; if missing, resolve via /2/users/me
+    """
+    token = _bearer()
+    if not token:
+        return []
+    user_id = (
+        os.environ.get("UAP_X_USER_ID", "").strip()
+        or os.environ.get("X_USER_ID", "").strip()
+        or _resolve_me_id(token)
+    )
+    if not user_id:
+        return []
+    params = f"max_results={max(5, min(max_results, 100))}&tweet.fields=author_id,text,created_at"
+    if since_id:
+        params += f"&since_id={since_id}"
+    url = f"{_api_base()}/2/users/{user_id}/mentions?{params}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "NARNA-Agent (https://narna.org, 0.2)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return []
+    rows = []
+    for tw in data.get("data") or []:
+        tid = str(tw.get("id") or "")
+        text = str(tw.get("text") or "").strip()
+        author = str(tw.get("author_id") or "")
+        if tid and text:
+            rows.append({"id": tid, "text": text, "author_id": author})
+    return rows
+
+
+def _resolve_me_id(token: str) -> str:
+    url = f"{_api_base()}/2/users/me"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "NARNA-Agent (https://narna.org, 0.2)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return str((data.get("data") or {}).get("id") or "")
+    except Exception:
+        return ""
+
+
+def x_poll_ready() -> bool:
+    return bool(_bearer()) and str(os.environ.get("UAP_X_POLL") or "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }

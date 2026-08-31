@@ -95,6 +95,36 @@ def deliver_job_result(
 
             send_instagram_message(target, text)
             return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "signal":
+            from .signal_gateway import send_signal_message
+
+            send_signal_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "line":
+            from .line_gateway import send_line_message
+
+            send_line_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch in {"imessage", "bluebubbles"}:
+            from .imessage_gateway import send_imessage
+
+            send_imessage(target, text)
+            return {"ok": True, "delivered": True, "channel": "imessage", "to": target}
+        if ch in {"tiktok"}:
+            from .tiktok_gateway import send_tiktok_message
+
+            send_tiktok_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "linkedin":
+            from .linkedin_gateway import send_linkedin_message
+
+            send_linkedin_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
+        if ch == "wechat":
+            from .wechat_gateway import send_wechat_message
+
+            send_wechat_message(target, text)
+            return {"ok": True, "delivered": True, "channel": ch, "to": target}
         return {"ok": False, "delivered": False, "error": f"unsupported channel: {ch}"}
     except Exception as e:
         return {"ok": False, "delivered": False, "error": str(e), "channel": ch, "to": target}
