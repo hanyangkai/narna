@@ -470,7 +470,7 @@ def health() -> dict[str, Any]:
     return {
         "status": status,
         "service": "narna-cloud",
-        "version": "0.2.3",
+        "version": __import__("narna").__version__,
         "api": "https://api.narna.org",
         "mcp": "https://api.narna.org/mcp",
         "checks": checks,
