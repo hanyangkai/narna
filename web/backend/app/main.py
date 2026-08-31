@@ -2429,9 +2429,10 @@ async def agent_whatsapp_webhook(
     request: Request,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Twilio WhatsApp webhook (form-urlencoded)."""
+    """WhatsApp webhook — Meta Cloud JSON or Twilio form-urlencoded."""
     from uap.narna_agent import NarnaAgent
     from uap.whatsapp_gateway import (
+        extract_whatsapp_cloud,
         extract_whatsapp_form,
         format_agent_reply,
         send_whatsapp_message,
@@ -2439,10 +2440,21 @@ async def agent_whatsapp_webhook(
     )
 
     if not whatsapp_enabled():
-        raise HTTPException(status_code=503, detail="WhatsApp/Twilio not configured")
+        raise HTTPException(status_code=503, detail="WhatsApp not configured (Cloud or Twilio)")
 
-    form = dict(await request.form())
-    frm, text = extract_whatsapp_form(form)
+    ctype = (request.headers.get("content-type") or "").lower()
+    frm: str | None = None
+    text: str | None = None
+    if "application/json" in ctype:
+        try:
+            payload = await request.json()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="invalid JSON") from e
+        # Meta verification challenge is GET; ignore status webhooks without messages
+        frm, text = extract_whatsapp_cloud(payload if isinstance(payload, dict) else {})
+    else:
+        form = dict(await request.form())
+        frm, text = extract_whatsapp_form(form)
     if not frm or not text:
         return {"ok": True, "ignored": True}
 
@@ -2470,6 +2482,25 @@ async def agent_whatsapp_webhook(
     bump_agent_turns(org=resolved, db=db)
     send_whatsapp_message(frm, format_agent_reply(out))
     return {"ok": True, "decisionId": out.get("decisionId")}
+
+
+@app.get("/v1/agent/whatsapp/webhook")
+async def agent_whatsapp_verify(request: Request) -> Any:
+    """Meta WhatsApp Cloud webhook verification (hub.challenge)."""
+    from fastapi.responses import PlainTextResponse
+
+    q = request.query_params
+    mode = q.get("hub.mode") or q.get("hub_mode")
+    token = q.get("hub.verify_token") or q.get("hub_verify_token")
+    challenge = q.get("hub.challenge") or q.get("hub_challenge")
+    expected = (
+        os.environ.get("UAP_WHATSAPP_VERIFY_TOKEN")
+        or os.environ.get("FB_VERIFY_TOKEN")
+        or ""
+    ).strip()
+    if mode == "subscribe" and expected and token == expected and challenge:
+        return PlainTextResponse(challenge)
+    raise HTTPException(status_code=403, detail="verification failed")
 
 
 @app.post("/v1/agent/signal/webhook")

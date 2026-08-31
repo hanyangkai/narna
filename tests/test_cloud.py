@@ -133,7 +133,8 @@ class CloudIntegrationTest(unittest.TestCase):
             )
             with urllib.request.urlopen(req2, timeout=10) as resp2:
                 metrics = json.loads(resp2.read().decode("utf-8"))
-            self.assertEqual(metrics.get("plan"), "pro")
+            # "pro" aliases to "cloud" via normalize_plan
+            self.assertEqual(metrics.get("plan"), "cloud")
 
             req3 = urllib.request.Request(
                 "http://127.0.0.1:8766/v1/billing/status",
@@ -142,7 +143,7 @@ class CloudIntegrationTest(unittest.TestCase):
             )
             with urllib.request.urlopen(req3, timeout=10) as resp3:
                 status = json.loads(resp3.read().decode("utf-8"))
-            self.assertEqual(status.get("plan"), "pro")
+            self.assertEqual(status.get("plan"), "cloud")
             self.assertIn("eventsInPeriod", status)
 
             req4 = urllib.request.Request(

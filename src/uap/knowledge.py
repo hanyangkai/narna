@@ -84,13 +84,39 @@ class KnowledgeGraph:
         name_contains: str | None = None,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        rows = list((self._read().get("entities") or {}).values())
+        data = self._read()
+        rows = list((data.get("entities") or {}).values())
         if kind:
-            rows = [r for r in rows if str(r.get("kind") or "").lower() == kind.lower()]
+            rows = [r for r in rows if r.get("kind") == kind]
         if name_contains:
-            q = name_contains.lower()
-            rows = [r for r in rows if q in str(r.get("name") or "").lower()]
+            needle = name_contains.lower()
+            rows = [r for r in rows if needle in str(r.get("name") or "").lower()]
         return rows[:limit]
+
+    def observe_message(self, message: str) -> list[dict[str, Any]]:
+        """Keyword-lite entity extraction into the project knowledge graph."""
+        import re
+
+        msg = (message or "").strip()
+        if not msg:
+            return []
+        created: list[dict[str, Any]] = []
+        # "project X" / "working on X"
+        for pat, kind in (
+            (r"(?:working on|building)\s+(?:project\s+|repo\s+)?([A-Za-z0-9._/-]{2,40})", "project"),
+            (r"(?:project|repo|đang làm)\s+([A-Za-z0-9._/-]{2,40})", "project"),
+            (r"(?:customer|client|khách)\s+([A-Za-z0-9 ._-]{2,40})", "customer"),
+        ):
+            for m in re.finditer(pat, msg, flags=re.I):
+                name = m.group(1).strip(" .,;:")
+                if len(name) < 2 or name.lower() in {"project", "repo", "the", "a", "an"}:
+                    continue
+                # Avoid dupes by name+kind
+                existing = self.query(kind=kind, name_contains=name, limit=5)
+                if any(str(e.get("name") or "").lower() == name.lower() for e in existing):
+                    continue
+                created.append(self.upsert_entity(kind=kind, name=name, props={"source": "observe"}))
+        return created[:5]
 
     def neighbors(self, entity_id: str) -> dict[str, Any]:
         data = self._read()

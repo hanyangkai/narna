@@ -103,13 +103,24 @@ class NarnaAgent:
         self._delegate_depth = 0
 
     def _delegate_subask(self, task: str) -> dict[str, Any]:
-        """Hermes-like subagent: nested ask with limited tool depth."""
+        """Hermes-like subagent: nested ask with isolated session + limited tool depth."""
+        from .ids import new_id
+
         if self._delegate_depth >= self.max_delegate_depth:
             raise RuntimeError(f"nested delegate blocked (max {self.max_delegate_depth})")
         self._delegate_depth += 1
         try:
+            parent = getattr(self, "_active_session_id", None)
+            sub_id = new_id("sub")
+            session = self.sessions.get_or_create(
+                sub_id, channel="delegate", external_id=None
+            )
+            if parent:
+                session["parentSessionId"] = parent
+                self.sessions._write(session)
             return self.ask(
                 task,
+                session_id=str(session["sessionId"]),
                 channel="delegate",
                 use_tools=self._delegate_depth < self.max_delegate_depth,
                 capture_skill=False,
@@ -140,10 +151,17 @@ class NarnaAgent:
             session_id, channel=channel, external_id=external_id
         )
         sid = str(session["sessionId"])
+        self._active_session_id = sid
         self.sessions.append(sid, role="user", content=msg)
         self.fts.index_turn(session_id=sid, role="user", content=msg)
         self.fts.observe_user_message(msg)
         self.memory_md.observe_user_message(msg)
+        try:
+            from .knowledge import KnowledgeGraph
+
+            KnowledgeGraph(self.workspace).observe_message(msg)
+        except Exception:
+            pass
 
         file_bits: list[str] = []
         sources: list[dict[str, str]] = []
@@ -170,6 +188,17 @@ class NarnaAgent:
         ]
         mem_md = self.memory_md.read_memory(max_chars=1800)
         user_md = self.memory_md.read_user(max_chars=1200)
+        project_md = self.memory_md.read_project(max_chars=1200)
+        kg_lines: list[str] = []
+        try:
+            from .knowledge import KnowledgeGraph
+
+            ents = KnowledgeGraph(self.workspace).query(limit=8)
+            kg_lines = [
+                f"- {e.get('kind')}:{e.get('name')}" for e in ents if isinstance(e, dict)
+            ]
+        except Exception:
+            pass
         tool_catalog = json.dumps(self.tools.specs(), ensure_ascii=False)
         history = self.sessions.history_for_prompt(sid, limit=10)
         ask_mode = (mode or "cheap").strip().lower()
@@ -196,6 +225,8 @@ class NarnaAgent:
             f"{chr(10).join(prior_lines) if prior_lines else '(none)'}\n\n"
             f"MEMORY.md:\n{mem_md or '(empty)'}\n\n"
             f"USER.md:\n{user_md or '(empty)'}\n\n"
+            f"PROJECT.md:\n{project_md or '(empty)'}\n\n"
+            f"Knowledge graph:\n{chr(10).join(kg_lines) if kg_lines else '(none)'}\n\n"
             f"User profile:\n{chr(10).join(profile_lines) if profile_lines else '(none)'}\n\n"
             f"FTS recall:\n{chr(10).join(fts_lines) if fts_lines else '(none)'}\n\n"
             f"Skills:\n{chr(10).join(skill_lines) if skill_lines else '(none)'}\n\n"
@@ -426,12 +457,14 @@ class NarnaAgent:
                 )
             except Exception:
                 hub_published = None
-        # Persist high-quality lessons into MEMORY.md (Honcho-lite)
+        # Persist high-quality lessons into MEMORY.md + FTS (Honcho-lite v2)
         try:
             dqs_val = int(adqa.get("dqs") or 0)
             if dqs_val >= 70:
                 lesson_line = draft.strip().split("\n")[0][:300]
-                self.memory_md.append_lesson(lesson_line or msg[:200], dqs=dqs_val)
+                lesson_text = lesson_line or msg[:200]
+                self.memory_md.append_lesson(lesson_text, dqs=dqs_val)
+                self.fts.index_lesson(lesson_text, dqs=dqs_val, meta={"action": action})
         except Exception:
             pass
 

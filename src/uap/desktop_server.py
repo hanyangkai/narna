@@ -339,6 +339,34 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
             os.environ["UAP_BROWSER_ENABLED"] = "1"
         return out
 
+    @app.get("/v1/desktop/update")
+    def desktop_update() -> dict[str, Any]:
+        from uap.desktop_update import check_update
+
+        return check_update()
+
+    @app.get("/v1/agent/memory")
+    def agent_memory_status() -> dict[str, Any]:
+        from uap.agent_memory_fts import AgentMemoryFTS
+        from uap.agent_memory_md import AgentMemoryMd
+
+        md = AgentMemoryMd(ws)
+        fts = AgentMemoryFTS(ws)
+        return {
+            "ok": True,
+            "turns": fts.turn_count(),
+            "lessons": fts.lesson_count(),
+            "profileKeys": list(fts.get_profile().keys()),
+            "memoryMdChars": len(md.read_memory(max_chars=100000)),
+            "userMdChars": len(md.read_user(max_chars=100000)),
+            "projectMdChars": len(md.read_project(max_chars=100000)),
+            "paths": {
+                "memory": str(md.memory_path),
+                "user": str(md.user_path),
+                "project": str(md.project_path),
+            },
+        }
+
     @app.get("/")
     def index() -> HTMLResponse:
         html = assets / "index.html"

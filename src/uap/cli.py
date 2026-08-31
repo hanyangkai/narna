@@ -1036,6 +1036,43 @@ def cmd_browser(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    from .desktop_update import check_update
+
+    out = check_update()
+    _print_json(out)
+    return 0 if out.get("ok") else 1
+
+
+def cmd_agent_memory(args: argparse.Namespace) -> int:
+    """Show Honcho-lite agent memory status (~/.narna)."""
+    from .agent_memory_fts import AgentMemoryFTS
+    from .agent_memory_md import AgentMemoryMd
+    from .narna_config import default_home
+
+    home = getattr(args, "home", None) or str(default_home())
+    md = AgentMemoryMd(home)
+    fts = AgentMemoryFTS(home)
+    _print_json(
+        {
+            "ok": True,
+            "home": home,
+            "turns": fts.turn_count(),
+            "lessons": fts.lesson_count(),
+            "profile": fts.get_profile(),
+            "memoryPreview": md.read_memory(max_chars=400),
+            "projectPreview": md.read_project(max_chars=400),
+            "paths": {
+                "memory": str(md.memory_path),
+                "user": str(md.user_path),
+                "project": str(md.project_path),
+                "fts": str(fts.db_path),
+            },
+        }
+    )
+    return 0
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     """Show / set ~/.narna config (json or yaml)."""
     from .narna_config import config_set, config_show, default_home
@@ -2228,6 +2265,15 @@ def build_parser() -> argparse.ArgumentParser:
     br_setup = browser_sub.add_parser("setup", help="pip install playwright + chromium")
     br_setup.add_argument("--with-deps", action="store_true", help="Install OS deps (Linux)")
     br_setup.set_defaults(func=cmd_browser)
+
+    upd = sub.add_parser("update", help="Check GitHub Releases for newer NARNA")
+    upd_sub = upd.add_subparsers(dest="update_cmd", required=True)
+    upd_chk = upd_sub.add_parser("check", help="Compare local version to latest release")
+    upd_chk.set_defaults(func=cmd_update)
+
+    amem = sub.add_parser("agent-memory", help="Honcho-lite MEMORY/USER/PROJECT + FTS status")
+    amem.add_argument("--home", default=None, help="Default: ~/.narna")
+    amem.set_defaults(func=cmd_agent_memory)
 
     cfg_p = sub.add_parser("config", help="Show/set ~/.narna config (json or yaml)")
     cfg_sub = cfg_p.add_subparsers(dest="config_cmd", required=True)

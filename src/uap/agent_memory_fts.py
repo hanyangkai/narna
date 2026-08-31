@@ -61,6 +61,23 @@ class AgentMemoryFTS:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS lessons (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    content TEXT,
+                    dqs INTEGER,
+                    meta_json TEXT,
+                    created_at TEXT
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS lessons_fts
+                USING fts5(content, tokenize='porter')
+                """
+            )
             conn.commit()
         finally:
             conn.close()
@@ -97,6 +114,7 @@ class AgentMemoryFTS:
             return []
         conn = self._conn()
         try:
+            results: list[dict[str, Any]] = []
             try:
                 rows = conn.execute(
                     """
@@ -116,7 +134,7 @@ class AgentMemoryFTS:
                     """,
                     (f"%{safe.lower()}%", limit),
                 ).fetchall()
-            return [
+            results.extend(
                 {
                     "source": "fts",
                     "sessionId": r["session_id"],
@@ -124,7 +142,77 @@ class AgentMemoryFTS:
                     "snippet": str(r["content"])[:240],
                 }
                 for r in rows
-            ]
+            )
+            # Also search lessons
+            try:
+                lesson_rows = conn.execute(
+                    """
+                    SELECT content FROM lessons_fts
+                    WHERE lessons_fts MATCH ?
+                    LIMIT ?
+                    """,
+                    (safe, max(2, limit // 2)),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                lesson_rows = conn.execute(
+                    """
+                    SELECT content FROM lessons
+                    WHERE lower(content) LIKE ?
+                    ORDER BY id DESC LIMIT ?
+                    """,
+                    (f"%{safe.lower()}%", max(2, limit // 2)),
+                ).fetchall()
+            results.extend(
+                {
+                    "source": "lesson",
+                    "sessionId": None,
+                    "role": "lesson",
+                    "snippet": str(r["content"])[:240],
+                }
+                for r in lesson_rows
+            )
+            return results[:limit]
+        finally:
+            conn.close()
+
+    def index_lesson(
+        self,
+        content: str,
+        *,
+        dqs: int | None = None,
+        meta: dict[str, Any] | None = None,
+    ) -> None:
+        content = (content or "").strip()[:2000]
+        if not content:
+            return
+        conn = self._conn()
+        try:
+            conn.execute(
+                "INSERT INTO lessons(content, dqs, meta_json, created_at) VALUES (?,?,?,?)",
+                (content, dqs, json.dumps(meta or {}), _now()),
+            )
+            conn.execute("INSERT INTO lessons_fts(content) VALUES (?)", (content,))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def lesson_count(self) -> int:
+        conn = self._conn()
+        try:
+            row = conn.execute("SELECT COUNT(*) AS n FROM lessons").fetchone()
+            return int(row["n"] if row else 0)
+        except Exception:
+            return 0
+        finally:
+            conn.close()
+
+    def turn_count(self) -> int:
+        conn = self._conn()
+        try:
+            row = conn.execute("SELECT COUNT(*) AS n FROM turns").fetchone()
+            return int(row["n"] if row else 0)
+        except Exception:
+            return 0
         finally:
             conn.close()
 

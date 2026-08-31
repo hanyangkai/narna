@@ -88,6 +88,8 @@ CHANNELS: tuple[ChannelSpec, ...] = (
         mode="webhook",
         tier="live",
         env_keys=(
+            "UAP_WHATSAPP_TOKEN",
+            "UAP_WHATSAPP_PHONE_NUMBER_ID",
             "UAP_TWILIO_ACCOUNT_SID",
             "UAP_TWILIO_AUTH_TOKEN",
             "UAP_TWILIO_WHATSAPP_FROM",

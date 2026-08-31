@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.7] — 2026-08-31
+
+### Max Hermes gap close
+- WhatsApp **Meta Cloud API** (native) + Twilio fallback · webhook verify GET
+- Shell backends: **singularity** + **vercel** BYOK HTTP (shared `_post_exec`)
+- Honcho-lite v2: `PROJECT.md`, FTS lessons index, KnowledgeGraph observe → Ask inject
+- Subagent sessions: isolated `sub_*` + `parentSessionId`
+- `narna update check` · `GET /v1/desktop/update` (GitHub Releases)
+- `narna agent-memory` · `GET /v1/agent/memory`
+- CI: `httpx` in cloud extra · billing plan asserts `cloud` (pro alias)
+
 ## [0.2.6] — 2026-08-31
 
 ### Hermes parity — desktop daemon + jobs + channels

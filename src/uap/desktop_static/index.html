@@ -538,6 +538,15 @@
     refreshHealth();
     loadCfg().then(refreshStatus);
     refreshBrowser();
+    (async () => {
+      try {
+        const j = await (await fetch("/v1/desktop/update")).json();
+        if (j.updateAvailable) {
+          agentBadge.textContent = "update " + j.latest + " available";
+          agentBadge.title = j.url || "";
+        }
+      } catch {}
+    })();
     addMsg("bot", "NARNA Desktop agent running locally. Paste your BYOK key to connect an LLM, or use mock mode to explore.");
   </script>
 </body>

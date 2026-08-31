@@ -29,23 +29,26 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 - [x] X, Facebook, YouTube, Instagram gateways
 - [x] Cloud webhooks for X / FB / IG / YouTube
 - [x] YouTube comment poll in `gateway run`
-- [ ] WhatsApp Cloud API (non-Twilio) native
+- [x] WhatsApp Cloud API (non-Twilio) native
 - [ ] X long-poll fallback
 - [ ] TikTok + LinkedIn outbound
 - [ ] iMessage bridge (BlueBubbles / Beeper)
 - [ ] LINE, WeChat stubs for APAC
 
-**Verify:** `pytest tests/test_social_channels.py`
+**Verify:** `pytest tests/test_social_channels.py tests/test_hermes_max_gaps.py`
 
 ---
 
 ## Phase R — Runtime hardening
 
 - [ ] Docker shell socket mount docs + compose fix
-- [ ] Modal/Daytona live backends (not stub-only)
+- [x] Modal/Daytona + Singularity/Vercel BYOK HTTP backends
 - [ ] Notarized .dmg / signed .msi
 - [ ] `@narna/client` npm for web embeds
 - [ ] Multi-tenant gateway isolation per org
+- [x] Desktop update check (`narna update check`)
+- [x] Honcho-lite v2 (PROJECT.md + FTS lessons + KG observe)
+- [x] Subagent session isolation
 
 ---
 
@@ -53,7 +56,7 @@ Target: agent that *feels* like Hermes/OpenClaw on social + tools, with DQS moat
 
 - [x] Decision Trace / Replay / Benchmark
 - [ ] ADQA on every gateway reply (already on Ask path)
-- [ ] Auto-lesson write on DQS ≥ 70
+- [x] Auto-lesson write on DQS ≥ 70
 - [ ] OpenClaw plugin published to npm
 - [ ] Hermes `delegate_task` → NARNA ADQA sidecar doc
 

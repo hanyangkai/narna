@@ -34,7 +34,7 @@ from narna.evaluate import evaluate
 from uap.adqa import ADQAEngine
 from uap.cmem_bridge import CmemBridge
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 __all__ = [
     "Agent",
     "wrap",

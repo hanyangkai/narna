@@ -401,6 +401,16 @@ def tool_shell_exec(args: dict[str, Any], *, cwd: Path) -> dict[str, Any]:
 
         remote = " ".join(shlex.quote(p) for p in parts)
         return exec_daytona(command=remote, timeout=timeout, cwd=str(cwd))
+    if backend == "singularity":
+        from .shell_remote import exec_singularity
+
+        remote = " ".join(shlex.quote(p) for p in parts)
+        return exec_singularity(command=remote, timeout=timeout, cwd=str(cwd))
+    if backend == "vercel":
+        from .shell_remote import exec_vercel
+
+        remote = " ".join(shlex.quote(p) for p in parts)
+        return exec_vercel(command=remote, timeout=timeout, cwd=str(cwd))
     return _run_local()
 
 

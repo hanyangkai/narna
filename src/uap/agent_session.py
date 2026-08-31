@@ -100,3 +100,23 @@ class AgentSessionStore:
                 role = "user"
             out.append({"role": role, "content": str(m.get("content") or "")[:4000]})
         return out
+
+    def list_children(self, parent_session_id: str) -> list[dict[str, Any]]:
+        parent = str(parent_session_id or "")
+        if not parent:
+            return []
+        kids: list[dict[str, Any]] = []
+        for path in self.root.glob("*.json"):
+            try:
+                row = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if row.get("parentSessionId") == parent:
+                kids.append(
+                    {
+                        "sessionId": row.get("sessionId"),
+                        "channel": row.get("channel"),
+                        "createdAt": row.get("createdAt"),
+                    }
+                )
+        return kids
