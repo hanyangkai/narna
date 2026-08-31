@@ -57,4 +57,12 @@ Build portable binaries (maintainers):
 bash scripts/build_desktop_mac.sh # macOS
 ```
 
-Also: `narna desktop --tui` · https://narna.org/download
+Also: `narna desktop --tui` · `narna desktop --daemon --gateway` · https://narna.org/download
+
+Install like Hermes:
+```bash
+curl -fsSL https://raw.githubusercontent.com/hanyangkai/narna/main/scripts/install.sh | bash
+narna desktop
+narna browser setup    # optional computer-use
+narna daemon install   # optional always-on (macOS/Linux)
+```

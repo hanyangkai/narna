@@ -99,18 +99,19 @@ class NarnaAgent:
         )
         self.adqa = ADQAEngine(self.workspace)
         self.max_tool_rounds = max(0, int(max_tool_rounds))
+        self.max_delegate_depth = 3
         self._delegate_depth = 0
 
     def _delegate_subask(self, task: str) -> dict[str, Any]:
-        """Hermes-like subagent: one nested ask without further tools."""
-        if self._delegate_depth >= 1:
-            raise RuntimeError("nested delegate blocked")
+        """Hermes-like subagent: nested ask with limited tool depth."""
+        if self._delegate_depth >= self.max_delegate_depth:
+            raise RuntimeError(f"nested delegate blocked (max {self.max_delegate_depth})")
         self._delegate_depth += 1
         try:
             return self.ask(
                 task,
                 channel="delegate",
-                use_tools=False,
+                use_tools=self._delegate_depth < self.max_delegate_depth,
                 capture_skill=False,
                 challenge=False,
             )

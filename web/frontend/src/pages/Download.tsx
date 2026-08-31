@@ -103,6 +103,12 @@ narna desktop`}</pre>
         <pre className="code-block">{`curl -fsSL https://raw.githubusercontent.com/hanyangkai/narna/main/desktop/install.sh | bash
 narna desktop`}</pre>
 
+        <h2>Any OS — one-liner (like Hermes)</h2>
+        <pre className="code-block">{`curl -fsSL https://raw.githubusercontent.com/hanyangkai/narna/main/scripts/install.sh | bash
+narna desktop
+narna browser setup    # optional Playwright
+narna daemon install   # optional always-on`}</pre>
+
         <h2>Any OS (pip)</h2>
         <pre className="code-block">{`${SPEC.install.replace("narna", 'narna[desktop]')}
 narna desktop

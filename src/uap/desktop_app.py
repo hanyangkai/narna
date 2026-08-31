@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import socket
 import sys
@@ -32,7 +33,17 @@ def run_desktop(
     open_browser: bool = True,
     tui: bool = False,
     provider: str | None = None,
+    gateway: bool = False,
+    daemon: bool = False,
+    setup_browser: bool = False,
 ) -> int:
+    if setup_browser:
+        from .browser_session import setup_browser as do_setup
+
+        out = do_setup()
+        print(json.dumps(out, indent=2) if out.get("ok") else f"Browser setup failed: {out.get('error')}")
+        return 0 if out.get("ok") else 1
+
     if tui:
         from .tui_app import run_tui
 
@@ -49,22 +60,31 @@ def run_desktop(
         )
         return 1
 
+    from .desktop_runtime import DesktopRuntime, remove_pid, write_pid
     from .desktop_server import create_app, default_workspace
 
     ws = Path(workspace) if workspace else default_workspace()
     ws.mkdir(parents=True, exist_ok=True)
     listen_port = int(port or os.environ.get("NARNA_DESKTOP_PORT") or _free_port())
-    app = create_app(workspace=ws)
+    runtime = DesktopRuntime(ws, gateway=gateway)
+    app = create_app(workspace=ws, runtime=runtime)
     url = f"http://{host}:{listen_port}/"
+
+    runtime.start()
+    if daemon:
+        write_pid(ws)
 
     print(f"NARNA Desktop — local agent")
     print(f"  workspace: {ws}")
     print(f"  open:      {url}")
     print(f"  data:      keys + memory in ~/.narna")
+    if gateway:
+        print(f"  gateway:   social channels enabled")
+    print(f"  jobs:      background ticker (every 60s)")
     print(f"  stop:      Ctrl+C")
     print()
 
-    if open_browser:
+    if open_browser and not daemon:
 
         def _open() -> None:
             time.sleep(0.8)
@@ -72,7 +92,12 @@ def run_desktop(
 
         threading.Thread(target=_open, daemon=True).start()
 
-    uvicorn.run(app, host=host, port=listen_port, log_level="warning")
+    try:
+        uvicorn.run(app, host=host, port=listen_port, log_level="warning")
+    finally:
+        runtime.stop()
+        if daemon:
+            remove_pid(ws)
     return 0
 
 
@@ -84,6 +109,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-browser", action="store_true")
     p.add_argument("--tui", action="store_true", help="Fullscreen TUI instead of browser")
     p.add_argument("--provider", default=None)
+    p.add_argument("--gateway", action="store_true", help="Start social gateway thread (needs tokens in ~/.narna/gateway.json)")
+    p.add_argument("--daemon", action="store_true", help="Run in background (no browser open, writes ~/.narna/desktop.pid)")
+    p.add_argument("--setup-browser", action="store_true", help="Install Playwright + Chromium then exit")
     args = p.parse_args(argv)
     return run_desktop(
         host=args.host,
@@ -92,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
         open_browser=not args.no_browser,
         tui=args.tui,
         provider=args.provider,
+        gateway=args.gateway,
+        daemon=args.daemon,
+        setup_browser=args.setup_browser,
     )
 
 

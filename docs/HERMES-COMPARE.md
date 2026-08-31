@@ -18,7 +18,7 @@
 | Terminal backends | 7 | local/docker/ssh + modal/daytona stubs | Near / **Stub** remote |
 | Memory | Honcho | FTS5 + MEMORY.md/USER.md | Near |
 | Subagent RPC | ✓ | `execute_code` + delegate ≤3 | Near |
-| Fullscreen TUI / Desktop | ✓ | `narna desktop` + `narna tui` + PWA | **Near** |
+| Fullscreen TUI / Desktop | ✓ | `narna desktop` + daemon + Jobs UI + `narna tui` + portable zip | **Near** |
 | Network Skills Hub | ✓ | zip + sync URL + local hub | Near |
 | MCP for other agents | — | ADQA + ask + runtime status | OpenClaw-ready |
 | Nous Portal Tool Gateway | ✓ | intentionally no | **Skip** |
@@ -26,15 +26,10 @@
 
 ## Still not end-to-end Hermes
 
-1. Apple/Microsoft **notarized** .msi / .dmg (portable Windows zip shipped in v0.2.0)  
+1. Apple/Microsoft **notarized** .msi / .dmg (portable zip shipped; `narna daemon install` for launchd/systemd)  
 2. Live Modal/Daytona/Singularity/Vercel backends (**Stub** — BYOK exec URL only)  
 3. Honcho-depth dialectic memory (MEMORY.md lite is enough for moat path)  
-4. 20+ messaging platforms (gold paths: Telegram · Discord · Slack)
+4. Native Electron/Tauri shell (browser localhost + PyInstaller portable)  
+5. 20+ messaging platforms live without manual token setup
 
-## Shipped
-
-- `narna desktop` + portable Windows build · public skills index  
-- Browser · gateway · 44 tools · Trace/Replay/Benchmark · TUI  
-- Prod parity track: Playwright on VPS · Docker shell default · OpenClaw MCP skill  
-
-Last updated: 2026-08-27
+Last updated: 2026-08-31

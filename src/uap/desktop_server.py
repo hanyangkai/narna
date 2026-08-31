@@ -69,12 +69,26 @@ class ConfigBody(BaseModel):
     model: str | None = None
 
 
-def create_app(*, workspace: Path | None = None) -> FastAPI:
+class JobBody(BaseModel):
+    schedule: str
+    deliverTo: str | None = None
+
+
+class GatewayConfigBody(BaseModel):
+    gatewayEnabled: bool | None = None
+    telegramBotToken: str | None = None
+    discordBotToken: str | None = None
+    slackBotToken: str | None = None
+    discordPollChannels: str | None = None
+    slackPollChannels: str | None = None
+
+
+def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> FastAPI:
     ws = Path(workspace) if workspace else default_workspace()
     ws.mkdir(parents=True, exist_ok=True)
     assets = static_dir()
 
-    app = FastAPI(title="NARNA Desktop", version="0.1.0")
+    app = FastAPI(title="NARNA Desktop", version="0.2.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -82,6 +96,7 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.state.workspace = ws
+    app.state.runtime = runtime
 
     @app.get("/v1/health")
     def health() -> dict[str, Any]:
@@ -100,6 +115,9 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
             }
         else:
             browser_on = bool(browser_cfg)
+        from uap.browser_session import browser_ready
+
+        browser = browser_ready()
         return {
             "ok": True,
             "mode": "desktop",
@@ -110,6 +128,8 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
                 os.environ.get("UAP_SHELL_BACKEND") or cfg.get("shellBackend") or "local"
             ),
             "browserEnabled": browser_on,
+            "browser": browser,
+            "daemon": (ws / "desktop.pid").is_file(),
             "skillsIndexDefault": os.environ.get(
                 "UAP_SKILL_HUB_INDEX_URL",
                 "https://raw.githubusercontent.com/hanyangkai/narna/main/skills/public-index.json",
@@ -227,6 +247,97 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
 
         rows = DecisionTraceStore(ws).list_traces(limit=min(limit, 100))
         return {"ok": True, "traces": rows, "count": len(rows)}
+
+    @app.get("/v1/agent/jobs")
+    def agent_jobs_list() -> dict[str, Any]:
+        from uap.agent_jobs import AgentJobStore
+
+        jobs = AgentJobStore(ws).list_jobs()
+        return {"ok": True, "jobs": jobs, "count": len(jobs)}
+
+    @app.post("/v1/agent/jobs")
+    def agent_jobs_create(body: JobBody) -> dict[str, Any]:
+        from uap.agent_jobs import AgentJobStore
+        from uap.nl_cron import parse_nl_schedule
+
+        try:
+            parsed = parse_nl_schedule(body.schedule)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        deliver = body.deliverTo or parsed.get("deliverTo")
+        row = AgentJobStore(ws).create(
+            prompt=str(parsed.get("prompt") or body.schedule),
+            every_minutes=parsed.get("everyMinutes"),
+            run_at=parsed.get("runAt"),
+            channel=str(parsed.get("channel") or "job"),
+            deliver_to=str(deliver) if deliver else None,
+        )
+        return {"ok": True, "job": row}
+
+    @app.delete("/v1/agent/jobs/{job_id}")
+    def agent_jobs_delete(job_id: str) -> dict[str, Any]:
+        from uap.agent_jobs import AgentJobStore
+
+        store = AgentJobStore(ws)
+        row = store.get(job_id)
+        if not row:
+            raise HTTPException(status_code=404, detail="job not found")
+        row["enabled"] = False
+        (store.root / f"{job_id}.json").write_text(
+            __import__("json").dumps(row, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        idx = store._read()
+        idx["jobs"] = [j for j in (idx.get("jobs") or []) if j.get("jobId") != job_id]
+        store._write(idx)
+        return {"ok": True, "jobId": job_id, "deleted": True}
+
+    @app.get("/v1/gateway/status")
+    def gateway_status() -> dict[str, Any]:
+        if runtime is not None:
+            return runtime.status()
+        from uap.gateway_config import gateway_config_masked
+        from uap.channels.registry import channels_status
+
+        return {
+            "ok": True,
+            "config": gateway_config_masked(ws),
+            "channels": channels_status(),
+            "runtime": {"gatewayThread": False},
+        }
+
+    @app.get("/v1/gateway/config")
+    def gateway_config_get() -> dict[str, Any]:
+        from uap.gateway_config import gateway_config_masked
+
+        return {"ok": True, **gateway_config_masked(ws)}
+
+    @app.put("/v1/gateway/config")
+    def gateway_config_put(body: GatewayConfigBody) -> dict[str, Any]:
+        from uap.gateway_config import apply_gateway_to_env, gateway_config_masked, save_gateway_config
+
+        data = body.model_dump(exclude_none=True)
+        save_gateway_config(data, ws)
+        apply_gateway_to_env(ws)
+        return {"ok": True, **gateway_config_masked(ws), "note": "Restart desktop --gateway to apply thread"}
+
+    @app.get("/v1/browser/status")
+    def browser_status() -> dict[str, Any]:
+        from uap.browser_session import browser_ready
+
+        return {"ok": True, **browser_ready()}
+
+    @app.post("/v1/browser/setup")
+    def browser_setup() -> dict[str, Any]:
+        from uap.browser_session import setup_browser
+
+        out = setup_browser()
+        if out.get("ok"):
+            cfg = load_config(ws)
+            cfg["browserEnabled"] = True
+            save_config(ws, cfg)
+            os.environ["UAP_BROWSER_ENABLED"] = "1"
+        return out
 
     @app.get("/")
     def index() -> HTMLResponse:

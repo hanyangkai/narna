@@ -67,6 +67,18 @@ class DesktopServerTests(unittest.TestCase):
             self.assertTrue(got["hasKey"])
             self.assertEqual(got["provider"], "openai")
 
+    def test_jobs_and_gateway_endpoints(self):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            app = create_app(workspace=Path(td))
+            client = TestClient(app)
+            jobs = client.get("/v1/agent/jobs")
+            self.assertEqual(jobs.status_code, 200)
+            self.assertIn("jobs", jobs.json())
+            gw = client.get("/v1/gateway/status")
+            self.assertEqual(gw.status_code, 200)
+            br = client.get("/v1/browser/status")
+            self.assertEqual(br.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()

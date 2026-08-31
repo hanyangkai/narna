@@ -1,0 +1,13 @@
+[Unit]
+Description=NARNA Desktop Agent (Hermes-like local daemon)
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env narna desktop --daemon --gateway --no-browser
+Restart=on-failure
+RestartSec=10
+Environment=NARNA_HOME=%h/.narna
+
+[Install]
+WantedBy=default.target

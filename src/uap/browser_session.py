@@ -187,3 +187,29 @@ def browser_ready() -> dict[str, Any]:
             "engine": "playwright",
             "error": str(e)[:300],
         }
+
+
+def setup_browser(*, with_deps: bool = False) -> dict[str, Any]:
+    """Install playwright + chromium (Hermes computer-use one-click setup)."""
+    import subprocess
+    import sys
+
+    steps: list[str] = []
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-q", "playwright"],
+            timeout=300,
+        )
+        steps.append("pip playwright")
+    except Exception as e:
+        return {"ok": False, "error": f"pip install playwright failed: {e}", "steps": steps}
+    cmd = [sys.executable, "-m", "playwright", "install", "chromium"]
+    if with_deps:
+        cmd.append("--with-deps")
+    try:
+        subprocess.check_call(cmd, timeout=600)
+        steps.append("playwright install chromium")
+    except Exception as e:
+        return {"ok": False, "error": f"playwright install failed: {e}", "steps": steps}
+    probe = browser_ready()
+    return {"ok": bool(probe.get("ready")), "steps": steps, **probe}

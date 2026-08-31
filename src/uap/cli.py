@@ -956,7 +956,84 @@ def cmd_desktop(args: argparse.Namespace) -> int:
         open_browser=not getattr(args, "no_browser", False),
         tui=bool(getattr(args, "tui", False)),
         provider=getattr(args, "provider", None),
+        gateway=bool(getattr(args, "gateway", False)),
+        daemon=bool(getattr(args, "daemon", False)),
+        setup_browser=bool(getattr(args, "setup_browser", False)),
     )
+
+
+def cmd_daemon(args: argparse.Namespace) -> int:
+    """Install or control background NARNA desktop agent (launchd/systemd)."""
+    import shutil
+    import subprocess
+
+    from .narna_config import default_home
+
+    home = default_home()
+    action = getattr(args, "daemon_cmd", "status")
+    root = Path(__file__).resolve().parents[2]
+    if action == "install":
+        if sys.platform == "darwin":
+            plist_src = root / "desktop" / "com.narna.agent.plist"
+            plist_dst = Path.home() / "Library" / "LaunchAgents" / "com.narna.agent.plist"
+            if not plist_src.is_file():
+                print(f"missing {plist_src}", file=sys.stderr)
+                return 1
+            plist_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(plist_src, plist_dst)
+            subprocess.run(["launchctl", "load", str(plist_dst)], check=False)
+            _print_json({"ok": True, "installed": str(plist_dst), "platform": "macos"})
+            return 0
+        if sys.platform == "linux":
+            svc_src = root / "desktop" / "narna-agent.service"
+            svc_dst = Path.home() / ".config" / "systemd" / "user" / "narna-agent.service"
+            if not svc_src.is_file():
+                print(f"missing {svc_src}", file=sys.stderr)
+                return 1
+            svc_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(svc_src, svc_dst)
+            subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
+            subprocess.run(["systemctl", "--user", "enable", "--now", "narna-agent.service"], check=False)
+            _print_json({"ok": True, "installed": str(svc_dst), "platform": "linux"})
+            return 0
+        print("daemon install supported on macOS and Linux only", file=sys.stderr)
+        return 2
+    if action == "uninstall":
+        if sys.platform == "darwin":
+            plist_dst = Path.home() / "Library" / "LaunchAgents" / "com.narna.agent.plist"
+            subprocess.run(["launchctl", "unload", str(plist_dst)], check=False)
+            plist_dst.unlink(missing_ok=True)
+            _print_json({"ok": True, "removed": str(plist_dst)})
+            return 0
+        if sys.platform == "linux":
+            subprocess.run(["systemctl", "--user", "disable", "--now", "narna-agent.service"], check=False)
+            svc = Path.home() / ".config" / "systemd" / "user" / "narna-agent.service"
+            svc.unlink(missing_ok=True)
+            _print_json({"ok": True, "removed": str(svc)})
+            return 0
+        return 2
+    pid_file = home / "desktop.pid"
+    _print_json(
+        {
+            "ok": True,
+            "pidFile": str(pid_file),
+            "running": pid_file.is_file(),
+            "pid": pid_file.read_text(encoding="utf-8").strip() if pid_file.is_file() else None,
+        }
+    )
+    return 0
+
+
+def cmd_browser(args: argparse.Namespace) -> int:
+    from .browser_session import browser_ready, setup_browser
+
+    sub = getattr(args, "browser_cmd", "status")
+    if sub == "setup":
+        out = setup_browser(with_deps=bool(getattr(args, "with_deps", False)))
+        _print_json(out)
+        return 0 if out.get("ok") else 1
+    _print_json({"ok": True, **browser_ready()})
+    return 0
 
 
 def cmd_config(args: argparse.Namespace) -> int:
@@ -1014,9 +1091,11 @@ def cmd_skills(args: argparse.Namespace) -> int:
 def cmd_gateway(args: argparse.Namespace) -> int:
     from .gateway_pairing import GatewayPairingStore
     from .gateway_runner import UnifiedGateway, config_from_env
+    from .gateway_config import apply_gateway_to_env
     from .narna_config import make_agent, resolve_workspace
 
     ws = resolve_workspace()
+    apply_gateway_to_env(ws)
     if args.gateway_cmd == "status":
         gw = UnifiedGateway(ask_fn=lambda *_: {}, workspace=ws)
         out = gw.status()
@@ -2128,7 +2207,27 @@ def build_parser() -> argparse.ArgumentParser:
     desk.add_argument("--no-browser", action="store_true")
     desk.add_argument("--tui", action="store_true", help="Use fullscreen TUI instead of browser")
     desk.add_argument("--provider", default=None)
+    desk.add_argument("--gateway", action="store_true", help="Enable social gateway thread")
+    desk.add_argument("--daemon", action="store_true", help="Background mode (no browser)")
+    desk.add_argument("--setup-browser", action="store_true", dest="setup_browser", help="Install Playwright + Chromium")
     desk.set_defaults(func=cmd_desktop)
+
+    daemon_p = sub.add_parser("daemon", help="Background agent install/status (macOS launchd / Linux systemd)")
+    daemon_sub = daemon_p.add_subparsers(dest="daemon_cmd", required=True)
+    d_inst = daemon_sub.add_parser("install", help="Install user service")
+    d_inst.set_defaults(func=cmd_daemon)
+    d_un = daemon_sub.add_parser("uninstall", help="Remove user service")
+    d_un.set_defaults(func=cmd_daemon)
+    d_st = daemon_sub.add_parser("status", help="Check desktop.pid")
+    d_st.set_defaults(func=cmd_daemon)
+
+    browser_p = sub.add_parser("browser", help="Playwright browser setup for computer-use")
+    browser_sub = browser_p.add_subparsers(dest="browser_cmd", required=True)
+    br_st = browser_sub.add_parser("status", help="Check Playwright readiness")
+    br_st.set_defaults(func=cmd_browser)
+    br_setup = browser_sub.add_parser("setup", help="pip install playwright + chromium")
+    br_setup.add_argument("--with-deps", action="store_true", help="Install OS deps (Linux)")
+    br_setup.set_defaults(func=cmd_browser)
 
     cfg_p = sub.add_parser("config", help="Show/set ~/.narna config (json or yaml)")
     cfg_sub = cfg_p.add_subparsers(dest="config_cmd", required=True)

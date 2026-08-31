@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.6] — 2026-08-31
+
+### Hermes parity — desktop daemon + jobs + channels
+- Background job ticker (60s) in `narna desktop` — NL cron runs unattended
+- `--daemon`, `--gateway`, `--setup-browser` flags
+- `narna daemon install` (launchd/systemd) · `narna browser setup`
+- Desktop UI: Jobs tab, Channels tab, Playwright one-click setup
+- `~/.narna/gateway.json` for Telegram/Discord tokens (no GitHub secrets needed locally)
+- Subagent delegate depth increased to 3
+- Hermes-style installer: `curl -fsSL …/scripts/install.sh | bash`
+
 ## [0.2.5] — 2026-08-31
 
 ### Desktop agent (Hermes-style)
