@@ -94,7 +94,8 @@ export default function ModelsSettings() {
           </p>
           {!cfg.byoLlmAllowed && (
             <p>
-              Upgrade to Personal to save your own keys. <Link to="/billing">Billing →</Link>
+              Prefer free Desktop (Mac/Windows) with local keys — no Pro.{" "}
+              <Link to="/download">Download →</Link>
             </p>
           )}
         </div>

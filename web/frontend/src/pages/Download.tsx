@@ -32,11 +32,12 @@ export default function Download() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Desktop</p>
-        <h1>NARNA on your PC</h1>
+        <p className="pill-label">Desktop · Free</p>
+        <h1>MacBook + Windows — free agent</h1>
         <p>
-          Local agent on <strong>127.0.0.1</strong> — Ask, tools, ADQA, Decision Memory. Keys stay on
-          disk. No cloud account required for the runtime.
+          Portable apps for <strong>macOS</strong> and <strong>Windows</strong>. Local agent on{" "}
+          <strong>127.0.0.1</strong> — Ask, tools, ADQA, Decision Memory. Your LLM key stays on disk.
+          No NARNA Pro fee. No cloud account required.
         </p>
       </header>
 
@@ -44,26 +45,26 @@ export default function Download() {
         <div className="land-cta" style={{ marginBottom: "1.5rem" }}>
           <a
             className="btn btn-primary"
-            href="https://github.com/hanyangkai/narna/releases/latest/download/NARNA-Desktop-windows.zip"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Download Windows
-          </a>
-          <a
-            className="btn btn-primary"
             href="https://github.com/hanyangkai/narna/releases/latest/download/NARNA-Desktop-macos.zip"
             target="_blank"
             rel="noreferrer"
           >
-            Download macOS
+            Download for Mac
+          </a>
+          <a
+            className="btn btn-primary"
+            href="https://github.com/hanyangkai/narna/releases/latest/download/NARNA-Desktop-windows.zip"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Download for Windows
           </a>
           <Link className="btn btn-secondary" to="/ask">
             Use in browser
           </Link>
         </div>
 
-        <h2>macOS — portable (no Python)</h2>
+        <h2>MacBook / macOS — portable (no Python)</h2>
         <p className="section-desc">
           Download <code>NARNA-Desktop-macos.zip</code> from{" "}
           <a

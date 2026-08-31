@@ -355,11 +355,11 @@ export default function Landing() {
               AI agents reason, verify, evaluate risk, and learn from outcomes.
             </p>
             <div className="land-cta">
-              <Link className="btn btn-primary" to="/ask">
-                Try NARNA Free
+              <Link className="btn btn-primary" to="/download">
+                Download free (Mac / Windows)
               </Link>
-              <Link className="btn btn-secondary" to="/download">
-                Download Desktop
+              <Link className="btn btn-secondary" to="/ask">
+                Try Ask free
               </Link>
               <a
                 className="btn land-btn-ghost"
@@ -371,7 +371,7 @@ export default function Landing() {
               </a>
             </div>
             <p className="land-hero-meta">
-              Hermes / OpenClaw for work — NARNA scores whether the decision was good.
+              Free agent on your machine — BYOK. Pro cloud plans not launched yet.
             </p>
             <p className="land-model-row">
               GPT · Claude · Gemini · DeepSeek · Qwen · Local Models
@@ -639,21 +639,28 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 12. Pricing */}
+      {/* 12. Pricing — free-first */}
       <section className="land-section" id="pricing">
         <div className="layout-wide">
           <Reveal>
             <p className="section-label">Pricing</p>
-            <h2 className="land-h2">Simple. Start free.</h2>
+            <h2 className="land-h2">Free agent. Pro later.</h2>
             <p className="land-desc">{PRICING.subline}</p>
           </Reveal>
-          <RevealStagger className="land-price-row land-price-row-4" stagger={0.08}>
+          <RevealStagger className="land-price-row land-price-row-3" stagger={0.08}>
             {PRICING.plans.map((p) => (
               <RevealItem
                 key={p.id}
                 className={`land-price${p.featured ? " land-price-featured" : ""}`}
               >
-                <h3>{p.name}</h3>
+                <h3>
+                  {p.name}
+                  {"comingSoon" in p && p.comingSoon ? (
+                    <span className="land-price-limit" style={{ display: "inline", marginLeft: "0.35rem" }}>
+                      · soon
+                    </span>
+                  ) : null}
+                </h3>
                 <p className="land-price-amt">
                   {p.price}
                   {p.period ? <span>{p.period}</span> : null}
@@ -672,20 +679,11 @@ export default function Landing() {
                 </Link>
               </RevealItem>
             ))}
-            <RevealItem className="land-price">
-              <h3>Enterprise</h3>
-              <p className="land-price-amt">Custom</p>
-              <p className="land-price-limit">Private deployment</p>
-              <ul className="land-price-features">
-                <li>Private deployment</li>
-                <li>Enterprise data &amp; governance</li>
-                <li>SSO · Audit · SLA</li>
-              </ul>
-              <Link to="/enterprise" className="btn btn-secondary">
-                Contact us
-              </Link>
-            </RevealItem>
           </RevealStagger>
+          <p className="land-desc" style={{ marginTop: "1.25rem" }}>
+            Need private deploy?{" "}
+            <Link to="/enterprise">Enterprise contact</Link> — no Pro checkout required to use the agent.
+          </p>
         </div>
       </section>
 
@@ -701,11 +699,11 @@ export default function Landing() {
             </h2>
             <p className="land-final-cta-label">Build with NARNA.</p>
             <div className="land-cta land-center-cta">
-              <Link className="btn btn-primary" to="/ask">
-                Try NARNA Free
+              <Link className="btn btn-primary" to="/download">
+                Download free
               </Link>
-              <Link className="btn land-btn-ghost" to="/docs">
-                Read the Docs
+              <Link className="btn land-btn-ghost" to="/ask">
+                Try Ask
               </Link>
             </div>
           </Reveal>

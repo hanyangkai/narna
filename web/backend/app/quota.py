@@ -102,7 +102,7 @@ def enforce_plan_limit(
                 status_code=402,
                 detail=(
                     f"ADQA hard cap exceeded: plan={org.plan}, "
-                    f"used={used}, limit={hard} checks/mo — upgrade at /billing"
+                    f"used={used}, limit={hard} checks/mo — use Desktop free: https://narna.org/download"
                 ),
             )
         if soft is not None and (used + projected_adqa) > soft:
@@ -126,7 +126,7 @@ def enforce_plan_limit(
                 status_code=402,
                 detail=(
                     f"Ask NARNA quota exceeded: plan={org.plan}, "
-                    f"used={used_t}, limit={hard_t} turns/mo — upgrade at /billing"
+                    f"used={used_t}, limit={hard_t} turns/mo — Desktop free: https://narna.org/download"
                 ),
             )
         if soft_t is not None and (used_t + projected_agent_turns) > soft_t:

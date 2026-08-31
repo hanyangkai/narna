@@ -6,7 +6,7 @@ const links = [
   { to: "/ask", label: "Agent" },
   { to: "/download", label: "Desktop" },
   { to: "/docs", label: "Docs" },
-  { to: "/pricing", label: "Pricing" },
+  { to: "/pricing", label: "Free" },
 ];
 
 export default function Nav() {
@@ -52,8 +52,8 @@ export default function Nav() {
               ))}
             </div>
             <div className="nav-actions">
-              <Link to="/ask" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Try NARNA Free
+              <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
+                Download free
               </Link>
               <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
                 GitHub

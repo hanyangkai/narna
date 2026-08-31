@@ -1,4 +1,4 @@
-"""Cloud plan quotas — Free · Cloud $20 · Team (seats).
+"""Cloud plan quotas — Free-first launch (Pro soft / not pushed).
 
 Legacy aliases: pro → cloud, business kept for Stripe/Paddle price IDs.
 """
@@ -10,16 +10,17 @@ from typing import Any
 import os
 
 # Soft caps warn; hard caps → HTTP 402. None = unlimited (still soft-cap warned).
+# Free-first: generous Ask/ADQA so users aren't funneled to Pro.
 PLANS: dict[str, dict[str, Any]] = {
     "free": {
-        "event_limit": 10_000,
-        "gu_limit": 1_000,
-        "adqa_soft_cap": 100,
-        "adqa_hard_cap": 500,
-        "agent_turns_soft_cap": 40,
-        "agent_turns_hard_cap": 50,
+        "event_limit": 100_000,
+        "gu_limit": 50_000,
+        "adqa_soft_cap": 5_000,
+        "adqa_hard_cap": None,  # no hard block — Desktop remains unlimited anyway
+        "agent_turns_soft_cap": 2_000,
+        "agent_turns_hard_cap": None,  # BYOK cloud Ask: soft warn only during free launch
         "seats": 1,
-        "enforcement": "hard",
+        "enforcement": "soft",
         "usd": 0.0,
         "byo_llm": True,  # Hermes-style: everyone brings their own LLM key
     },

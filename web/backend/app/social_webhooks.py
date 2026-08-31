@@ -64,7 +64,7 @@ async def handle_social_ask(
             try:
                 send_fn(
                     str(external_id),
-                    "Free Ask quota reached. Upgrade at https://narna.org/billing",
+                    "Hosted Ask limit — use Desktop free: https://narna.org/download",
                 )
             except Exception:
                 pass

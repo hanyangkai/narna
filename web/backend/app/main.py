@@ -2254,7 +2254,7 @@ async def agent_telegram_webhook(
             try:
                 send_telegram_message(
                     chat_id,
-                    "Free Ask quota reached. Upgrade with USDC/USDT at https://narna.org/billing",
+                    "Hosted Ask limit — Desktop free (Mac/Windows): https://narna.org/download",
                 )
             except Exception:
                 pass
@@ -2335,7 +2335,7 @@ async def agent_discord_webhook(
             try:
                 send_discord_message(
                     channel_id,
-                    "Free Ask quota reached. Upgrade with USDC/USDT at https://narna.org/billing",
+                    "Hosted Ask limit — Desktop free (Mac/Windows): https://narna.org/download",
                 )
             except Exception:
                 pass
@@ -2404,7 +2404,7 @@ async def agent_slack_events(
     except HTTPException as e:
         if e.status_code == 402:
             try:
-                send_slack_message(channel, "Free Ask quota reached — https://narna.org/billing")
+                send_slack_message(channel, "Hosted Ask limit — Desktop free: https://narna.org/download")
             except Exception:
                 pass
             return {"ok": True, "quota": True}
@@ -2464,7 +2464,7 @@ async def agent_whatsapp_webhook(
     except HTTPException as e:
         if e.status_code == 402:
             try:
-                send_whatsapp_message(frm, "Free Ask quota reached — narna.org/billing")
+                send_whatsapp_message(frm, "Hosted Ask limit — Desktop free: narna.org/download")
             except Exception:
                 pass
             return {"ok": True, "quota": True}

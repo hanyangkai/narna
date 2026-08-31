@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import PaymentQr from "../components/PaymentQr";
-import PageHero from "../components/PageHero";
 import {
   DEFAULT_DEV_KEY,
   PLAN_PRICES,
@@ -16,7 +16,6 @@ import {
   type BillingInvoice,
   type BillingStatus,
 } from "../api";
-import { getApiKey, setApiKey } from "../lib/storage";
 
 const payablePlans = ["cloud", "team", "business"] as const;
 
@@ -34,7 +33,7 @@ function teamPriceLabel(seats: number): string {
 }
 
 export default function Billing() {
-  const [apiKey, setApiKeyState] = useState(() => getApiKey(DEFAULT_DEV_KEY));
+  const [apiKey, setApiKeyState] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [networks, setNetworks] = useState<BillingCryptoNetwork[]>([]);
   const [cryptoConfig, setCryptoConfig] = useState<BillingCryptoConfig | null>(null);
@@ -50,7 +49,7 @@ export default function Billing() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    setApiKey(apiKey);
+    localStorage.setItem("uap_api_key", apiKey);
     try {
       const [s, inv] = await Promise.all([
         fetchBillingStatus(apiKey),
@@ -162,17 +161,26 @@ export default function Billing() {
   return (
     <div className="layout-wide">
       <section>
-        <PageHero label="Billing" title="Subscribe with USDC / USDT">
+        <header className="page-header" style={{ paddingTop: "1rem" }}>
+          <p className="pill-label">Billing</p>
+          <h1>Pro checkout — not launched yet</h1>
           <p>
-            NARNA Cloud accepts stablecoins only — USDC or USDT on Ethereum, Polygon, Base, Arbitrum, or
-            BSC. On-chain bot confirms the exact amount and upgrades your plan for 30 days. No card.
+            <strong>Use the free agent.</strong> Download Desktop (Mac/Windows) or Ask with your own LLM
+            key — no Pro payment required. Crypto checkout below is kept for later GTM; ignore it for now.
           </p>
-          <ol style={{ marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem" }}>
-            <li>Pick Pro or Team, chain, and USDC or USDT.</li>
-            <li>Send the <strong>exact</strong> amount to the wallet shown (QR included).</li>
+          <p style={{ marginTop: "0.75rem" }}>
+            <Link to="/download">→ Download free</Link>
+            {" · "}
+            <Link to="/ask">Try Ask</Link>
+            {" · "}
+            <Link to="/pricing">Free plans</Link>
+          </p>
+          <ol style={{ marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem", opacity: 0.7 }}>
+            <li>When Pro launches: pick plan, chain, and USDC or USDT.</li>
+            <li>Send the exact amount to the wallet shown (QR included).</li>
             <li>Bot watches the chain — plan upgrades automatically within a few minutes.</li>
           </ol>
-        </PageHero>
+        </header>
 
         {cryptoConfig && (
           <div className="card" style={{ marginBottom: "1rem" }}>

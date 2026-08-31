@@ -286,7 +286,9 @@ export default function Ask() {
       const text = e instanceof Error ? e.message : String(e);
       setError(text);
       if (text.includes("402") || text.toLowerCase().includes("quota")) {
-        setError("Free Ask quota reached. Upgrade with USDC/USDT for Personal.");
+        setError(
+          "Hosted Ask fair-use limit reached. Use Desktop free (Mac/Windows) with your own LLM key — no Pro needed."
+        );
       }
     } finally {
       setLoading(false);
@@ -499,8 +501,8 @@ export default function Ask() {
         {error && (
           <div className="error ask-error">
             {error}{" "}
-            {(error.includes("quota") || error.includes("402")) && (
-              <Link to="/billing">Upgrade →</Link>
+            {(error.includes("quota") || error.includes("402") || error.includes("fair-use")) && (
+              <Link to="/download">Download Desktop free →</Link>
             )}
           </div>
         )}
@@ -549,7 +551,14 @@ export default function Ask() {
           </div>
           {quota.hard != null && (
             <p className="ask-quota">
-              Turns this period: {quota.used ?? 0} / {quota.hard}
+              Hosted turns this period: {quota.used ?? 0} / {quota.hard} ·{" "}
+              <Link to="/download">Desktop = unlimited free</Link>
+            </p>
+          )}
+          {quota.hard == null && quota.used != null && (
+            <p className="ask-quota">
+              Hosted turns this period: {quota.used} · free launch ·{" "}
+              <Link to="/download">Desktop recommended</Link>
             </p>
           )}
         </div>

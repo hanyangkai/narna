@@ -16,7 +16,14 @@ export default function Pricing() {
       <div className="land-price-row land-price-row-3" style={{ marginBottom: "2rem" }}>
         {PRICING.plans.map((p) => (
           <div key={p.id} className={`land-price${p.featured ? " land-price-featured" : ""}`}>
-            <h3>{p.name}</h3>
+            <h3>
+              {p.name}
+              {"comingSoon" in p && p.comingSoon ? (
+                <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", color: "var(--muted)" }}>
+                  · soon
+                </span>
+              ) : null}
+            </h3>
             <p className="land-price-amt">
               {p.price}
               {p.period ? <span>{p.period}</span> : null}
@@ -38,7 +45,7 @@ export default function Pricing() {
       <p style={{ color: "var(--muted)" }}>{PRICING.enterpriseNote}</p>
 
       <section className="section">
-        <h2>Why upgrade?</h2>
+        <h2>Free covers the agent</h2>
         <ul className="land-price-features" style={{ maxWidth: "42rem" }}>
           {PRICING.whyUpgrade.map((line) => (
             <li key={line}>{line}</li>
@@ -47,21 +54,17 @@ export default function Pricing() {
       </section>
 
       <section className="section">
-        <h2>Same shape as modern infra</h2>
-        <p className="section-desc">
-          Free engine on your machine. Paid cloud so every agent and console shares Decision Memory and
-          ADQA — analogous to open-source memory engines + managed sync clouds.
-        </p>
+        <h2>Get started</h2>
         <div className="two-col">
           <div className="card feature-card">
-            <h3>Pay with USDC / USDT</h3>
-            <p>Stablecoin checkout on 5 chains — no card. Bot confirms on-chain.</p>
-            <Link to="/billing">Billing →</Link>
+            <h3>Desktop (recommended)</h3>
+            <p>macOS + Windows portable zips — full agent, no NARNA fee, BYOK.</p>
+            <Link to="/download">Download →</Link>
           </div>
           <div className="card feature-card">
-            <h3>Enterprise</h3>
-            <p>On-prem Decision Runtime, SSO, industry packages, SLA.</p>
-            <Link to="/enterprise">Contact →</Link>
+            <h3>Ask in browser</h3>
+            <p>Paste your LLM key. Or use mock mode. Pro billing is not required.</p>
+            <Link to="/ask">Open Ask →</Link>
           </div>
         </div>
       </section>
