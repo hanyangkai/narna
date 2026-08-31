@@ -147,27 +147,33 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
 
     @app.post("/v1/agent/ask")
     def agent_ask(body: AskBody) -> dict[str, Any]:
-        from uap.model_router import ModelRouter
-        from uap.narna_agent import NarnaAgent
+        from uap.narna_config import make_agent
 
         cfg = load_config(ws)
         provider = (body.llmProvider or cfg.get("provider") or "openrouter").lower()
         api_key = (body.llmApiKey or cfg.get("apiKey") or "").strip() or None
         base_url = body.llmBaseUrl or cfg.get("baseUrl") or None
-        if not api_key:
-            provider = "mock"
-        models: dict[str, str] = {}
-        model = body.model or cfg.get("model")
-        if model:
-            models = {"cheap": str(model), "reason": str(model), "challenge": str(model)}
-        try:
+        if body.llmProvider or body.llmApiKey or body.llmBaseUrl or body.model:
+            from uap.model_router import ModelRouter
+
+            if not api_key:
+                provider = "mock"
+            models: dict[str, str] = {}
+            model = body.model or cfg.get("model")
+            if model:
+                models = {"cheap": str(model), "reason": str(model), "challenge": str(model)}
             router = ModelRouter(
                 provider=provider,
                 api_key=api_key,
                 base_url=base_url,
                 models=models or None,
             )
+            from uap.narna_agent import NarnaAgent
+
             agent = NarnaAgent(workspace=ws, router=router)
+        else:
+            agent = make_agent(ws)
+        try:
             out = agent.ask(
                 body.message,
                 session_id=body.sessionId,
@@ -179,6 +185,48 @@ def create_app(*, workspace: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=502, detail=str(e)) from e
         return {"ok": True, **out}
+
+    @app.get("/v1/agent/status")
+    def agent_status() -> dict[str, Any]:
+        from uap.narna_config import make_agent
+
+        cfg = load_config(ws)
+        agent = make_agent(ws)
+        tools = agent.tools.specs()
+        skills = agent.skills.list_skills()
+        return {
+            "ok": True,
+            "hasKey": bool(cfg.get("apiKey")),
+            "provider": cfg.get("provider") or "mock",
+            "model": cfg.get("model"),
+            "toolCount": len(tools),
+            "skillCount": len(skills),
+            "workspace": str(ws),
+            "shellBackend": os.environ.get("UAP_SHELL_BACKEND") or cfg.get("shellBackend") or "local",
+            "browserEnabled": bool(cfg.get("browserEnabled")),
+            "standard": "NGS-0029-desktop-agent",
+        }
+
+    @app.get("/v1/agent/tools")
+    def agent_tools() -> dict[str, Any]:
+        from uap.narna_config import make_agent
+
+        agent = make_agent(ws)
+        return {"ok": True, "tools": agent.tools.specs()}
+
+    @app.get("/v1/agent/skills")
+    def agent_skills() -> dict[str, Any]:
+        from uap.narna_config import make_agent
+
+        agent = make_agent(ws)
+        return {"ok": True, "skills": agent.skills.list_skills()[:50]}
+
+    @app.get("/v1/agent/traces")
+    def agent_traces(limit: int = 20) -> dict[str, Any]:
+        from uap.decision_trace import DecisionTraceStore
+
+        rows = DecisionTraceStore(ws).list_traces(limit=min(limit, 100))
+        return {"ok": True, "traces": rows, "count": len(rows)}
 
     @app.get("/")
     def index() -> HTMLResponse:

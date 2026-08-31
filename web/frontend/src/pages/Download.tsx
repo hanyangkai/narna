@@ -3,22 +3,28 @@ import { BRAND, SPEC } from "../brand";
 
 const steps = [
   {
-    title: "Install",
-    win: "Portable zip (no Python) or PowerShell installer",
-    unix: "curl install.sh · or pip",
-    alt: `pip install "narna[desktop]"`,
+    title: "Download",
+    win: "Windows or macOS zip — no Python needed",
+    unix: "Or: pip install narna[desktop]",
+    alt: "Hermes-like local agent on your PC",
   },
   {
     title: "Launch",
-    win: "NARNA-Desktop.exe  or  narna desktop",
+    win: "NARNA-Desktop.exe / NARNA-Desktop",
     unix: "narna desktop",
     alt: "Opens http://127.0.0.1:8765/",
   },
   {
     title: "Bring your key",
-    win: "Paste OpenRouter / OpenAI / Ollama in the UI",
+    win: "Setup wizard → paste OpenRouter / OpenAI / Ollama",
     unix: "Saved only under ~/.narna",
-    alt: "No company LLM — BYOK forever",
+    alt: "BYOK — your keys never leave your machine",
+  },
+  {
+    title: "Chat + tools",
+    win: "Shell, browser, memory, ADQA scoring",
+    unix: "Same agent runtime as cloud gateway",
+    alt: "Optional: narna gateway run for Telegram later",
   },
 ];
 
@@ -42,12 +48,35 @@ export default function Download() {
             target="_blank"
             rel="noreferrer"
           >
-            Download Windows zip
+            Download Windows
+          </a>
+          <a
+            className="btn btn-primary"
+            href="https://github.com/hanyangkai/narna/releases/latest/download/NARNA-Desktop-macos.zip"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Download macOS
           </a>
           <Link className="btn btn-secondary" to="/ask">
             Use in browser
           </Link>
         </div>
+
+        <h2>macOS — portable (no Python)</h2>
+        <p className="section-desc">
+          Download <code>NARNA-Desktop-macos.zip</code> from{" "}
+          <a
+            href="https://github.com/hanyangkai/narna/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub Releases
+          </a>
+          , unzip, run <code>NARNA-Desktop</code> (or double-click in Finder).
+        </p>
+        <pre className="code-block">{`# Or build from source (maintainers)
+bash scripts/build_desktop_mac.sh`}</pre>
 
         <h2>Windows — portable (no Python)</h2>
         <p className="section-desc">

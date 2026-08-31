@@ -13,6 +13,7 @@
       --text: #e8f2f7;
       --muted: #8eacbc;
       --accent: #3db8a0;
+      --warn: #e8b84a;
       --font: "Segoe UI", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
@@ -22,10 +23,21 @@
         radial-gradient(900px 500px at 100% 0%, #1a2f28, transparent), var(--bg);
       color: var(--text); font-family: var(--font);
     }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
-    header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem; }
-    header h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0.04em; }
-    header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .app { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; }
+    @media (max-width: 720px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } }
+    .sidebar {
+      border-right: 1px solid var(--line); padding: 1.25rem 0.75rem;
+      background: rgba(0,0,0,0.25);
+    }
+    .sidebar h1 { margin: 0 0 0.25rem; font-size: 1.1rem; letter-spacing: 0.04em; padding: 0 0.5rem; }
+    .sidebar p { margin: 0 0 1rem; color: var(--muted); font-size: 0.78rem; padding: 0 0.5rem; }
+    .nav { display: flex; flex-direction: column; gap: 0.25rem; }
+    .nav button {
+      text-align: left; background: transparent; color: var(--text); border: 0;
+      padding: 0.55rem 0.75rem; border-radius: 8px; cursor: pointer; font: inherit;
+    }
+    .nav button.active { background: #0f2a36; color: var(--accent); }
+    .main { padding: 1.25rem; max-width: 920px; }
     .badge { font-size: 0.75rem; color: var(--accent); border: 1px solid var(--line); padding: 0.2rem 0.5rem; border-radius: 999px; }
     .panel {
       background: #0a1820; border: 1px solid var(--line); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
@@ -37,13 +49,15 @@
       border-radius: 8px; padding: 0.65rem 0.75rem; font: inherit;
     }
     textarea { min-height: 96px; resize: vertical; }
-    button {
+    button.primary {
       background: var(--accent); color: #042018; border: 0; border-radius: 8px;
       padding: 0.65rem 1rem; font-weight: 650; cursor: pointer; font: inherit;
     }
-    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
     button:disabled { opacity: 0.5; cursor: wait; }
-    #log { display: flex; flex-direction: column; gap: 0.75rem; min-height: 220px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    #log { display: flex; flex-direction: column; gap: 0.75rem; min-height: 280px; max-height: 52vh; overflow-y: auto; }
     .msg { padding: 0.75rem 0.9rem; border-radius: 10px; border: 1px solid var(--line); white-space: pre-wrap; line-height: 1.45; }
     .msg.user { background: #0a2430; }
     .msg.bot { background: #0a1f1c; border-color: #24584c; }
@@ -52,65 +66,156 @@
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
     .hint { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; }
+    .stat { background: #061018; border: 1px solid var(--line); border-radius: 10px; padding: 0.75rem; }
+    .stat b { display: block; font-size: 1.4rem; color: var(--accent); }
+    .stat span { font-size: 0.78rem; color: var(--muted); }
+    .list { list-style: none; padding: 0; margin: 0; max-height: 360px; overflow-y: auto; }
+    .list li { padding: 0.5rem 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+    .list code { color: var(--accent); font-size: 0.82rem; }
+    .wizard { text-align: center; padding: 2rem 1rem; }
+    .wizard h2 { margin: 0 0 0.5rem; }
+    .wizard-steps { display: flex; justify-content: center; gap: 0.5rem; margin: 1.5rem 0; flex-wrap: wrap; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+    .step-dot.on { background: var(--accent); }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(4,12,18,0.92); z-index: 50;
+      display: flex; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .overlay.hidden { display: none; }
+    .overlay .panel { max-width: 480px; width: 100%; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+    .topbar h2 { margin: 0; font-size: 1.15rem; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>NARNA Desktop</h1>
-        <p>Local AI agent · Decision quality on your PC · BYOK</p>
-      </div>
-      <span class="badge" id="health">starting…</span>
-    </header>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>NARNA</h1>
+      <p>Local AI agent · BYOK · ADQA</p>
+      <nav class="nav" id="nav">
+        <button type="button" data-tab="chat" class="active">Chat</button>
+        <button type="button" data-tab="tools">Tools</button>
+        <button type="button" data-tab="skills">Skills</button>
+        <button type="button" data-tab="settings">Settings</button>
+      </nav>
+      <p style="margin-top:1.5rem;font-size:0.75rem;color:var(--muted);padding:0 0.5rem">
+        <span class="badge" id="health">…</span><br><br>
+        Data stays in <code>~/.narna</code>
+      </p>
+    </aside>
 
-    <section class="panel" id="settings">
-      <div class="grid2">
-        <div>
-          <label for="provider">LLM provider</label>
-          <select id="provider">
-            <option value="openrouter">OpenRouter</option>
-            <option value="openai">OpenAI</option>
-            <option value="ollama">Ollama</option>
-            <option value="mock">Mock (offline demo)</option>
-          </select>
-        </div>
-        <div>
-          <label for="model">Model (optional)</label>
-          <input id="model" placeholder="e.g. openai/gpt-4o-mini" />
-        </div>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="tabTitle">Chat with your agent</h2>
+        <span class="badge" id="agentBadge">loading…</span>
       </div>
-      <div style="margin-top:0.75rem">
-        <label for="apiKey">API key (saved in ~/.narna — never uploaded)</label>
-        <input id="apiKey" type="password" placeholder="sk-… or OpenRouter key" autocomplete="off" />
-      </div>
-      <div class="row" style="margin-top:0.75rem">
-        <button type="button" class="secondary" id="saveCfg">Save key</button>
-        <span class="hint" id="cfgStatus"></span>
-      </div>
-    </section>
 
-    <section class="panel">
-      <div id="log"></div>
-      <div style="margin-top:0.75rem">
-        <label for="prompt">Ask NARNA</label>
-        <textarea id="prompt" placeholder="Should I sign this contract? What evidence do I need?"></textarea>
-      </div>
-      <div class="row" style="margin-top:0.75rem">
-        <select id="mode" style="width:auto">
-          <option value="cheap">Mode: cheap</option>
-          <option value="quality">Mode: quality</option>
-          <option value="critical">Mode: critical</option>
-        </select>
-        <button type="button" id="send">Ask</button>
-        <button type="button" class="secondary" id="newSession">New session</button>
-      </div>
-    </section>
+      <section class="tab active" id="tab-chat">
+        <div class="panel">
+          <div id="log"></div>
+          <div style="margin-top:0.75rem">
+            <label for="prompt">Message</label>
+            <textarea id="prompt" placeholder="Research this topic, run a shell command, browse the web…"></textarea>
+          </div>
+          <div class="row" style="margin-top:0.75rem">
+            <select id="mode" style="width:auto">
+              <option value="cheap">Mode: cheap</option>
+              <option value="quality">Mode: quality</option>
+              <option value="critical">Mode: critical</option>
+            </select>
+            <button type="button" class="primary" id="send">Send</button>
+            <button type="button" class="secondary" id="newSession">New session</button>
+          </div>
+          <p class="hint">Ctrl+Enter to send · Agent uses tools automatically (shell, browser, memory, ADQA)</p>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-tools">
+        <div class="panel">
+          <p class="hint">Built-in tools — same runtime as Hermes/OpenClaw-style agents, plus ADQA scoring.</p>
+          <ul class="list" id="toolsList"><li>Loading…</li></ul>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-skills">
+        <div class="panel">
+          <p class="hint">SKILL.md packages loaded from your workspace and public hub.</p>
+          <ul class="list" id="skillsList"><li>Loading…</li></ul>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-settings">
+        <div class="panel">
+          <div class="stat-grid" id="statGrid"></div>
+        </div>
+        <div class="panel">
+          <div class="grid2">
+            <div>
+              <label for="provider">LLM provider</label>
+              <select id="provider">
+                <option value="openrouter">OpenRouter</option>
+                <option value="openai">OpenAI</option>
+                <option value="ollama">Ollama (local)</option>
+                <option value="mock">Mock (offline demo)</option>
+              </select>
+            </div>
+            <div>
+              <label for="model">Model (optional)</label>
+              <input id="model" placeholder="e.g. openai/gpt-4o-mini" />
+            </div>
+          </div>
+          <div style="margin-top:0.75rem">
+            <label for="apiKey">API key (saved locally — never uploaded)</label>
+            <input id="apiKey" type="password" placeholder="sk-… or OpenRouter key" autocomplete="off" />
+          </div>
+          <div class="row" style="margin-top:0.75rem">
+            <button type="button" class="secondary" id="saveCfg">Save</button>
+            <span class="hint" id="cfgStatus"></span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 style="margin:0 0 0.5rem;font-size:1rem">Social channels (optional)</h3>
+          <p class="hint">Connect Telegram / WhatsApp later via <code>narna gateway run</code> — not required for desktop agent.</p>
+        </div>
+      </section>
+    </main>
   </div>
+
+  <div class="overlay" id="wizard">
+    <div class="panel wizard">
+      <h2>Welcome to NARNA Desktop</h2>
+      <p class="hint">Your local AI agent — like Hermes, with decision quality built in.</p>
+      <div class="wizard-steps">
+        <span class="step-dot on" id="wd1"></span>
+        <span class="step-dot" id="wd2"></span>
+        <span class="step-dot" id="wd3"></span>
+      </div>
+      <div id="wizardBody">
+        <p>1. Install done ✓<br>2. Paste your LLM key (OpenRouter / OpenAI / Ollama)<br>3. Start chatting — tools run on your PC</p>
+        <div style="margin-top:1rem;text-align:left">
+          <label for="wizKey">API key</label>
+          <input id="wizKey" type="password" placeholder="sk-…" />
+          <div class="row" style="margin-top:0.75rem">
+            <select id="wizProvider" style="width:auto">
+              <option value="openrouter">OpenRouter</option>
+              <option value="openai">OpenAI</option>
+              <option value="ollama">Ollama</option>
+            </select>
+            <button type="button" class="primary" id="wizSave">Save & start</button>
+            <button type="button" class="secondary" id="wizSkip">Demo (mock)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const state = { sessionId: null };
+    const state = { sessionId: null, tab: "chat" };
     const logEl = document.getElementById("log");
     const healthEl = document.getElementById("health");
+    const agentBadge = document.getElementById("agentBadge");
+    const wizard = document.getElementById("wizard");
 
     function addMsg(role, text, meta) {
       const d = document.createElement("div");
@@ -126,13 +231,55 @@
       d.scrollIntoView({ behavior: "smooth", block: "end" });
     }
 
+    function showTab(name) {
+      state.tab = name;
+      document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+      document.getElementById("tab-" + name).classList.add("active");
+      document.querySelectorAll("#nav button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.tab === name);
+      });
+      const titles = { chat: "Chat with your agent", tools: "Agent tools", skills: "Skills", settings: "Settings" };
+      document.getElementById("tabTitle").textContent = titles[name] || name;
+      if (name === "tools") loadTools();
+      if (name === "skills") loadSkills();
+    }
+
+    document.getElementById("nav").onclick = (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      if (btn) showTab(btn.dataset.tab);
+    };
+
     async function refreshHealth() {
       try {
         const r = await fetch("/v1/health");
         const j = await r.json();
-        healthEl.textContent = j.ok ? "local · ready" : "error";
+        healthEl.textContent = j.ok ? "agent ready" : "error";
       } catch {
         healthEl.textContent = "offline";
+      }
+    }
+
+    async function refreshStatus() {
+      try {
+        const r = await fetch("/v1/agent/status");
+        const j = await r.json();
+        agentBadge.textContent = j.hasKey
+          ? j.toolCount + " tools · " + (j.provider || "mock")
+          : "no key — mock mode";
+        document.getElementById("statGrid").innerHTML =
+          "<div class='stat'><b>" + j.toolCount + "</b><span>tools</span></div>" +
+          "<div class='stat'><b>" + j.skillCount + "</b><span>skills</span></div>" +
+          "<div class='stat'><b>" + (j.provider || "—") + "</b><span>provider</span></div>" +
+          "<div class='stat'><b>" + (j.shellBackend || "local") + "</b><span>shell</span></div>";
+        if (!j.hasKey && !localStorage.getItem("narna_wizard_done")) {
+          wizard.classList.remove("hidden");
+        } else {
+          wizard.classList.add("hidden");
+        }
+        return j;
+      } catch {
+        agentBadge.textContent = "status error";
+        return null;
       }
     }
 
@@ -142,32 +289,80 @@
       document.getElementById("provider").value = j.provider || "openrouter";
       document.getElementById("model").value = j.model || "";
       document.getElementById("cfgStatus").textContent = j.hasKey
-        ? "Key on disk (" + (j.maskedKey || "set") + ")"
-        : "No key — Ask will use mock";
+        ? "Key saved (" + (j.maskedKey || "set") + ")"
+        : "No key — mock mode";
+      return j;
     }
 
-    document.getElementById("saveCfg").onclick = async () => {
-      const body = {
-        provider: document.getElementById("provider").value,
-        apiKey: document.getElementById("apiKey").value || undefined,
-        model: document.getElementById("model").value || null,
-      };
+    async function saveConfig(body) {
       const r = await fetch("/v1/desktop/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const j = await r.json();
+      return r.json();
+    }
+
+    document.getElementById("saveCfg").onclick = async () => {
+      const j = await saveConfig({
+        provider: document.getElementById("provider").value,
+        apiKey: document.getElementById("apiKey").value || undefined,
+        model: document.getElementById("model").value || null,
+      });
       document.getElementById("apiKey").value = "";
       document.getElementById("cfgStatus").textContent = j.hasKey ? "Saved" : "Cleared";
       await loadCfg();
+      await refreshStatus();
+    };
+
+    document.getElementById("wizSave").onclick = async () => {
+      await saveConfig({
+        provider: document.getElementById("wizProvider").value,
+        apiKey: document.getElementById("wizKey").value || undefined,
+      });
+      localStorage.setItem("narna_wizard_done", "1");
+      wizard.classList.add("hidden");
+      await loadCfg();
+      await refreshStatus();
+      addMsg("bot", "Key saved. Your agent is ready — ask anything.");
+    };
+
+    document.getElementById("wizSkip").onclick = () => {
+      localStorage.setItem("narna_wizard_done", "1");
+      wizard.classList.add("hidden");
+      addMsg("bot", "Running in mock mode. Add a key in Settings for real LLM responses.");
     };
 
     document.getElementById("newSession").onclick = () => {
       state.sessionId = null;
       logEl.innerHTML = "";
-      addMsg("bot", "New session. Ask anything — ADQA will score the decision.");
+      addMsg("bot", "New session. Tools + ADQA active.");
     };
+
+    async function loadTools() {
+      const ul = document.getElementById("toolsList");
+      try {
+        const j = await (await fetch("/v1/agent/tools")).json();
+        ul.innerHTML = (j.tools || []).map((t) =>
+          "<li><code>" + t.name + "</code> — " + (t.description || "").slice(0, 120) + "</li>"
+        ).join("") || "<li>No tools</li>";
+      } catch {
+        ul.innerHTML = "<li>Failed to load</li>";
+      }
+    }
+
+    async function loadSkills() {
+      const ul = document.getElementById("skillsList");
+      try {
+        const j = await (await fetch("/v1/agent/skills")).json();
+        const skills = j.skills || [];
+        ul.innerHTML = skills.length
+          ? skills.map((s) => "<li><code>" + (s.name || s.id || "?") + "</code> — " + (s.description || "").slice(0, 100) + "</li>").join("")
+          : "<li>No skills yet — sync via <code>narna skills hub-sync</code></li>";
+      } catch {
+        ul.innerHTML = "<li>Failed to load</li>";
+      }
+    }
 
     async function ask() {
       const prompt = document.getElementById("prompt").value.trim();
@@ -193,8 +388,8 @@
         const meta =
           "<strong>DQS " + (j.dqs ?? "—") + "</strong> · " +
           (j.guardian || j.verdict || "—") +
-          (j.traceId ? " · " + j.traceId : "") +
-          (tools.length ? " · tools: " + tools.join(", ") : "");
+          (j.traceId ? " · trace " + j.traceId.slice(0, 8) : "") +
+          (tools.length ? " · " + tools.join(", ") : "");
         addMsg("bot", j.answer || "(empty)", meta);
       } catch (e) {
         addMsg("bot", "Error: " + e.message);
@@ -209,8 +404,8 @@
     });
 
     refreshHealth();
-    loadCfg();
-    addMsg("bot", "Welcome to NARNA Desktop. Paste a BYOK key above, then ask a decision question.");
+    loadCfg().then(refreshStatus);
+    addMsg("bot", "NARNA Desktop agent running locally. Paste your BYOK key to connect an LLM, or use mock mode to explore.");
   </script>
 </body>
 </html>

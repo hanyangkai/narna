@@ -149,3 +149,50 @@ def apply_config_to_env(home: Path | None = None) -> dict[str, Any]:
             "1" if cfg.get("browserEnabled") else "0",
         )
     return cfg
+
+
+def resolve_workspace(home: Path | str | None = None) -> Path:
+    """Default agent workspace (~/.narna) — Hermes-like local home."""
+    root = Path(home).expanduser() if home else default_home()
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def router_from_config(
+    home: Path | str | None = None,
+    *,
+    provider_override: str | None = None,
+) -> Any:
+    """Build ModelRouter from ~/.narna BYOK config (desktop + CLI)."""
+    from .model_router import ModelRouter
+
+    cfg = load_narna_config(home)
+    provider = (provider_override or cfg.get("provider") or "mock").lower()
+    api_key = (cfg.get("apiKey") or "").strip() or None
+    base_url = cfg.get("baseUrl") or None
+    if not api_key and provider != "ollama":
+        provider = "mock"
+    models: dict[str, str] = {}
+    model = cfg.get("model")
+    if model:
+        m = str(model)
+        models = {"cheap": m, "reason": m, "challenge": m}
+    return ModelRouter(
+        provider=provider,
+        api_key=api_key,
+        base_url=base_url,
+        models=models or None,
+    )
+
+
+def make_agent(
+    home: Path | str | None = None,
+    *,
+    provider_override: str | None = None,
+) -> Any:
+    """NarnaAgent bound to ~/.narna with BYOK router."""
+    from .narna_agent import NarnaAgent
+
+    ws = resolve_workspace(home)
+    apply_config_to_env(ws)
+    return NarnaAgent(workspace=ws, router=router_from_config(ws, provider_override=provider_override))

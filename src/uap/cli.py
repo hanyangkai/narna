@@ -795,15 +795,13 @@ def cmd_reason(args: argparse.Namespace) -> int:
 
 
 def cmd_ask(args: argparse.Namespace) -> int:
-    from .model_router import ModelRouter
-    from .narna_agent import NarnaAgent
+    from .narna_config import make_agent
 
     msg = getattr(args, "message_opt", None) or args.message
     if not msg:
         print("message required", file=sys.stderr)
         return 2
-    router = ModelRouter(provider=getattr(args, "provider", None) or None)
-    out = NarnaAgent(Path.cwd(), router=router).ask(
+    out = make_agent(provider_override=getattr(args, "provider", None) or None).ask(
         msg, challenge=bool(getattr(args, "challenge", False))
     )
     _print_json(out)
@@ -851,12 +849,10 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 
 def cmd_chat(args: argparse.Namespace) -> int:
     """Hermes-like interactive REPL with slash commands."""
-    from .model_router import ModelRouter
-    from .narna_agent import NarnaAgent
+    from .narna_config import make_agent
     from .slash_commands import SLASH_HELP, parse_slash
 
-    router = ModelRouter(provider=getattr(args, "provider", None) or None)
-    agent = NarnaAgent(Path.cwd(), router=router)
+    agent = make_agent(provider_override=getattr(args, "provider", None) or None)
     session_id: str | None = None
     print("NARNA chat — type /help · /quit to exit")
     while True:
@@ -936,11 +932,12 @@ def cmd_chat(args: argparse.Namespace) -> int:
 
 def cmd_tui(args: argparse.Namespace) -> int:
     """Fullscreen TUI (optional textual). Falls back message if not installed."""
+    from .narna_config import default_home
     from .tui_app import run_tui
 
     return run_tui(
         provider=getattr(args, "provider", None) or None,
-        workspace=Path.cwd(),
+        workspace=default_home(),
     )
 
 
@@ -1017,13 +1014,13 @@ def cmd_skills(args: argparse.Namespace) -> int:
 def cmd_gateway(args: argparse.Namespace) -> int:
     from .gateway_pairing import GatewayPairingStore
     from .gateway_runner import UnifiedGateway, config_from_env
-    from .model_router import ModelRouter
-    from .narna_agent import NarnaAgent
+    from .narna_config import make_agent, resolve_workspace
 
+    ws = resolve_workspace()
     if args.gateway_cmd == "status":
-        gw = UnifiedGateway(ask_fn=lambda *_: {}, workspace=Path.cwd())
+        gw = UnifiedGateway(ask_fn=lambda *_: {}, workspace=ws)
         out = gw.status()
-        out["pairing"] = GatewayPairingStore(Path.cwd()).status()
+        out["pairing"] = GatewayPairingStore(ws).status()
         _print_json(out)
         return 0
     if args.gateway_cmd == "channels":
@@ -1032,7 +1029,7 @@ def cmd_gateway(args: argparse.Namespace) -> int:
         _print_json(channels_status())
         return 0
     if args.gateway_cmd == "pair":
-        store = GatewayPairingStore(Path.cwd())
+        store = GatewayPairingStore(ws)
         code = getattr(args, "code", None) or ""
         if code:
             _print_json(store.confirm(code))
@@ -1045,8 +1042,7 @@ def cmd_gateway(args: argparse.Namespace) -> int:
         _print_json(store.pair_direct(channel, external))
         return 0
 
-    router = ModelRouter(provider=getattr(args, "provider", None) or None)
-    agent = NarnaAgent(Path.cwd(), router=router)
+    agent = make_agent(provider_override=getattr(args, "provider", None) or None)
 
     def ask_fn(message: str, channel: str, external_id: str | None) -> dict:
         return agent.ask(
@@ -1056,7 +1052,7 @@ def cmd_gateway(args: argparse.Namespace) -> int:
             use_tools=True,
         )
 
-    gw = UnifiedGateway(ask_fn=ask_fn, config=config_from_env(), workspace=Path.cwd())
+    gw = UnifiedGateway(ask_fn=ask_fn, config=config_from_env(), workspace=ws)
     if args.gateway_cmd == "once":
         n = gw.poll_once()
         _print_json({"handled": n, **gw.status()})

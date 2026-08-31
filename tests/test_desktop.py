@@ -34,6 +34,27 @@ class DesktopServerTests(unittest.TestCase):
             self.assertTrue(body.get("answer"))
             self.assertIn("dqs", body)
 
+    def test_agent_status_tools(self):
+        try:
+            from fastapi.testclient import TestClient  # noqa: F401
+        except ImportError:
+            self.skipTest("fastapi not installed")
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            app = create_app(workspace=Path(td))
+            client = TestClient(app)
+            st = client.get("/v1/agent/status")
+            self.assertEqual(st.status_code, 200)
+            body = st.json()
+            self.assertTrue(body["ok"])
+            self.assertIn("toolCount", body)
+            self.assertGreater(body["toolCount"], 0)
+            tools = client.get("/v1/agent/tools")
+            self.assertEqual(tools.status_code, 200)
+            self.assertGreater(len(tools.json()["tools"]), 0)
+            skills = client.get("/v1/agent/skills")
+            self.assertEqual(skills.status_code, 200)
+            self.assertIn("skills", skills.json())
+
     def test_config_roundtrip(self):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             ws = Path(td)

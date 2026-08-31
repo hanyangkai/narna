@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.5] — 2026-08-31
+
+### Desktop agent (Hermes-style)
+- Unified agent runtime on `~/.narna` for `desktop`, `chat`, `ask`, `gateway`
+- Desktop UI: setup wizard, Chat/Tools/Skills/Settings tabs
+- New APIs: `/v1/agent/status`, `/v1/agent/tools`, `/v1/agent/skills`, `/v1/agent/traces`
+- macOS portable build (`NARNA-Desktop-macos.zip`) in CI
+- Download page: Windows + macOS one-click zips
+
 ## [0.2.4] — 2026-08-31
 
 ### Agent + social gateway

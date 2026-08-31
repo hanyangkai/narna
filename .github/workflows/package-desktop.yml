@@ -35,8 +35,22 @@ jobs:
           name: NARNA-Desktop-windows
           path: dist/NARNA-Desktop-windows.zip
 
+  macos-app:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build portable macOS app
+        run: bash scripts/build_desktop_mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NARNA-Desktop-macos
+          path: dist/NARNA-Desktop-macos.zip
+
   release:
-    needs: [zip-scripts, windows-exe]
+    needs: [zip-scripts, windows-exe, macos-app]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -57,5 +71,6 @@ jobs:
           files: |
             release-assets/narna-desktop.zip
             release-assets/NARNA-Desktop-windows.zip
+            release-assets/NARNA-Desktop-macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

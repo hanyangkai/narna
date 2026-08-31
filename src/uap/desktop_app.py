@@ -57,9 +57,10 @@ def run_desktop(
     app = create_app(workspace=ws)
     url = f"http://{host}:{listen_port}/"
 
-    print(f"NARNA Desktop")
+    print(f"NARNA Desktop — local agent")
     print(f"  workspace: {ws}")
     print(f"  open:      {url}")
+    print(f"  data:      keys + memory in ~/.narna")
     print(f"  stop:      Ctrl+C")
     print()
 
