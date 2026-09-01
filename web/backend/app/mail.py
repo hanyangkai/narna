@@ -58,6 +58,7 @@ def _send_resend(to: str, subject: str, text: str, html: str | None) -> bool:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            "User-Agent": "narna-cloud/1.0",
         },
         method="POST",
     )
