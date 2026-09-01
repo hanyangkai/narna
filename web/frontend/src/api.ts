@@ -58,9 +58,14 @@ export type BillingStatus = {
   adqaChecksInPeriod?: number;
   adqaSoftCap?: number | null;
   adqaHardCap?: number | null;
+  agentTurnsInPeriod?: number;
+  agentTurnsHardCap?: number | null;
+  agentTurnsSoftCap?: number | null;
   seatCount?: number;
   email?: string | null;
   orgName?: string | null;
+  isPro?: boolean;
+  features?: Record<string, unknown> | null;
 };
 
 export type SignupResponse = {

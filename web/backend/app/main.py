@@ -36,6 +36,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from .account import account_me, claim_recovery, request_recovery, signup_account
+from .cloud_sync import sync_pull, sync_push, sync_status
 from .auth import get_org_from_api_key, get_org_optional
 from .billing import (
     add_plan_period,
@@ -46,6 +47,7 @@ from .billing import (
     plan_adqa_hard_cap,
     plan_adqa_soft_cap,
     plan_agent_turns_hard_cap,
+    plan_agent_turns_soft_cap,
     plan_allows_byo_llm,
     plan_event_limit,
     plan_gu_limit,
@@ -65,6 +67,7 @@ from .invoice_utils import (
 from .database import get_db, init_db
 from .metrics import METRICS
 from .mcp_http import router as mcp_router
+from .plan_features import feature_enabled, plan_features_payload, require_feature
 from .quota import bump_adqa_usage, bump_agent_turns, enforce_plan_limit
 from .tenants import tenant_id_for_org, tenant_workspace
 from .models import (
@@ -130,6 +133,10 @@ from .schemas import (
     RecoveryClaimRequest,
     RecoveryClaimResponse,
     AuthConfigResponse,
+    CloudSyncPullResponse,
+    CloudSyncPushRequest,
+    CloudSyncPushResponse,
+    CloudSyncStatusResponse,
     TelemetryAggregateResponse,
     TelemetryAggregateRow,
     TelemetryConsentRequest,
@@ -980,11 +987,48 @@ def billing_status(
         adqaHardCap=plan_adqa_hard_cap(org.plan),
         agentTurnsInPeriod=int(getattr(org, "agent_turns_in_period", 0) or 0),
         agentTurnsHardCap=plan_agent_turns_hard_cap(org.plan),
+        agentTurnsSoftCap=plan_agent_turns_soft_cap(org.plan),
         seatCount=int(getattr(org, "seat_count", 1) or 1),
         byoLlmAllowed=plan_allows_byo_llm(org.plan),
         email=getattr(org, "email", None),
         orgName=org.name,
+        isPro=plan_features_payload(org.plan)["isPro"],
+        features=plan_features_payload(org.plan),
     )
+
+
+@app.get("/v1/sync/status", response_model=CloudSyncStatusResponse)
+def cloud_sync_status(org: Organization = Depends(get_org_from_api_key)) -> CloudSyncStatusResponse:
+    return CloudSyncStatusResponse(**sync_status(org=org))
+
+
+@app.post("/v1/sync/push", response_model=CloudSyncPushResponse)
+def cloud_sync_push(
+    body: CloudSyncPushRequest,
+    org: Organization = Depends(get_org_from_api_key),
+    db: Session = Depends(get_db),
+) -> CloudSyncPushResponse:
+    return CloudSyncPushResponse(
+        **sync_push(
+            org=org,
+            db=db,
+            device_id=body.deviceId,
+            payload=body.model_dump(),
+        )
+    )
+
+
+@app.get("/v1/sync/pull", response_model=CloudSyncPullResponse)
+def cloud_sync_pull(
+    deviceId: str | None = None,
+    org: Organization = Depends(get_org_from_api_key),
+) -> CloudSyncPullResponse:
+    return CloudSyncPullResponse(**sync_pull(org=org, device_id=deviceId))
+
+
+@app.get("/v1/billing/features")
+def billing_features(org: Organization = Depends(get_org_from_api_key)) -> dict[str, Any]:
+    return {"ok": True, **plan_features_payload(org.plan)}
 
 
 @app.post("/v1/billing/checkout-session", response_model=BillingCheckoutResponse)
@@ -1986,6 +2030,17 @@ def agent_ask(
 
     resolved = _resolve_ask_org(request=request, org=org, db=db)
     warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    mode = str(body.mode or "cheap").lower()
+    if mode == "quality" and not feature_enabled(resolved.plan, "quality_mode"):
+        raise HTTPException(
+            status_code=402,
+            detail="Quality mode is Pro — upgrade at https://narna.org/checkout (Desktop quality mode is always free)",
+        )
+    if mode == "critical" and not feature_enabled(resolved.plan, "critical_mode"):
+        raise HTTPException(
+            status_code=402,
+            detail="Critical mode is Pro — upgrade at https://narna.org/checkout (Desktop critical mode is always free)",
+        )
     # Paid/team may enable challenge; free can opt-in but still billed as 1 turn
     challenge = bool(body.challenge) and normalize_plan(resolved.plan) != "free"
     if body.challenge and normalize_plan(resolved.plan) == "free":
@@ -3012,6 +3067,17 @@ def agent_ask_stream(
 
     resolved = _resolve_ask_org(request=request, org=org, db=db)
     warn = enforce_plan_limit(org=resolved, projected_agent_turns=1)
+    mode = str(body.mode or "cheap").lower()
+    if mode == "quality" and not feature_enabled(resolved.plan, "quality_mode"):
+        raise HTTPException(
+            status_code=402,
+            detail="Quality mode is Pro — upgrade at https://narna.org/checkout",
+        )
+    if mode == "critical" and not feature_enabled(resolved.plan, "critical_mode"):
+        raise HTTPException(
+            status_code=402,
+            detail="Critical mode is Pro — upgrade at https://narna.org/checkout",
+        )
     challenge = bool(body.challenge)
     ws = tenant_workspace(resolved.id)
     override = None
@@ -3108,7 +3174,7 @@ def agent_jobs_create(
     if normalize_plan(resolved.plan) == "free" and every:
         raise HTTPException(
             status_code=403,
-            detail="Recurring jobs require Personal or Team — upgrade at /billing",
+            detail="Recurring cloud jobs require Pro — upgrade at https://narna.org/checkout (Desktop local jobs stay free)",
         )
     try:
         row = AgentJobStore(tenant_workspace(resolved.id)).create(

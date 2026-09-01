@@ -174,12 +174,12 @@ export const COMPATIBILITY = [
   "Kubernetes",
 ] as const;
 
-/** Pricing — Free-first launch. Pro/Team soft until GTM. See docs/NARNA-MARKET-PLAN.md */
+/** Pricing — Desktop free forever; Pro = Cloud Brain */
 export const PRICING = {
-  tagline: "Free forever for the agent on your machine.",
+  tagline: "Desktop agent free forever. Pro is your cloud brain.",
   subline:
-    "Download Desktop or use Ask with your own LLM key. No Pro required. Paid cloud plans stay optional — not pushed yet.",
-  philosophy: "Agent + ADQA free locally. Cloud Pro comes later.",
+    "Full agent on Mac/Windows — unlimited, BYOK, no account. Pro adds backup, sync, hosted MCP, and always-on cloud.",
+  philosophy: "Local agent free. Pro unlocks connectivity — not features removed from Desktop.",
   unit: "agent turns",
   freeFirst: true,
   plans: [
@@ -188,13 +188,13 @@ export const PRICING = {
       name: "Free",
       price: "$0",
       period: "",
-      limit: "Desktop + Ask · BYOK · forever",
-      retention: "Local ~/.narna · MEMORY.md · Decision Traces",
+      limit: "Desktop unlimited · Cloud 200 Ask/mo",
+      retention: "Local ~/.narna · forever",
       features: [
-        "Full NARNA Agent (desktop & CLI)",
-        "ADQA · Decision Memory · tools",
-        "macOS + Windows portable apps",
-        "Your LLM key (OpenRouter / OpenAI / Ollama)",
+        "Full Desktop agent (Mac + Windows)",
+        "All tools · ADQA · Decision Memory · BYOK",
+        "Cloud Ask (200 turns/mo)",
+        "Hosted MCP (100 ADQA/mo)",
       ],
       cta: "Download free",
       ctaTo: "/download",
@@ -206,12 +206,13 @@ export const PRICING = {
       price: "$20",
       period: "/mo",
       limit: "USDC / USDT · 5 EVM chains",
-      retention: "Cloud Decision Memory + higher limits",
+      retention: "Cloud backup · 1yr traces · multi-device",
       features: [
-        "Higher hosted Ask limits",
-        "Full ADQA API + MCP",
-        "Decision Replay in cloud",
-        "Pay on-chain — no card",
+        "Cloud Memory Backup & sync (Desktop ↔ cloud)",
+        "Hosted MCP — Cursor / Claude Code ADQA",
+        "Quality & Critical modes on web Ask",
+        "Recurring cloud jobs · always-on channels",
+        "20k Ask turns/mo · 10k ADQA/mo",
       ],
       cta: "Pay with USDC",
       ctaTo: "/checkout",
@@ -239,10 +240,10 @@ export const PRICING = {
   ],
   enterpriseNote: "Enterprise — private deployment · SSO · audit · SLA — contact when ready.",
   whyUpgrade: [
-    "Free covers the full agent: Desktop (Mac/Windows), CLI, ADQA, tools, memory — BYOK.",
-    "Pro ($20/mo USDC on Base) unlocks higher cloud limits, ADQA API, and MCP.",
-    "Pay at /checkout — money goes to NARNA treasury on-chain, no Stripe.",
-    "Hermes/OpenClaw for work; NARNA scores whether the decision was good enough to act.",
+    "Desktop stays free: full agent, unlimited local use, BYOK — no license ever.",
+    "Pro = Cloud Brain: backup ~/.narna, sync phone + PC, hosted MCP for your IDE.",
+    "Pro unlocks Quality/Critical on web Ask, recurring cloud jobs, always-on Telegram/Discord.",
+    "Free cloud: 200 Ask turns/mo. Pro: 20k turns, 30 sync backups/mo, 1yr trace history.",
   ],
   revenueStreams: [
     "Pro ($20/mo crypto)",

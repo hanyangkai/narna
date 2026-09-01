@@ -158,10 +158,69 @@ class BillingStatusResponse(BaseModel):
     adqaHardCap: int | None = None
     agentTurnsInPeriod: int = 0
     agentTurnsHardCap: int | None = None
+    agentTurnsSoftCap: int | None = None
     seatCount: int = 1
     byoLlmAllowed: bool = False
     email: str | None = None
     orgName: str | None = None
+    isPro: bool = False
+    features: dict[str, Any] | None = None
+
+
+class CloudSyncPushRequest(BaseModel):
+    deviceId: str
+    memoryMd: str | None = None
+    userMd: str | None = None
+    projectMd: str | None = None
+    lessons: list[dict[str, Any]] = []
+    traces: list[dict[str, Any]] = []
+    profile: dict[str, str] = {}
+
+
+class CloudSyncStatusResponse(BaseModel):
+    ok: bool = True
+    plan: str = "free"
+    isPro: bool = False
+    displayName: str = "Free"
+    cloudSync: bool = False
+    recurringJobs: bool = False
+    qualityMode: bool = False
+    criticalMode: bool = False
+    hostedChannels: bool = False
+    decisionReplayCloud: bool = False
+    privateSkillPublish: bool = False
+    traceRetentionDays: int = 7
+    syncPushLimit: int | None = None
+    upgradeUrl: str = "https://narna.org/checkout"
+    lastPushAt: str | None = None
+    lastPullAt: str | None = None
+    pushesInPeriod: int = 0
+    pushLimit: int | None = None
+    deviceCount: int = 0
+    devices: list[dict[str, Any]] = []
+
+
+class CloudSyncPullResponse(BaseModel):
+    ok: bool = True
+    empty: bool = False
+    memoryMd: str | None = None
+    userMd: str | None = None
+    projectMd: str | None = None
+    lessons: list[dict[str, Any]] = []
+    traces: list[dict[str, Any]] = []
+    profile: dict[str, str] = {}
+    lastPushAt: str | None = None
+    syncedAt: str | None = None
+
+
+class CloudSyncPushResponse(BaseModel):
+    ok: bool = True
+    deviceId: str
+    syncedAt: str
+    pushesInPeriod: int = 0
+    pushLimit: int | None = None
+    lessonCount: int = 0
+    traceCount: int = 0
 
 
 class AgentAskRequest(BaseModel):

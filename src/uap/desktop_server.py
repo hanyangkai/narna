@@ -83,6 +83,25 @@ class GatewayConfigBody(BaseModel):
     slackPollChannels: str | None = None
 
 
+class CloudLinkBody(BaseModel):
+    cloudApiKey: str | None = None
+    cloudApiUrl: str | None = None
+    syncAuto: bool | None = None
+    deviceId: str | None = None
+
+
+def _device_id(cfg: dict[str, Any], ws: Path) -> str:
+    import hashlib
+
+    did = str(cfg.get("cloudDeviceId") or "").strip()
+    if did:
+        return did[:64]
+    seed = f"{ws.resolve()}".encode()
+    did = "desktop_" + hashlib.sha256(seed).hexdigest()[:16]
+    cfg["cloudDeviceId"] = did
+    return did
+
+
 def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> FastAPI:
     ws = Path(workspace) if workspace else default_workspace()
     ws.mkdir(parents=True, exist_ok=True)
@@ -370,6 +389,97 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
                 "project": str(md.project_path),
             },
         }
+
+    @app.get("/v1/desktop/cloud")
+    def desktop_cloud_status() -> dict[str, Any]:
+        from uap.cloud_client import cloud_billing_status, cloud_sync_status, default_cloud_url
+
+        cfg = load_config(ws)
+        key = str(cfg.get("cloudApiKey") or "").strip()
+        base = str(cfg.get("cloudApiUrl") or default_cloud_url()).strip()
+        did = _device_id(cfg, ws)
+        save_config(ws, cfg)
+        out: dict[str, Any] = {
+            "ok": True,
+            "linked": bool(key),
+            "cloudApiUrl": base,
+            "deviceId": did,
+            "syncAuto": bool(cfg.get("cloudSyncAuto")),
+            "maskedCloudKey": (key[:12] + "…") if len(key) > 16 else ("***" if key else ""),
+            "plan": None,
+            "isPro": False,
+            "features": None,
+            "lastSyncAt": cfg.get("cloudLastSyncAt"),
+        }
+        if not key:
+            return out
+        billing = cloud_billing_status(api_key=key, base_url=base)
+        sync = cloud_sync_status(api_key=key, base_url=base)
+        if billing.get("ok", True) and "plan" in billing:
+            out["plan"] = billing.get("plan")
+            out["isPro"] = bool(billing.get("isPro") or billing.get("features", {}).get("isPro"))
+            out["planExpiresAt"] = billing.get("planExpiresAt")
+            out["features"] = billing.get("features")
+        elif billing.get("error"):
+            out["cloudError"] = billing.get("error")
+        if sync.get("ok", True):
+            out["sync"] = {
+                "lastPushAt": sync.get("lastPushAt"),
+                "pushesInPeriod": sync.get("pushesInPeriod"),
+                "pushLimit": sync.get("pushLimit"),
+                "cloudSync": sync.get("cloudSync"),
+            }
+        return out
+
+    @app.put("/v1/desktop/cloud")
+    def desktop_cloud_link(body: CloudLinkBody) -> dict[str, Any]:
+        cfg = load_config(ws)
+        if body.cloudApiKey is not None:
+            cfg["cloudApiKey"] = body.cloudApiKey.strip()
+        if body.cloudApiUrl is not None:
+            cfg["cloudApiUrl"] = body.cloudApiUrl.strip() or None
+        if body.syncAuto is not None:
+            cfg["cloudSyncAuto"] = bool(body.syncAuto)
+        if body.deviceId:
+            cfg["cloudDeviceId"] = body.deviceId.strip()[:64]
+        save_config(ws, cfg)
+        return desktop_cloud_status()
+
+    @app.post("/v1/desktop/cloud/sync/push")
+    def desktop_cloud_sync_push() -> dict[str, Any]:
+        from uap.cloud_client import cloud_sync_push, collect_sync_bundle, default_cloud_url
+
+        cfg = load_config(ws)
+        key = str(cfg.get("cloudApiKey") or "").strip()
+        if not key:
+            raise HTTPException(status_code=400, detail="Link NARNA Cloud API key in Cloud Pro tab")
+        base = str(cfg.get("cloudApiUrl") or default_cloud_url()).strip()
+        did = _device_id(cfg, ws)
+        bundle = collect_sync_bundle(ws, device_id=did)
+        out = cloud_sync_push(api_key=key, base_url=base, bundle=bundle)
+        if not out.get("ok", True) and out.get("error"):
+            raise HTTPException(status_code=int(out.get("status") or 402), detail=str(out["error"]))
+        from datetime import datetime, timezone
+
+        cfg["cloudLastSyncAt"] = datetime.now(timezone.utc).isoformat()
+        save_config(ws, cfg)
+        return {"ok": True, **out}
+
+    @app.post("/v1/desktop/cloud/sync/pull")
+    def desktop_cloud_sync_pull() -> dict[str, Any]:
+        from uap.cloud_client import apply_sync_pull, cloud_sync_pull, default_cloud_url
+
+        cfg = load_config(ws)
+        key = str(cfg.get("cloudApiKey") or "").strip()
+        if not key:
+            raise HTTPException(status_code=400, detail="Link NARNA Cloud API key first")
+        base = str(cfg.get("cloudApiUrl") or default_cloud_url()).strip()
+        did = _device_id(cfg, ws)
+        pulled = cloud_sync_pull(api_key=key, base_url=base, device_id=did)
+        if not pulled.get("ok", True) and pulled.get("error"):
+            raise HTTPException(status_code=int(pulled.get("status") or 402), detail=str(pulled["error"]))
+        applied = apply_sync_pull(ws, pulled) if not pulled.get("empty") else {}
+        return {"ok": True, "pulled": pulled, "applied": applied}
 
     @app.get("/")
     def index() -> HTMLResponse:

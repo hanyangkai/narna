@@ -1,4 +1,4 @@
-"""Cloud plan quotas — Free-first launch (Pro soft / not pushed).
+"""Cloud plan quotas — Desktop free forever; Pro unlocks cloud brain + sync.
 
 Legacy aliases: pro → cloud, business kept for Stripe/Paddle price IDs.
 """
@@ -9,61 +9,66 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 import os
 
-# Soft caps warn; hard caps → HTTP 402. None = unlimited (still soft-cap warned).
-# Free-first: generous Ask/ADQA so users aren't funneled to Pro.
+# Soft caps warn; hard caps → HTTP 402. None = unlimited.
+# Desktop local agent is never metered — only cloud API routes use these.
 PLANS: dict[str, dict[str, Any]] = {
     "free": {
-        "event_limit": 100_000,
-        "gu_limit": 50_000,
-        "adqa_soft_cap": 5_000,
-        "adqa_hard_cap": None,  # no hard block — Desktop remains unlimited anyway
-        "agent_turns_soft_cap": 2_000,
-        "agent_turns_hard_cap": None,  # BYOK cloud Ask: soft warn only during free launch
+        "event_limit": 10_000,
+        "gu_limit": 10_000,
+        "adqa_soft_cap": 50,
+        "adqa_hard_cap": 100,
+        "agent_turns_soft_cap": 50,
+        "agent_turns_hard_cap": 200,
+        "sync_push_cap": 0,
         "seats": 1,
-        "enforcement": "soft",
+        "enforcement": "hard",
         "usd": 0.0,
-        "byo_llm": True,  # Hermes-style: everyone brings their own LLM key
+        "byo_llm": True,
     },
     "cloud": {
         "event_limit": None,
         "gu_limit": 5_000_000,
-        "adqa_soft_cap": 50_000,
-        "adqa_hard_cap": None,
-        "agent_turns_soft_cap": 4_000,
-        "agent_turns_hard_cap": 5_000,
+        "adqa_soft_cap": 5_000,
+        "adqa_hard_cap": 10_000,
+        "agent_turns_soft_cap": 10_000,
+        "agent_turns_hard_cap": 20_000,
+        "sync_push_cap": 30,
         "seats": 1,
         "enforcement": "soft",
         "usd": 20.0,
         "byo_llm": True,
-        "display_name": "personal",
+        "display_name": "Pro",
     },
-    # Alias used by older checkout / Stripe price ids
     "pro": {
         "event_limit": None,
         "gu_limit": 5_000_000,
-        "adqa_soft_cap": 50_000,
-        "adqa_hard_cap": None,
-        "agent_turns_soft_cap": 4_000,
-        "agent_turns_hard_cap": 5_000,
+        "adqa_soft_cap": 5_000,
+        "adqa_hard_cap": 10_000,
+        "agent_turns_soft_cap": 10_000,
+        "agent_turns_hard_cap": 20_000,
+        "sync_push_cap": 30,
         "seats": 1,
         "enforcement": "soft",
         "usd": 20.0,
         "alias_of": "cloud",
         "byo_llm": True,
+        "display_name": "Pro",
     },
     "team": {
         "event_limit": None,
         "gu_limit": 20_000_000,
-        "adqa_soft_cap": 200_000,
-        "adqa_hard_cap": None,
+        "adqa_soft_cap": 50_000,
+        "adqa_hard_cap": 50_000,
         "agent_turns_soft_cap": 40_000,
         "agent_turns_hard_cap": 50_000,
+        "sync_push_cap": 100,
         "seats": 3,
         "seat_max": 50,
         "enforcement": "soft",
-        "usd": 99.0,  # per seat / mo
+        "usd": 99.0,
         "usd_per_seat": 99.0,
         "byo_llm": True,
+        "display_name": "Team",
     },
     "business": {
         "event_limit": 10_000_000,
@@ -72,10 +77,12 @@ PLANS: dict[str, dict[str, Any]] = {
         "adqa_hard_cap": None,
         "agent_turns_soft_cap": 100_000,
         "agent_turns_hard_cap": None,
+        "sync_push_cap": 200,
         "seats": 10,
         "enforcement": "soft",
         "usd": 199.0,
         "byo_llm": True,
+        "display_name": "Business",
     },
 }
 
@@ -115,6 +122,10 @@ def plan_agent_turns_hard_cap(plan: str) -> int | None:
 
 def plan_agent_turns_soft_cap(plan: str) -> int | None:
     return plan_def(plan).get("agent_turns_soft_cap")
+
+
+def plan_sync_push_cap(plan: str) -> int | None:
+    return plan_def(plan).get("sync_push_cap")
 
 
 def plan_allows_byo_llm(plan: str) -> bool:
