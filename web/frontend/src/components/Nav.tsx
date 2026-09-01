@@ -54,10 +54,10 @@ export default function Nav() {
             </div>
             <div className="nav-actions">
               <Link to="/checkout" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Pro $20
+                Get Pro $20
               </Link>
               <Link to="/signup" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Sign up
+                Sign up free
               </Link>
               <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
                 Download free

@@ -1035,7 +1035,7 @@ def _mock_plan_allowed() -> bool:
 def get_crypto_receiver_wallet() -> str:
     return os.environ.get(
         "UAP_CRYPTO_RECEIVER_WALLET",
-        "0x24DAb37fd89222710ce1D5A4c4E81e26D51E34D5",
+        "0xa62297ec44dd59824f34132f9e8b3157b8b7f51a",
     )
 
 

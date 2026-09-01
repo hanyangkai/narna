@@ -11,7 +11,7 @@
 | RPC 5 chains | configured |
 | `UAP_BILLING_MODE` | `mock` (đúng — plan flip qua on-chain, không card) |
 | `UAP_TELEGRAM_BOT_TOKEN` | **trống** → gateway container **chưa chạy** |
-| Receiver wallet | `0x24DAb37fd89222710ce1D5A4c4E81e26D51E34D5` (mặc định compose) |
+| Receiver wallet | `0xa62297ec44dd59824f34132f9e8b3157b8b7f51a` (mặc định compose) |
 
 ---
 
@@ -49,7 +49,7 @@ Hoặc GitHub Actions secret `TELEGRAM_BOT_TOKEN` + deploy workflow.
 
 | Câu hỏi | Tại sao |
 |---------|---------|
-| Ví `0x24DAb37fd89222710ce1D5A4c4E81e26D51E34D5` là ví bạn kiểm soát? | Bot chỉ credit plan khi USDC/USDT vào đúng ví này |
+| Ví `0xa62297ec44dd59824f34132f9e8b3157b8b7f51a` là ví bạn kiểm soát? | Bot chỉ credit plan khi USDC/USDT vào đúng ví này |
 | Muốn đổi ví? | Gửi địa chỉ EVM mới → patch `UAP_CRYPTO_RECEIVER_WALLET` trên VPS |
 
 **Flow test (khuyến nghị Base — phí thấp):**
