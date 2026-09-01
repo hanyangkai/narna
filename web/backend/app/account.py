@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from .mail import send_recovery_email, send_welcome_email, smtp_configured
+from .mail import send_recovery_email, send_welcome_email, mail_configured
 from .models import ApiKey, AuthToken, Organization, generate_api_key
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -67,7 +67,7 @@ def signup_account(
     db.refresh(org)
 
     emailed = False
-    if send_email and smtp_configured():
+    if send_email and mail_configured():
         emailed = send_welcome_email(to=norm, api_key=full, name=org.name)
 
     return {
@@ -103,7 +103,7 @@ def request_recovery(*, db: Session, email: str) -> dict:
             )
         )
         db.commit()
-        if smtp_configured():
+        if mail_configured():
             sent = send_recovery_email(to=norm, token=raw)
         else:
             # Dev without SMTP — log token server-side only in mock
@@ -113,7 +113,7 @@ def request_recovery(*, db: Session, email: str) -> dict:
         "ok": True,
         "message": "If an account exists, we sent a sign-in link to your email.",
         "emailSent": sent,
-        "smtpConfigured": smtp_configured(),
+        "smtpConfigured": mail_configured(),
     }
 
 
@@ -170,5 +170,5 @@ def account_me(org: Organization) -> dict:
         "planExpiresAt": (
             org.plan_expires_at.isoformat() if getattr(org, "plan_expires_at", None) else None
         ),
-        "smtpConfigured": smtp_configured(),
+        "smtpConfigured": mail_configured(),
     }

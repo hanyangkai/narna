@@ -25,6 +25,8 @@ services:
       UAP_BASE_RPC_URL: ${UAP_BASE_RPC_URL:-}
       UAP_ARBITRUM_RPC_URL: ${UAP_ARBITRUM_RPC_URL:-}
       UAP_BSC_RPC_URL: ${UAP_BSC_RPC_URL:-}
+      UAP_RESEND_API_KEY: ${UAP_RESEND_API_KEY:-}
+      UAP_RESEND_FROM: ${UAP_RESEND_FROM:-NARNA <noreply@99x.exchange>}
       UAP_SITE_URL: ${UAP_SITE_URL:-https://narna.org}
       UAP_SMTP_HOST: ${UAP_SMTP_HOST:-}
       UAP_SMTP_PORT: ${UAP_SMTP_PORT:-587}

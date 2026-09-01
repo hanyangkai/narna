@@ -39,6 +39,7 @@ def main() -> None:
         "UAP_YOUTUBE_OAUTH_TOKEN": "YOUTUBE_OAUTH_TOKEN",
         "UAP_YOUTUBE_CHANNEL_ID": "YOUTUBE_CHANNEL_ID",
         "UAP_YOUTUBE_POLL_CHANNELS": "YOUTUBE_POLL_CHANNELS",
+        "UAP_RESEND_API_KEY": "RESEND_API_KEY",
     }
     for dest, src in mapping.items():
         val = os.environ.get(src, "").strip()
@@ -47,6 +48,16 @@ def main() -> None:
             changed = True
             if dest == "UAP_OPENROUTER_API_KEY":
                 kv["UAP_ROUTER_PROVIDER"] = "openrouter"
+
+    # Resend from-address (optional override)
+    from_addr = os.environ.get("UAP_RESEND_FROM", "").strip()
+    if from_addr:
+        kv["UAP_RESEND_FROM"] = from_addr
+        changed = True
+    site_url = os.environ.get("UAP_SITE_URL", "").strip()
+    if site_url:
+        kv["UAP_SITE_URL"] = site_url
+        changed = True
 
     if not changed:
         print("no secret patches")

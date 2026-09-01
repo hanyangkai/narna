@@ -526,11 +526,11 @@ def auth_me(org: Organization = Depends(get_org_from_api_key)) -> AccountMeRespo
 
 @app.get("/v1/auth/config", response_model=AuthConfigResponse)
 def auth_config() -> AuthConfigResponse:
-    from .mail import smtp_configured
+    from .mail import mail_configured
 
     return AuthConfigResponse(
         ok=True,
-        smtpConfigured=smtp_configured(),
+        smtpConfigured=mail_configured(),
         siteUrl=os.environ.get("UAP_SITE_URL", "https://narna.org").rstrip("/"),
         paymentRail="usdc_usdt",
         proUsd=20.0,

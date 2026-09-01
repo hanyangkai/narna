@@ -55,6 +55,8 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_OAUTH_TOKEN: ${{ secrets.YOUTUBE_OAUTH_TOKEN }}
           YOUTUBE_CHANNEL_ID: ${{ secrets.YOUTUBE_CHANNEL_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          UAP_RESEND_FROM: ${{ secrets.UAP_RESEND_FROM }}
         run: |
           set -euo pipefail
           H="${{ secrets.VPS_HOST }}"
@@ -90,6 +92,8 @@ jobs:
              YOUTUBE_API_KEY='$YOUTUBE_API_KEY' \
              YOUTUBE_OAUTH_TOKEN='$YOUTUBE_OAUTH_TOKEN' \
              YOUTUBE_CHANNEL_ID='$YOUTUBE_CHANNEL_ID' \
+             RESEND_API_KEY='$RESEND_API_KEY' \
+             UAP_RESEND_FROM='$UAP_RESEND_FROM' \
              python3 /tmp/patch_vps_agent_env.py"
 
           ssh -i ~/.ssh/deploy_key "$TARGET" \

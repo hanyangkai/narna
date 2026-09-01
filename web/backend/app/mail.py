@@ -1,33 +1,86 @@
-"""Transactional email for signup, recovery, and payment (SMTP — no Stripe)."""
+"""Transactional email — Resend HTTP API (preferred) or SMTP fallback."""
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import smtplib
+import urllib.error
+import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 logger = logging.getLogger("narna-mail")
 
 
+def resend_configured() -> bool:
+    return bool(os.environ.get("UAP_RESEND_API_KEY", "").strip())
+
+
 def smtp_configured() -> bool:
     return bool(os.environ.get("UAP_SMTP_HOST", "").strip())
+
+
+def mail_configured() -> bool:
+    return resend_configured() or smtp_configured()
 
 
 def site_url() -> str:
     return os.environ.get("UAP_SITE_URL", "https://narna.org").rstrip("/")
 
 
-def _send(to: str, subject: str, text: str, html: str | None = None) -> bool:
+def _from_addr() -> str:
+    return (
+        os.environ.get("UAP_RESEND_FROM", "").strip()
+        or os.environ.get("UAP_SMTP_FROM", "").strip()
+        or os.environ.get("UAP_SMTP_USER", "").strip()
+        or "NARNA <noreply@narna.org>"
+    )
+
+
+def _send_resend(to: str, subject: str, text: str, html: str | None) -> bool:
+    api_key = os.environ.get("UAP_RESEND_API_KEY", "").strip()
+    if not api_key:
+        return False
+    payload: dict[str, object] = {
+        "from": _from_addr(),
+        "to": [to],
+        "subject": subject[:200],
+        "text": text,
+    }
+    if html:
+        payload["html"] = html
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return 200 <= resp.status < 300
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:500]
+        logger.error("resend send failed", extra={"to": to, "status": exc.code, "detail": detail})
+        return False
+    except Exception:
+        logger.exception("resend send failed", extra={"to": to})
+        return False
+
+
+def _send_smtp(to: str, subject: str, text: str, html: str | None) -> bool:
     host = os.environ.get("UAP_SMTP_HOST", "").strip()
     if not host:
-        logger.info("smtp skip (not configured)", extra={"to": to, "subject": subject})
         return False
     port = int(os.environ.get("UAP_SMTP_PORT") or 587)
     user = os.environ.get("UAP_SMTP_USER", "").strip()
     password = os.environ.get("UAP_SMTP_PASSWORD", "").strip()
-    from_addr = os.environ.get("UAP_SMTP_FROM", "").strip() or user or "noreply@narna.org"
+    from_addr = _from_addr()
 
     if html:
         msg = MIMEMultipart("alternative")
@@ -67,6 +120,15 @@ def _send(to: str, subject: str, text: str, html: str | None = None) -> bool:
     except Exception:
         logger.exception("smtp send failed", extra={"to": to})
         return False
+
+
+def _send(to: str, subject: str, text: str, html: str | None = None) -> bool:
+    if resend_configured():
+        return _send_resend(to, subject, text, html)
+    if smtp_configured():
+        return _send_smtp(to, subject, text, html)
+    logger.info("mail skip (not configured)", extra={"to": to, "subject": subject})
+    return False
 
 
 def send_welcome_email(*, to: str, api_key: str, name: str) -> bool:
