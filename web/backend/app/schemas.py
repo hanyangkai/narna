@@ -83,6 +83,7 @@ class SignupResponse(BaseModel):
     apiKey: str
     keyPrefix: str
     message: str
+    emailSent: bool = False
 
 
 class AccountMeResponse(BaseModel):
@@ -93,6 +94,38 @@ class AccountMeResponse(BaseModel):
     plan: str
     createdAt: str | None = None
     planExpiresAt: str | None = None
+    smtpConfigured: bool = False
+
+
+class RecoveryRequest(BaseModel):
+    email: str
+
+
+class RecoveryResponse(BaseModel):
+    ok: bool = True
+    message: str
+    emailSent: bool = False
+    smtpConfigured: bool = False
+
+
+class RecoveryClaimRequest(BaseModel):
+    token: str
+
+
+class RecoveryClaimResponse(BaseModel):
+    ok: bool = True
+    apiKey: str
+    email: str | None = None
+    plan: str
+    message: str
+
+
+class AuthConfigResponse(BaseModel):
+    ok: bool = True
+    smtpConfigured: bool = False
+    siteUrl: str = "https://narna.org"
+    paymentRail: str = "usdc_usdt"
+    proUsd: float = 20.0
 
 
 class BillingCheckoutRequest(BaseModel):

@@ -35,7 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
-from .account import account_me, signup_account
+from .account import account_me, claim_recovery, request_recovery, signup_account
 from .auth import get_org_from_api_key, get_org_optional
 from .billing import (
     add_plan_period,
@@ -125,6 +125,11 @@ from .schemas import (
     SignupRequest,
     SignupResponse,
     AccountMeResponse,
+    RecoveryRequest,
+    RecoveryResponse,
+    RecoveryClaimRequest,
+    RecoveryClaimResponse,
+    AuthConfigResponse,
     TelemetryAggregateResponse,
     TelemetryAggregateRow,
     TelemetryConsentRequest,
@@ -517,6 +522,31 @@ def auth_signup(body: SignupRequest, db: Session = Depends(get_db)) -> SignupRes
 @app.get("/v1/auth/me", response_model=AccountMeResponse)
 def auth_me(org: Organization = Depends(get_org_from_api_key)) -> AccountMeResponse:
     return AccountMeResponse(**account_me(org))
+
+
+@app.get("/v1/auth/config", response_model=AuthConfigResponse)
+def auth_config() -> AuthConfigResponse:
+    from .mail import smtp_configured
+
+    return AuthConfigResponse(
+        ok=True,
+        smtpConfigured=smtp_configured(),
+        siteUrl=os.environ.get("UAP_SITE_URL", "https://narna.org").rstrip("/"),
+        paymentRail="usdc_usdt",
+        proUsd=20.0,
+    )
+
+
+@app.post("/v1/auth/recovery", response_model=RecoveryResponse)
+def auth_recovery(body: RecoveryRequest, db: Session = Depends(get_db)) -> RecoveryResponse:
+    return RecoveryResponse(**request_recovery(db=db, email=body.email))
+
+
+@app.post("/v1/auth/recovery/claim", response_model=RecoveryClaimResponse)
+def auth_recovery_claim(
+    body: RecoveryClaimRequest, db: Session = Depends(get_db)
+) -> RecoveryClaimResponse:
+    return RecoveryClaimResponse(**claim_recovery(db=db, token=body.token))
 
 
 @app.get("/v1/billing/paddle/status")

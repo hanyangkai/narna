@@ -165,11 +165,13 @@ export default function Billing() {
           <p className="pill-label">Billing</p>
           <h1>Pro — pay with USDC / USDT</h1>
           <p>
-            No Stripe. Create an account at <Link to="/signup">/signup</Link>, save your API key, then pay
-            on-chain. Bot upgrades your plan automatically.
+            No Stripe. Fastest path: <Link to="/checkout">/checkout</Link> — email → USDC on Base → Pro
+            auto-activates.
           </p>
           <p style={{ marginTop: "0.75rem" }}>
-            <Link to="/signup">Sign up</Link>
+            <Link to="/checkout">Get Pro</Link>
+            {" · "}
+            <Link to="/signup">Sign up free</Link>
             {" · "}
             <Link to="/account">Sign in</Link>
             {" · "}

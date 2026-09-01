@@ -3101,6 +3101,49 @@ table.data-table th {
   margin-bottom: 1rem;
 }
 
+.signup-info {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 194, 215, 0.08);
+  border: 1px solid rgba(0, 194, 215, 0.25);
+}
+
+.checkout-page {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.checkout-card h2 {
+  margin-top: 0;
+}
+
+.checkout-amount {
+  font-size: 1.35rem;
+  margin: 1rem 0;
+}
+
+.checkout-wallet {
+  word-break: break-all;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.checkout-copy-row {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.checkout-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkout-existing summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
 .muted {
   color: var(--muted);
   font-weight: normal;

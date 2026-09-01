@@ -86,6 +86,22 @@ def _mark_invoice_paid(
             org.seat_count = seats
         elif org.plan == "team" and int(getattr(org, "seat_count", 1) or 1) < 3:
             org.seat_count = 3
+        if getattr(org, "email", None):
+            try:
+                from .mail import send_payment_confirmed_email
+
+                send_payment_confirmed_email(
+                    to=str(org.email),
+                    plan=normalize_plan(inv.plan),
+                    amount=str(inv.expected_amount),
+                    asset=str(inv.asset or "usdc"),
+                    network=str(inv.network or "base"),
+                    expires_at=(
+                        org.plan_expires_at.isoformat() if org.plan_expires_at else None
+                    ),
+                )
+            except Exception:
+                logger.exception("payment email failed")
 
 
 def _scan_invoice(

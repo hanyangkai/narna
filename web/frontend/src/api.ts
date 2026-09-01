@@ -72,6 +72,7 @@ export type SignupResponse = {
   apiKey: string;
   keyPrefix: string;
   message: string;
+  emailSent?: boolean;
 };
 
 export type AccountMe = {
@@ -82,6 +83,30 @@ export type AccountMe = {
   plan: string;
   createdAt: string | null;
   planExpiresAt: string | null;
+  smtpConfigured?: boolean;
+};
+
+export type AuthConfig = {
+  ok: boolean;
+  smtpConfigured: boolean;
+  siteUrl: string;
+  paymentRail: string;
+  proUsd: number;
+};
+
+export type RecoveryResponse = {
+  ok: boolean;
+  message: string;
+  emailSent: boolean;
+  smtpConfigured: boolean;
+};
+
+export type RecoveryClaimResponse = {
+  ok: boolean;
+  apiKey: string;
+  email: string | null;
+  plan: string;
+  message: string;
 };
 
 export type BillingCryptoNetwork = {
@@ -251,6 +276,48 @@ export async function signupAccount(email: string, name?: string): Promise<Signu
 export async function fetchAccountMe(apiKey: string): Promise<AccountMe> {
   const res = await fetch(`${API_BASE}/v1/auth/me`, { headers: authHeaders(apiKey) });
   if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  const res = await fetch(`${API_BASE}/v1/auth/config`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function requestRecovery(email: string): Promise<RecoveryResponse> {
+  const res = await fetch(`${API_BASE}/v1/auth/recovery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      throw new Error(j.detail || text);
+    } catch {
+      throw new Error(text);
+    }
+  }
+  return res.json();
+}
+
+export async function claimRecovery(token: string): Promise<RecoveryClaimResponse> {
+  const res = await fetch(`${API_BASE}/v1/auth/recovery/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      throw new Error(j.detail || text);
+    } catch {
+      throw new Error(text);
+    }
+  }
   return res.json();
 }
 

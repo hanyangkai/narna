@@ -65,6 +65,20 @@ class ApiKey(Base):
     organization: Mapped["Organization"] = relationship(back_populates="api_keys")
 
 
+class AuthToken(Base):
+    """One-time tokens for email recovery / magic sign-in."""
+
+    __tablename__ = "auth_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    purpose: Mapped[str] = mapped_column(String(32), default="recovery")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class Run(Base):
     __tablename__ = "runs"
     __table_args__ = (UniqueConstraint("org_id", "run_id", name="uq_org_run"),)
