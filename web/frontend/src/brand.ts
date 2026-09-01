@@ -205,7 +205,7 @@ export const PRICING = {
       name: "Pro",
       price: "$20",
       period: "/mo",
-      limit: "USDC / USDT · cancel anytime",
+      limit: "USDC / USDT · 5 EVM chains",
       retention: "Cloud Decision Memory + higher limits",
       features: [
         "Higher hosted Ask limits",

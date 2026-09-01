@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PaymentQr from "../components/PaymentQr";
 import {
   checkoutCrypto,
   fetchAuthConfig,
   fetchBillingStatus,
+  fetchCryptoNetworks,
   requestRecovery,
   signupAccount,
   type BillingCryptoCheckoutResponse,
+  type BillingCryptoNetwork,
 } from "../api";
 
 type Phase = "email" | "pay" | "done";
+
+const FALLBACK_NETWORKS: BillingCryptoNetwork[] = [
+  { id: "base", name: "Base", chainId: 8453, assets: ["usdc", "usdt"], rpcConfigured: true },
+  { id: "ethereum", name: "Ethereum", chainId: 1, assets: ["usdc", "usdt"], rpcConfigured: true },
+  { id: "polygon", name: "Polygon", chainId: 137, assets: ["usdc", "usdt"], rpcConfigured: true },
+  { id: "arbitrum", name: "Arbitrum One", chainId: 42161, assets: ["usdc", "usdt"], rpcConfigured: true },
+  { id: "bsc", name: "BNB Smart Chain", chainId: 56, assets: ["usdc", "usdt"], rpcConfigured: true },
+];
+
+function networkLabel(networks: BillingCryptoNetwork[], id: string): string {
+  return networks.find((n) => n.id === id)?.name ?? id;
+}
 
 export default function Checkout() {
   const [phase, setPhase] = useState<Phase>("email");
@@ -23,21 +37,48 @@ export default function Checkout() {
   const [checkout, setCheckout] = useState<BillingCryptoCheckoutResponse | null>(null);
   const [plan, setPlan] = useState("free");
   const [proUsd, setProUsd] = useState(20);
-  const [network] = useState("base");
-  const [asset] = useState<"usdc" | "usdt">("usdc");
+  const [networks, setNetworks] = useState<BillingCryptoNetwork[]>(FALLBACK_NETWORKS);
+  const [network, setNetwork] = useState("base");
+  const [asset, setAsset] = useState<"usdc" | "usdt">("usdc");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchAuthConfig()
       .then((c) => setProUsd(c.proUsd))
       .catch(() => undefined);
+    fetchCryptoNetworks()
+      .then((rows) => {
+        if (rows.length > 0) {
+          setNetworks(rows);
+          if (!rows.some((n) => n.id === network)) {
+            setNetwork(rows.find((n) => n.id === "base")?.id ?? rows[0].id);
+          }
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
-  const startPay = async (key: string) => {
+  const selectedNetwork = networks.find((n) => n.id === network);
+  const assetsForNetwork = selectedNetwork?.assets ?? ["usdc", "usdt"];
+
+  useEffect(() => {
+    if (!assetsForNetwork.includes(asset)) {
+      setAsset(assetsForNetwork[0] as "usdc" | "usdt");
+    }
+  }, [asset, assetsForNetwork]);
+
+  const payNetworkName = useMemo(() => {
+    if (checkout) return networkLabel(networks, checkout.network);
+    return selectedNetwork?.name ?? network;
+  }, [checkout, networks, network, selectedNetwork?.name]);
+
+  const startPay = async (key: string, net = network, tok = asset) => {
     setApiKey(key);
     localStorage.setItem("uap_api_key", key);
-    const out = await checkoutCrypto(key, "cloud", asset, network);
+    const out = await checkoutCrypto(key, "cloud", tok, net);
     setCheckout(out);
+    setNetwork(out.network);
+    setAsset(out.asset as "usdc" | "usdt");
     setPhase("pay");
   };
 
@@ -89,6 +130,19 @@ export default function Checkout() {
     }
   };
 
+  const onSwitchNetwork = async () => {
+    if (!apiKey.startsWith("uap_live_")) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await startPay(apiKey, network, asset);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (phase !== "pay" || !apiKey) return;
     const poll = async () => {
@@ -130,8 +184,8 @@ export default function Checkout() {
         <p className="pill-label">Checkout</p>
         <h1>NARNA Pro — ${proUsd}/mo</h1>
         <p className="how-hero-lead">
-          Pay with <strong>USDC or USDT</strong> on Base (low fees). Money stays on-chain to NARNA
-          treasury — no Stripe, no middleman.
+          Pay with <strong>USDC or USDT</strong> on any supported EVM chain — same treasury wallet on
+          Ethereum, Base, Polygon, Arbitrum, BNB Chain. Base recommended (lowest fees).
         </p>
       </header>
 
@@ -140,7 +194,7 @@ export default function Checkout() {
 
       {phase === "email" && (
         <div className="card signup-card checkout-card">
-          <h2>1. Your email</h2>
+          <h2>1. Your email &amp; chain</h2>
           <p className="muted">Creates a free account + API key, then opens payment.</p>
           <label>
             Email
@@ -156,13 +210,38 @@ export default function Checkout() {
             Name <span className="muted">(optional)</span>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Team name" />
           </label>
+          <div className="checkout-chain-row">
+            <label>
+              Network
+              <select value={network} onChange={(e) => setNetwork(e.target.value)}>
+                {networks.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.name}
+                    {n.id === "base" ? " (recommended)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Token
+              <select value={asset} onChange={(e) => setAsset(e.target.value as "usdc" | "usdt")}>
+                {assetsForNetwork.map((a) => (
+                  <option key={a} value={a}>
+                    {a.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <button
             type="button"
             className="btn btn-primary btn-block"
             disabled={loading || !email.trim()}
             onClick={onContinue}
           >
-            {loading ? "…" : `Continue — pay $${proUsd} USDC`}
+            {loading
+              ? "…"
+              : `Continue — pay $${proUsd} ${asset.toUpperCase()} on ${selectedNetwork?.name ?? network}`}
           </button>
 
           <details className="checkout-existing" style={{ marginTop: "1.25rem" }}>
@@ -197,7 +276,11 @@ export default function Checkout() {
           <h2>2. Send exact amount</h2>
           <p className="checkout-amount">
             <span className="mono">{checkout.expectedAmount}</span>{" "}
-            <strong>{checkout.asset.toUpperCase()}</strong> on <strong>Base</strong>
+            <strong>{checkout.asset.toUpperCase()}</strong> on <strong>{payNetworkName}</strong>
+          </p>
+          <p className="signup-foot muted">
+            Same wallet on all 5 EVM chains — send only on <strong>{payNetworkName}</strong> for this
+            invoice.
           </p>
           <div className="land-cta checkout-copy-row">
             <button type="button" className="btn btn-secondary btn-sm" onClick={copyAmount}>
@@ -213,11 +296,46 @@ export default function Checkout() {
             ) : null}
           </div>
           <p className="mono checkout-wallet">{checkout.recipientWallet}</p>
-          <PaymentQr payload={checkout.qrPayload} label="Scan in Coinbase / MetaMask / Rainbow" />
+          <PaymentQr payload={checkout.qrPayload} label={`Scan ${checkout.asset.toUpperCase()} on ${payNetworkName}`} />
           <p className="signup-foot">
             Waiting for on-chain confirmation… (usually 1–3 min) · Plan: {plan}
           </p>
           <p className="signup-foot muted">Invoice: {checkout.invoiceId}</p>
+
+          <details className="checkout-existing" style={{ marginTop: "1rem" }}>
+            <summary>Pay on a different chain instead?</summary>
+            <div className="checkout-chain-row" style={{ marginTop: "0.75rem" }}>
+              <label>
+                Network
+                <select value={network} onChange={(e) => setNetwork(e.target.value)}>
+                  {networks.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Token
+                <select value={asset} onChange={(e) => setAsset(e.target.value as "usdc" | "usdt")}>
+                  {assetsForNetwork.map((a) => (
+                    <option key={a} value={a}>
+                      {a.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={loading || (network === checkout.network && asset === checkout.asset)}
+              onClick={onSwitchNetwork}
+              style={{ marginTop: "0.5rem" }}
+            >
+              {loading ? "…" : "Create new invoice on this chain"}
+            </button>
+          </details>
         </div>
       )}
 
