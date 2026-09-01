@@ -19,6 +19,7 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>Product</h4>
+          <Link to="/how-it-works">How it works</Link>
           <Link to="/ask">Ask Agent</Link>
           <Link to="/download">Desktop (Mac / Windows)</Link>
           <Link to="/pricing">Free</Link>

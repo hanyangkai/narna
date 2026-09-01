@@ -628,6 +628,9 @@ export default function Landing() {
           </Reveal>
           <Reveal delay={0.15}>
             <div className="land-cta">
+              <Link className="btn btn-secondary" to="/how-it-works">
+                How it works
+              </Link>
               <Link className="btn btn-secondary" to="/docs">
                 Read the Docs
               </Link>

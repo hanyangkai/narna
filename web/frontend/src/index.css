@@ -2659,3 +2659,116 @@ table.data-table th {
     padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
   }
 }
+
+/* —— How it works page —— */
+.how-loop {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.how-loop-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.25rem;
+}
+
+.how-loop-n {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  min-width: 2rem;
+}
+
+.how-loop-item h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.how-loop-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.how-diagram {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+}
+
+.how-layer-q {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0 0 0.35rem;
+  font-style: italic;
+}
+
+.how-memory-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.how-memory-table th,
+.how-memory-table td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.how-memory-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.how-path-steps {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.how-mcp-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.35rem 1rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.how-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.how-faq details {
+  padding: 1rem 1.25rem;
+}
+
+.how-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.how-faq p {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.how-cta {
+  text-align: center;
+  border-top: none;
+}

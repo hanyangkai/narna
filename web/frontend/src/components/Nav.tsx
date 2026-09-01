@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { BRAND } from "../brand";
 
 const links = [
+  { to: "/how-it-works", label: "How it works" },
   { to: "/ask", label: "Agent" },
   { to: "/download", label: "Desktop" },
   { to: "/docs", label: "Docs" },
