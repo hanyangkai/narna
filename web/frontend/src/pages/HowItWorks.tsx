@@ -40,22 +40,21 @@ export default function HowItWorks() {
         <p className="pill-label">How it works</p>
         <h1>Act → Verify → Learn</h1>
         <p className="how-hero-lead">
-          Agent làm việc · ADQA chấm điểm · Memory nhớ bài học
+          Agent does the work · ADQA scores quality · Memory keeps lessons
         </p>
       </header>
 
-      {/* Main flow */}
       <section className="how-panel">
-        <h2 className="how-panel-title">Vòng lặp</h2>
+        <h2 className="how-panel-title">The loop</h2>
         <div className="how-flow">
           <div className="how-node">
             <span className="how-node-icon">💬</span>
-            <strong>Hỏi</strong>
+            <strong>Ask</strong>
           </div>
           <FlowArrow />
           <div className="how-node">
             <span className="how-node-icon">🧠</span>
-            <strong>Suy luận</strong>
+            <strong>Reason</strong>
           </div>
           <FlowArrow />
           <div className="how-node how-node-accent">
@@ -66,57 +65,55 @@ export default function HowItWorks() {
           <FlowArrow />
           <div className="how-node">
             <span className="how-node-icon">⚡</span>
-            <strong>Hành động</strong>
+            <strong>Act</strong>
           </div>
           <FlowArrow />
           <div className="how-node">
             <span className="how-node-icon">📚</span>
-            <strong>Nhớ</strong>
+            <strong>Learn</strong>
           </div>
         </div>
       </section>
 
-      {/* Stack diagram */}
       <section className="how-panel">
-        <h2 className="how-panel-title">Kiến trúc</h2>
+        <h2 className="how-panel-title">Architecture</h2>
         <div className="how-stack">
-          <LayerBox title="LLM của bạn" sub="Brain" tone="llm">
-            <p>OpenRouter · OpenAI · Ollama · hoặc web Ask</p>
+          <LayerBox title="Your LLM" sub="Brain" tone="llm">
+            <p>OpenRouter · OpenAI · Ollama · or web Ask</p>
           </LayerBox>
           <div className="how-stack-connector" />
           <LayerBox title="NARNA Agent" sub="Runtime" tone="agent">
             <p>Chat · tools · browser · gateway</p>
           </LayerBox>
           <div className="how-stack-row">
-            <LayerBox title="Memory" sub="Nhớ gì?" tone="memory">
+            <LayerBox title="Memory" sub="What to recall?" tone="memory">
               <p>MEMORY.md · FTS · lessons</p>
             </LayerBox>
-            <LayerBox title="ADQA" sub="Đủ tốt?" tone="adqa">
+            <LayerBox title="ADQA" sub="Good enough?" tone="adqa">
               <p>ACT · REVIEW · REJECT</p>
             </LayerBox>
-            <LayerBox title="CMEM" sub="Tùy chọn" tone="cmem">
-              <p>Đồng bộ đa máy</p>
+            <LayerBox title="CMEM" sub="Optional" tone="cmem">
+              <p>Cross-device sync</p>
             </LayerBox>
           </div>
         </div>
       </section>
 
-      {/* Memory upgrade visual */}
       <section className="how-panel how-panel-memory">
-        <h2 className="how-panel-title">Memory — 3 tầng</h2>
+        <h2 className="how-panel-title">Memory — 3 layers</h2>
         <div className="how-memory-lanes">
           <div className="how-lane">
-            <span className="how-lane-tag">Hôm nay</span>
+            <span className="how-lane-tag">Today</span>
             <strong>Session + FTS</strong>
-            <p>Mọi lượt chat được index · tìm lại theo nghĩa</p>
+            <p>Every turn indexed · semantic search recall</p>
           </div>
           <div className="how-lane how-lane-mid">
-            <span className="how-lane-tag">Lâu dài</span>
+            <span className="how-lane-tag">Long-term</span>
             <strong>MEMORY.md + lessons</strong>
-            <p>DQS ≥ 70 → tự lưu bài học · USER/PROJECT profile</p>
+            <p>DQS ≥ 60 → auto-save lessons · USER/PROJECT profile</p>
           </div>
           <div className="how-lane">
-            <span className="how-lane-tag">Đa thiết bị</span>
+            <span className="how-lane-tag">Multi-device</span>
             <strong>CMEM bridge</strong>
             <p>
               <code>NARNA_CMEM_URL</code> ·{" "}
@@ -127,13 +124,12 @@ export default function HowItWorks() {
           </div>
         </div>
         <p className="how-note">
-          v0.2.9: recall FTS tăng · lessons gần đây luôn inject vào context
+          v0.2.9: higher FTS recall · recent lessons always injected into context
         </p>
       </section>
 
-      {/* Devices */}
       <section className="how-panel">
-        <h2 className="how-panel-title">Chạy ở đâu?</h2>
+        <h2 className="how-panel-title">Where to run</h2>
         <div className="how-devices">
           <div className="how-device how-device-ok">
             <span className="how-device-icon">🖥</span>
@@ -142,7 +138,7 @@ export default function HowItWorks() {
             <ul>
               <li>Tools · shell · browser</li>
               <li>~50–200 MB app</li>
-              <li>Data ~/.narna</li>
+              <li>Data in ~/.narna</li>
             </ul>
             <Link to="/download" className="btn btn-primary btn-sm">
               Download
@@ -154,11 +150,11 @@ export default function HowItWorks() {
             <p className="how-device-status">◐ PWA Ask</p>
             <ul>
               <li>Add to Home Screen → /ask</li>
-              <li>BYOK key trong Safari</li>
-              <li>Không chạy Desktop binary</li>
+              <li>BYOK key in Safari</li>
+              <li>No Desktop binary</li>
             </ul>
             <Link to="/ask" className="btn btn-secondary btn-sm">
-              Mở Ask
+              Open Ask
             </Link>
           </div>
           <div className="how-device how-device-partial">
@@ -166,8 +162,8 @@ export default function HowItWorks() {
             <h3>Browser only</h3>
             <p className="how-device-status">◐ Ask + ADQA</p>
             <ul>
-              <li>Không cần cài LLM local</li>
-              <li>Cần API key hoặc mock</li>
+              <li>No local LLM install</li>
+              <li>API key or mock mode</li>
               <li>Fair-use cloud</li>
             </ul>
             <Link to="/ask" className="btn btn-secondary btn-sm">
@@ -177,33 +173,31 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* LLM without local download */}
       <section className="how-panel">
-        <h2 className="how-panel-title">Chưa có LLM trên PC?</h2>
+        <h2 className="how-panel-title">No LLM on your PC?</h2>
         <div className="how-llm-options">
           <div className="how-llm-card how-llm-yes">
-            <h3>✓ Được — qua API</h3>
+            <h3>✓ Yes — via API</h3>
             <div className="how-llm-flow">
-              <span>Bạn</span>
+              <span>You</span>
               <FlowArrow />
               <span>NARNA Ask</span>
               <FlowArrow />
               <span>OpenRouter / OpenAI</span>
             </div>
-            <p>Paste key 1 lần · trả phí theo usage của provider · không tải model</p>
+            <p>Paste key once · pay per provider usage · no model download</p>
           </div>
           <div className="how-llm-card how-llm-no">
-            <h3>✗ Chưa — điều khiển ChatGPT web</h3>
+            <h3>✗ Not yet — drive ChatGPT web</h3>
             <p>
-              NARNA <strong>không</strong> tự login ChatGPT.com / Claude.ai thay bạn (anti-bot, ToS).
-              Desktop có <code>browser_navigate</code> cho trang bạn mở — không phải thay LLM API.
+              NARNA does <strong>not</strong> log into ChatGPT.com / Claude.ai for you (anti-bot, ToS).
+              Desktop <code>browser_navigate</code> opens pages you control — not a substitute for an LLM API.
             </p>
-            <p className="how-note">Workaround: OpenRouter free tier · Ollama sau khi có GPU/RAM</p>
+            <p className="how-note">Workaround: OpenRouter free tier · Ollama when you have GPU/RAM</p>
           </div>
         </div>
       </section>
 
-      {/* MCP compact */}
       <section className="how-panel how-panel-compact">
         <h2 className="how-panel-title">MCP</h2>
         <div className="how-mcp-strip">

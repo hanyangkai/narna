@@ -185,8 +185,8 @@ export default function Billing() {
         {cryptoConfig && (
           <div className="card" style={{ marginBottom: "1rem" }}>
             <p>
-              <strong>NARNA treasury wallet</strong> — khách gửi USDC/USDT subscription vào đây (
-              {cryptoConfig.cryptoMode} · cùng địa chỉ trên 5 chain EVM):
+              <strong>NARNA treasury wallet</strong> — send USDC/USDT subscriptions here (
+              {cryptoConfig.cryptoMode} · same address on 5 EVM chains):
             </p>
             <p className="mono" style={{ wordBreak: "break-all", marginTop: "0.5rem" }}>
               {cryptoConfig.receiverWallet}
