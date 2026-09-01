@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.9] — 2026-09-01
+
+### Pro Cloud Brain
+- **Cloud Pro** tab in Desktop UI — link API key, manual backup/pull, auto daily sync toggle
+- `POST/GET /v1/desktop/cloud/*` — status, push, pull, config save
+- Background **daily cloud backup** when `cloudSyncAuto` + Pro key linked
+- Runtime stats: `cloudSyncRuns`, `cloudSyncLastAt`, `cloudSyncLastError`
+- Pro gates on cloud: quality/critical Ask modes, recurring cloud jobs, sync quota
+
 ## [0.2.8] — 2026-08-31
 
 ### Max remaining Hermes gaps

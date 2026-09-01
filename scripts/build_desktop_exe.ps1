@@ -23,11 +23,15 @@ if (-not (Test-Path (Join-Path $out "NARNA-Desktop.exe"))) {
 
 Copy-Item (Join-Path $Root "desktop\README.md") (Join-Path $out "README.md") -Force
 @"
-NARNA Desktop (portable)
+NARNA Desktop (portable) v0.2.9
 
 1. Double-click NARNA-Desktop.exe
 2. Browser opens http://127.0.0.1:8765/
 3. Paste OpenRouter / OpenAI / Ollama key (saved under %USERPROFILE%\.narna)
+
+Cloud Pro (optional):
+- Tab "Cloud Pro" -> paste API key from narna.org/account
+- Enable auto backup for daily encrypted sync to cloud (Pro plan)
 
 No Python install required.
 "@ | Set-Content -Encoding utf8 (Join-Path $out "START-HERE.txt")

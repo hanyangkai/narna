@@ -19,9 +19,17 @@ class DesktopRuntime:
         self.gateway_enabled = gateway
         self._stop = threading.Event()
         self._jobs_thread: threading.Thread | None = None
+        self._cloud_thread: threading.Thread | None = None
         self._gateway_thread: threading.Thread | None = None
         self._gateway: Any = None
-        self.stats: dict[str, Any] = {"jobsRuns": 0, "jobsHandled": 0, "gateway": "off"}
+        self.stats: dict[str, Any] = {
+            "jobsRuns": 0,
+            "jobsHandled": 0,
+            "cloudSyncRuns": 0,
+            "cloudSyncLastAt": None,
+            "cloudSyncLastError": None,
+            "gateway": "off",
+        }
 
     def start(self) -> None:
         from .gateway_config import apply_gateway_to_env, load_gateway_config
@@ -32,6 +40,9 @@ class DesktopRuntime:
 
         self._jobs_thread = threading.Thread(target=self._jobs_loop, name="narna-jobs", daemon=True)
         self._jobs_thread.start()
+
+        self._cloud_thread = threading.Thread(target=self._cloud_sync_loop, name="narna-cloud-sync", daemon=True)
+        self._cloud_thread.start()
 
         if gw_on:
             self._gateway_thread = threading.Thread(target=self._gateway_loop, name="narna-gateway", daemon=True)
@@ -60,6 +71,64 @@ class DesktopRuntime:
             except Exception as e:
                 logger.warning("job ticker: %s", e)
             self._stop.wait(60.0)
+
+    def _cloud_sync_loop(self) -> None:
+        """Daily Pro cloud backup when cloudSyncAuto is enabled."""
+        while not self._stop.is_set():
+            try:
+                from .narna_config import load_narna_config, save_narna_config
+
+                cfg = load_narna_config(self.workspace)
+                if not cfg.get("cloudSyncAuto"):
+                    self._stop.wait(3600.0)
+                    continue
+                key = str(cfg.get("cloudApiKey") or "").strip()
+                if not key:
+                    self._stop.wait(3600.0)
+                    continue
+
+                last = str(cfg.get("cloudLastSyncAt") or "")
+                due = True
+                if last:
+                    from datetime import datetime, timezone
+
+                    try:
+                        prev = datetime.fromisoformat(last.replace("Z", "+00:00"))
+                        due = (datetime.now(timezone.utc) - prev).total_seconds() >= 86400
+                    except Exception:
+                        due = True
+                if not due:
+                    self._stop.wait(3600.0)
+                    continue
+
+                from .cloud_client import (
+                    cloud_sync_push,
+                    collect_sync_bundle,
+                    default_cloud_url,
+                )
+                from .desktop_server import _device_id  # noqa: PLC0415
+
+                base = str(cfg.get("cloudApiUrl") or default_cloud_url()).strip()
+                did = _device_id(cfg, self.workspace)
+                bundle = collect_sync_bundle(self.workspace, device_id=did)
+                out = cloud_sync_push(api_key=key, base_url=base, bundle=bundle)
+                if out.get("ok", True) and not out.get("error"):
+                    from datetime import datetime, timezone
+
+                    cfg["cloudLastSyncAt"] = datetime.now(timezone.utc).isoformat()
+                    save_narna_config(cfg, self.workspace)
+                    self.stats["cloudSyncRuns"] = int(self.stats.get("cloudSyncRuns") or 0) + 1
+                    self.stats["cloudSyncLastAt"] = cfg["cloudLastSyncAt"]
+                    self.stats["cloudSyncLastError"] = None
+                    logger.info("cloud backup ok device=%s", did)
+                else:
+                    err = str(out.get("error") or "sync failed")[:200]
+                    self.stats["cloudSyncLastError"] = err
+                    logger.info("cloud backup skip: %s", err)
+            except Exception as e:
+                self.stats["cloudSyncLastError"] = str(e)[:200]
+                logger.warning("cloud sync: %s", e)
+            self._stop.wait(3600.0)
 
     def _gateway_loop(self) -> None:
         try:
@@ -105,6 +174,9 @@ class DesktopRuntime:
             "runtime": {
                 "jobsRuns": self.stats.get("jobsRuns", 0),
                 "jobsHandled": self.stats.get("jobsHandled", 0),
+                "cloudSyncRuns": self.stats.get("cloudSyncRuns", 0),
+                "cloudSyncLastAt": self.stats.get("cloudSyncLastAt"),
+                "cloudSyncLastError": self.stats.get("cloudSyncLastError"),
                 "gatewayThread": bool(self._gateway_thread and self._gateway_thread.is_alive()),
             },
             "config": gateway_config_masked(self.workspace),

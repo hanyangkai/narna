@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "narna"
-version = "0.2.8"
+version = "0.2.9"
 description = "NARNA — Open-source AI Agent with ADQA decision quality. Social gateway for Telegram, WhatsApp, X, Discord, and more."
 readme = "README.md"
 requires-python = ">=3.11"
