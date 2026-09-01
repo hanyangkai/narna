@@ -26,6 +26,9 @@ class MemoryV2Tests(unittest.TestCase):
             self.assertGreaterEqual(fts.lesson_count(), 1)
             hits = fts.search("dual approval")
             self.assertTrue(any(h.get("source") == "lesson" for h in hits))
+            recent = fts.recent_lessons(limit=3)
+            self.assertGreaterEqual(len(recent), 1)
+            self.assertIn("dual approval", recent[0].get("snippet", ""))
 
     def test_kg_observe(self):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:

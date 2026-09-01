@@ -206,6 +206,32 @@ class AgentMemoryFTS:
         finally:
             conn.close()
 
+    def recent_lessons(self, *, limit: int = 6) -> list[dict[str, Any]]:
+        """Recent high-value lessons — always inject for continuity."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                """
+                SELECT content, dqs, created_at FROM lessons
+                ORDER BY COALESCE(dqs, 0) DESC, id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            return [
+                {
+                    "source": "lesson_recent",
+                    "snippet": str(r["content"])[:240],
+                    "dqs": r["dqs"],
+                    "createdAt": r["created_at"],
+                }
+                for r in rows
+            ]
+        except Exception:
+            return []
+        finally:
+            conn.close()
+
     def turn_count(self) -> int:
         conn = self._conn()
         try:

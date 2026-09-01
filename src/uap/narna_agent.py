@@ -172,7 +172,7 @@ class NarnaAgent:
                 file_bits.append(f"--- file: {name} ---\n{text}")
                 sources.append({"type": "file", "name": name})
 
-        priors = self.memory.query(action=action, limit=5)
+        priors = self.memory.query(action=action, limit=8)
         prior_lines = [
             f"- prior dqs={p.get('dqs')} guardian={p.get('guardian')} lesson={p.get('lesson') or ''}"
             for p in priors
@@ -182,11 +182,18 @@ class NarnaAgent:
         ]
         profile = self.fts.get_profile()
         profile_lines = [f"- {k}: {v}" for k, v in list(profile.items())[:8]]
-        fts_hits = self.fts.search(msg, limit=4)
+        fts_hits = self.fts.search(msg, limit=8)
         fts_lines = [
             f"- [{h.get('role')}] {h.get('snippet')}" for h in fts_hits
         ]
-        mem_md = self.memory_md.read_memory(max_chars=1800)
+        recent_lessons = self.fts.recent_lessons(limit=5)
+        seen_snippets = {h.get("snippet") for h in fts_hits}
+        for les in recent_lessons:
+            snip = les.get("snippet")
+            if snip and snip not in seen_snippets:
+                fts_lines.append(f"- [lesson dqs={les.get('dqs')}] {snip}")
+                seen_snippets.add(snip)
+        mem_md = self.memory_md.read_memory(max_chars=2400)
         user_md = self.memory_md.read_user(max_chars=1200)
         project_md = self.memory_md.read_project(max_chars=1200)
         kg_lines: list[str] = []
@@ -460,7 +467,7 @@ class NarnaAgent:
         # Persist high-quality lessons into MEMORY.md + FTS (Honcho-lite v2)
         try:
             dqs_val = int(adqa.get("dqs") or 0)
-            if dqs_val >= 70:
+            if dqs_val >= 60:
                 lesson_line = draft.strip().split("\n")[0][:300]
                 lesson_text = lesson_line or msg[:200]
                 self.memory_md.append_lesson(lesson_text, dqs=dqs_val)
