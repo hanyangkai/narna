@@ -69,6 +69,32 @@ class ApiKeyResponse(BaseModel):
     message: str
 
 
+class SignupRequest(BaseModel):
+    email: str
+    name: str = ""
+
+
+class SignupResponse(BaseModel):
+    ok: bool = True
+    orgId: int
+    email: str
+    name: str
+    plan: str
+    apiKey: str
+    keyPrefix: str
+    message: str
+
+
+class AccountMeResponse(BaseModel):
+    ok: bool = True
+    orgId: int
+    email: str | None = None
+    name: str
+    plan: str
+    createdAt: str | None = None
+    planExpiresAt: str | None = None
+
+
 class BillingCheckoutRequest(BaseModel):
     plan: str
 
@@ -101,6 +127,8 @@ class BillingStatusResponse(BaseModel):
     agentTurnsHardCap: int | None = None
     seatCount: int = 1
     byoLlmAllowed: bool = False
+    email: str | None = None
+    orgName: str | None = None
 
 
 class AgentAskRequest(BaseModel):

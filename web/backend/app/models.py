@@ -42,6 +42,7 @@ class Organization(Base):
     # Privacy-preserving Governance Telemetry (default OFF)
     telemetry_opt_in: Mapped[int] = mapped_column(Integer, default=0)  # 0/1
     train_opt_in: Mapped[int] = mapped_column(Integer, default=0)  # 0/1
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     api_keys: Mapped[list["ApiKey"]] = relationship(back_populates="organization")

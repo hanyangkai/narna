@@ -59,6 +59,29 @@ export type BillingStatus = {
   adqaSoftCap?: number | null;
   adqaHardCap?: number | null;
   seatCount?: number;
+  email?: string | null;
+  orgName?: string | null;
+};
+
+export type SignupResponse = {
+  ok: boolean;
+  orgId: number;
+  email: string;
+  name: string;
+  plan: string;
+  apiKey: string;
+  keyPrefix: string;
+  message: string;
+};
+
+export type AccountMe = {
+  ok: boolean;
+  orgId: number;
+  email: string | null;
+  name: string;
+  plan: string;
+  createdAt: string | null;
+  planExpiresAt: string | null;
 };
 
 export type BillingCryptoNetwork = {
@@ -203,6 +226,30 @@ export async function verifyPackageSession(
 
 export async function fetchBillingStatus(apiKey: string): Promise<BillingStatus> {
   const res = await fetch(`${API_BASE}/v1/billing/status`, { headers: authHeaders(apiKey) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function signupAccount(email: string, name?: string): Promise<SignupResponse> {
+  const res = await fetch(`${API_BASE}/v1/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, name: name || "" }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text) as { detail?: string };
+      throw new Error(j.detail || text);
+    } catch {
+      throw new Error(text);
+    }
+  }
+  return res.json();
+}
+
+export async function fetchAccountMe(apiKey: string): Promise<AccountMe> {
+  const res = await fetch(`${API_BASE}/v1/auth/me`, { headers: authHeaders(apiKey) });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

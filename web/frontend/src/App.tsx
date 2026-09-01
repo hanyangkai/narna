@@ -11,6 +11,8 @@ import Docs from "./pages/Docs";
 import Download from "./pages/Download";
 import Enterprise from "./pages/Enterprise";
 import GuardianConsole from "./pages/GuardianConsole";
+import Account from "./pages/Account";
+import Signup from "./pages/Signup";
 import HowItWorks from "./pages/HowItWorks";
 import Landing from "./pages/Landing";
 import ModelsSettings from "./pages/ModelsSettings";
@@ -34,6 +36,8 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/ask" element={<Ask />} />
           <Route path="/settings/models" element={<ModelsSettings />} />

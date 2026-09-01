@@ -35,6 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
+from .account import account_me, signup_account
 from .auth import get_org_from_api_key, get_org_optional
 from .billing import (
     add_plan_period,
@@ -121,6 +122,9 @@ from .schemas import (
     RunSummary,
     SessionDetail,
     SessionSummary,
+    SignupRequest,
+    SignupResponse,
+    AccountMeResponse,
     TelemetryAggregateResponse,
     TelemetryAggregateRow,
     TelemetryConsentRequest,
@@ -499,6 +503,20 @@ def ready() -> dict[str, Any]:
 @app.get("/v1/metrics/slo")
 def metrics_slo() -> dict[str, Any]:
     return {"ok": True, "slo": METRICS.to_slo(), "service": "narna-cloud"}
+
+
+@app.post("/v1/auth/signup", response_model=SignupResponse)
+def auth_signup(body: SignupRequest, db: Session = Depends(get_db)) -> SignupResponse:
+    """Self-serve signup — returns API key once (no Stripe)."""
+    if os.environ.get("UAP_SIGNUP_DISABLED", "").lower() in {"1", "true", "yes"}:
+        raise HTTPException(status_code=503, detail="signup temporarily disabled")
+    out = signup_account(db=db, email=body.email, name=body.name or None)
+    return SignupResponse(**out)
+
+
+@app.get("/v1/auth/me", response_model=AccountMeResponse)
+def auth_me(org: Organization = Depends(get_org_from_api_key)) -> AccountMeResponse:
+    return AccountMeResponse(**account_me(org))
 
 
 @app.get("/v1/billing/paddle/status")
@@ -934,6 +952,8 @@ def billing_status(
         agentTurnsHardCap=plan_agent_turns_hard_cap(org.plan),
         seatCount=int(getattr(org, "seat_count", 1) or 1),
         byoLlmAllowed=plan_allows_byo_llm(org.plan),
+        email=getattr(org, "email", None),
+        orgName=org.name,
     )
 
 

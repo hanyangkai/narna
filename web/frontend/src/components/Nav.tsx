@@ -53,6 +53,9 @@ export default function Nav() {
               ))}
             </div>
             <div className="nav-actions">
+              <Link to="/signup" className="btn btn-secondary" onClick={() => setOpen(false)}>
+                Sign up
+              </Link>
               <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
                 Download free
               </Link>

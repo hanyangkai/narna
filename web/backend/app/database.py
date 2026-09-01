@@ -65,6 +65,8 @@ def _migrate_schema() -> None:
             alterations.append("ADD COLUMN telemetry_opt_in INTEGER DEFAULT 0")
         if "train_opt_in" not in cols:
             alterations.append("ADD COLUMN train_opt_in INTEGER DEFAULT 0")
+        if "email" not in cols:
+            alterations.append("ADD COLUMN email VARCHAR(255)")
         if alterations:
             with engine.begin() as conn:
                 for clause in alterations:

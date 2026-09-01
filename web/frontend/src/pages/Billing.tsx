@@ -163,23 +163,18 @@ export default function Billing() {
       <section>
         <header className="page-header" style={{ paddingTop: "1rem" }}>
           <p className="pill-label">Billing</p>
-          <h1>Pro checkout — not launched yet</h1>
+          <h1>Pro — pay with USDC / USDT</h1>
           <p>
-            <strong>Use the free agent.</strong> Download Desktop (Mac/Windows) or Ask with your own LLM
-            key — no Pro payment required. Crypto checkout below is kept for later GTM; ignore it for now.
+            No Stripe. Create an account at <Link to="/signup">/signup</Link>, save your API key, then pay
+            on-chain. Bot upgrades your plan automatically.
           </p>
           <p style={{ marginTop: "0.75rem" }}>
-            <Link to="/download">→ Download free</Link>
+            <Link to="/signup">Sign up</Link>
             {" · "}
-            <Link to="/ask">Try Ask</Link>
+            <Link to="/account">Sign in</Link>
             {" · "}
-            <Link to="/pricing">Free plans</Link>
+            <Link to="/download">Desktop free</Link>
           </p>
-          <ol style={{ marginTop: "0.75rem", paddingLeft: "1.25rem", maxWidth: "40rem", opacity: 0.7 }}>
-            <li>When Pro launches: pick plan, chain, and USDC or USDT.</li>
-            <li>Send the exact amount to the wallet shown (QR included).</li>
-            <li>Bot watches the chain — plan upgrades automatically within a few minutes.</li>
-          </ol>
         </header>
 
         {cryptoConfig && (
