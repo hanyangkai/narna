@@ -232,6 +232,13 @@ def agent_jobs_tick_all(request: Request) -> dict[str, Any]:
 def _seed_dev_org() -> None:
     from .database import SessionLocal
 
+    crypto_mode = os.environ.get("UAP_CRYPTO_MODE", "mock").lower()
+    sentry_env = os.environ.get("SENTRY_ENVIRONMENT", "").lower()
+    is_prod = crypto_mode == "live" or sentry_env == "production"
+    
+    if is_prod:
+        return
+    
     db = SessionLocal()
     try:
         if db.query(Organization).first() is not None:

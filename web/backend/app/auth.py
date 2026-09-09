@@ -18,6 +18,11 @@ def hash_key(key: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
+WELL_KNOWN_SEED_HASHES = {
+    "5790c9c9a6eef649172e2867d5311512586536eb220df83943ac42e5f53c033f",
+}
+
+
 def load_key_denylist() -> set[str]:
     """Load denied key hashes from env. Supports comma-separated SHA256 hashes."""
     raw = os.getenv("UAP_KEY_DENYLIST", "")
@@ -29,12 +34,24 @@ def load_key_denylist() -> set[str]:
 _KEY_DENYLIST = load_key_denylist()
 
 
+def is_production_mode() -> bool:
+    """Check if running in production mode via UAP_CRYPTO_MODE or SENTRY_ENVIRONMENT."""
+    crypto_mode = os.getenv("UAP_CRYPTO_MODE", "mock").lower()
+    sentry_env = os.getenv("SENTRY_ENVIRONMENT", "").lower()
+    return crypto_mode == "live" or sentry_env == "production"
+
+
 def is_key_denied(key: str) -> bool:
-    """Check if key is in denylist by comparing SHA256 hash."""
-    if not _KEY_DENYLIST:
-        return False
+    """Check if key is denied: manual denylist + well-known seeds in production."""
     key_hash = hash_key(key)
-    return key_hash in _KEY_DENYLIST
+    
+    if key_hash in _KEY_DENYLIST:
+        return True
+    
+    if is_production_mode() and key_hash in WELL_KNOWN_SEED_HASHES:
+        return True
+    
+    return False
 
 
 def get_org_from_api_key(

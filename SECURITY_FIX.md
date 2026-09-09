@@ -2,7 +2,7 @@
 
 ## Critical Security Changes
 
-This PR addresses NARNA-FREE-GLOBAL-001 - removal of hardcoded API keys from the frontend bundle.
+This PR addresses NARNA-FREE-GLOBAL-001 - removal of hardcoded API keys from the frontend bundle and implements automatic rejection of well-known seed/dev keys in production.
 
 ### Changes Made
 
@@ -11,6 +11,10 @@ This PR addresses NARNA-FREE-GLOBAL-001 - removal of hardcoded API keys from the
 - Format: comma-separated SHA256 hashes of revoked keys
 - Returns `401` with message "API key revoked" for denied keys
 - Both `get_org_from_api_key` and `resolve_api_key` check denylist
+- **NEW**: Built-in `WELL_KNOWN_SEED_HASHES` constant with known seed/dev key hashes
+- **NEW**: `is_production_mode()` checks `UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production`
+- **NEW**: Automatic rejection of well-known seed keys BEFORE DB lookup in production mode
+- **CRITICAL**: Well-known dev key is rejected immediately when `UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production`, even if not in manual denylist
 
 **Example usage:**
 ```bash
@@ -45,7 +49,46 @@ UAP_KEY_DENYLIST="hash1,hash2,hash3"
   > No formal Terms of Service or Privacy Policy. Use at your own risk.
   > For production use, consult legal counsel."
 
+#### 5. Conditional Dev Org Seeding (`web/backend/app/main.py`)
+- **NEW**: `_seed_dev_org()` now skips seeding when in production mode
+- Checks `UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production` before seeding
+- Well-known dev key is NEVER created in production environments
+- Dev key seeding only occurs in local/test environments (UAP_CRYPTO_MODE=mock)
+
+#### 6. Tests for Well-Known Dev Key Rejection
+- **NEW**: `tests/test_well_known_dev_key.py` - comprehensive tests for:
+  - Well-known dev key hash verification
+  - Production mode detection (UAP_CRYPTO_MODE=live, SENTRY_ENVIRONMENT=production)
+  - Automatic rejection in production mode
+  - Dev key allowed in dev/test mode
+  - Manual denylist overrides
+  - Conditional dev org seeding
+
 ### Post-Deployment Steps (Operations)
+
+**AUTOMATIC PROTECTION**: When `UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production`, well-known seed/dev keys are automatically rejected BEFORE any DB lookup. No manual denylist configuration required for seed keys.
+
+#### Quick Enable (Production)
+
+1. **Set ONE of these environment variables** (recommended: both for defense-in-depth):
+   ```bash
+   UAP_CRYPTO_MODE=live
+   SENTRY_ENVIRONMENT=production
+   ```
+
+2. **Restart the application** - well-known seed key rejection is now active automatically
+
+3. **Verify rejection** (optional):
+   ```bash
+   # Test with well-known dev key (REDACTED in logs)
+   curl -H "Authorization: Bearer uap_live_dev_local_key_change_in_prod" \
+        https://api.narna.org/v1/billing/status
+   # Expected: {"detail":"API key revoked"}
+   ```
+
+#### Optional: Manual Denylist for Additional Keys
+
+If you need to revoke OTHER keys beyond the built-in seed key:
 
 1. **Generate SHA256 hash of LEAKED_DEFAULT_KEY**:
    ```bash
@@ -75,34 +118,40 @@ UAP_KEY_DENYLIST="hash1,hash2,hash3"
 ### Security Verification Checklist
 
 - [ ] No plaintext API keys in frontend bundle
-- [ ] Server rejects requests with LEAKED_DEFAULT_KEY (after denylist configured)
+- [ ] **CRITICAL**: `UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production` set in production
+- [ ] Server automatically rejects well-known seed key in production mode (no manual denylist needed)
+- [ ] Dev org seeding skipped in production (verify no "Dev API key" log message on startup)
 - [ ] `/billing` page shows empty state when not authenticated
 - [ ] All API key inputs use password masking
 - [ ] Disclaimer footer visible on all pages
-- [ ] Production env var `UAP_KEY_DENYLIST` configured
-- [ ] Affected users notified of key rotation
+- [ ] Tests pass: `pytest tests/test_well_known_dev_key.py -v`
 
-### Expected Behavior After Deploy + Rotation
+### Expected Behavior After Deploy
 
-**Before denylist + rotation:**
-- Old leaked key still works (until added to denylist)
-- New users get fresh keys
-- Frontend no longer ships with default fallback
-
-**After denylist configured:**
-- Requests with leaked key → `401 Unauthorized: API key revoked`
+**Production Mode (`UAP_CRYPTO_MODE=live` OR `SENTRY_ENVIRONMENT=production`):**
+- Well-known seed key → `401 Unauthorized: API key revoked` (automatic, BEFORE DB lookup)
+- Dev org seeding skipped - no well-known dev key created in database
 - Unauth users see sign-in prompts on `/billing`
 - No auto-fetch of billing data without explicit user key
 
-**After rotation:**
-- Affected orgs have new keys
-- Old leaked key permanently blocked
-- No impact to other users
+**Dev/Test Mode (`UAP_CRYPTO_MODE=mock` AND `SENTRY_ENVIRONMENT!=production`):**
+- Dev org with well-known key auto-created for local testing
+- Well-known dev key works for local development
+- Frontend requires explicit key input (no default fallback)
+
+**Manual Denylist (optional, any mode):**
+- Requests with manually denied keys → `401 Unauthorized: API key revoked`
+- Works in addition to automatic well-known seed rejection in production
 
 ### Files Modified
 
 **Backend:**
-- `web/backend/app/auth.py` - added denylist checks
+- `web/backend/app/auth.py` - added built-in seed hash denylist + automatic production mode rejection
+- `web/backend/app/main.py` - conditional dev org seeding (skip in production)
+- `web/backend/.env.example` - documented UAP_KEY_DENYLIST
+
+**Tests:**
+- `tests/test_well_known_dev_key.py` - comprehensive tests for seed key rejection
 
 **Frontend:**
 - `web/frontend/src/api.ts` - removed DEFAULT_DEV_KEY, added maskApiKey
@@ -118,14 +167,32 @@ UAP_KEY_DENYLIST="hash1,hash2,hash3"
 ### Testing Locally
 
 ```bash
-# 1. Set denylist with test key hash
-export UAP_KEY_DENYLIST="5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+# 1. Test automatic rejection in production mode
+export UAP_CRYPTO_MODE=live
+export SENTRY_ENVIRONMENT=production
+# Start server, then test
+curl -H "Authorization: Bearer uap_live_dev_local_key_change_in_prod" \
+     http://localhost:8000/v1/billing/status
+# Expected: {"detail":"API key revoked"}
 
-# 2. Try to use test denied key
+# 2. Test dev mode allows seed key (for local development)
+export UAP_CRYPTO_MODE=mock
+unset SENTRY_ENVIRONMENT
+# Restart server - should see "[UAP Cloud] Dev API key: uap_live_dev_local_key_change_in_prod"
+curl -H "Authorization: Bearer uap_live_dev_local_key_change_in_prod" \
+     http://localhost:8000/v1/billing/status
+# Expected: 200 OK with billing data
+
+# 3. Run tests
+pytest tests/test_well_known_dev_key.py -v
+# Expected: all tests pass
+
+# 4. Test manual denylist (optional)
+export UAP_KEY_DENYLIST="5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
 curl -H "Authorization: Bearer password" http://localhost:8000/v1/billing/status
 # Expected: {"detail":"API key revoked"}
 
-# 3. Build frontend and verify no hardcoded keys
+# 5. Build frontend and verify no hardcoded keys
 cd web/frontend
 npm run build
 grep -r "uap_live_dev" dist/
