@@ -287,7 +287,7 @@ export default function Ask() {
       setError(text);
       if (text.includes("402") || text.toLowerCase().includes("quota")) {
         setError(
-          "Hosted Ask fair-use limit reached. Use Desktop free (Mac/Windows) with your own LLM key — no Pro needed."
+          "Plan quota reached. Use Desktop free (Mac/Windows) with your own LLM key — unlimited, no Pro needed."
         );
       }
     } finally {
@@ -549,18 +549,6 @@ export default function Ask() {
               {loading ? "…" : "Ask"}
             </button>
           </div>
-          {quota.hard != null && (
-            <p className="ask-quota">
-              Hosted turns this period: {quota.used ?? 0} / {quota.hard} ·{" "}
-              <Link to="/download">Desktop = unlimited free</Link>
-            </p>
-          )}
-          {quota.hard == null && quota.used != null && (
-            <p className="ask-quota">
-              Hosted turns this period: {quota.used} · free launch ·{" "}
-              <Link to="/download">Desktop recommended</Link>
-            </p>
-          )}
         </div>
       </div>
     </div>

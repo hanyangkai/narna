@@ -128,7 +128,7 @@ Store under existing `tenant_workspace(org_id)` — no new DB tables for v1 (fil
 
 | Metric | Free (cloud) | Pro (cloud) | Desktop local |
 |--------|--------------|-------------|---------------|
-| Agent turns/mo | 50 soft / **200 hard** | 5k soft / **20k hard** | ∞ |
+| Agent turns/mo | **unlimited (BYOK)** | 5k soft / **20k hard** | ∞ |
 | ADQA checks/mo | 100 hard | 10k hard | ∞ |
 | Sync push/mo | 0 | 30 | N/A |
 | Recurring jobs | 0 | 10 | ∞ (local) |
@@ -209,7 +209,7 @@ Use in: sync routes, jobs create, MCP meter, social webhooks.
 
 **Free**
 - Desktop Mac/Windows — full agent, unlimited
-- Cloud Ask — 200 turns/mo
+- Cloud Ask — unlimited (BYOK only, no hosted LLM)
 - Local MCP tools
 
 **Pro $20/mo**
