@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  DEFAULT_DEV_KEY,
   fetchRuns,
   fetchSessions,
   healthCheck,
@@ -17,7 +16,7 @@ function stateBadge(state: string) {
 }
 
 export default function Console() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [tab, setTab] = useState<"sessions" | "runs">("sessions");
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -29,6 +28,10 @@ export default function Console() {
   }, []);
 
   async function load() {
+    if (!apiKey.trim()) {
+      setError("Please enter your API key");
+      return;
+    }
     setError(null);
     localStorage.setItem("uap_api_key", apiKey);
     try {
@@ -43,7 +46,9 @@ export default function Console() {
   }
 
   useEffect(() => {
-    load();
+    if (apiKey.trim()) {
+      load();
+    }
   }, []);
 
   return (
@@ -66,10 +71,16 @@ export default function Console() {
         <div className="console-bar">
           <label>
             API Key
-            <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} className="mono" />
+            <input 
+              type="password"
+              value={apiKey} 
+              onChange={(e) => setApiKey(e.target.value)} 
+              className="mono"
+              placeholder="uap_live_…"
+            />
           </label>
-          <button type="button" className="btn btn-primary" onClick={load}>
-            Refresh
+          <button type="button" className="btn btn-primary" onClick={load} disabled={!apiKey.trim()}>
+            Load Data
           </button>
         </div>
         <div className="console-tabs" style={{ display: "flex", gap: "0.5rem", margin: "1rem 0" }}>

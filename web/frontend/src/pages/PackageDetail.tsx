@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { DEFAULT_DEV_KEY, fetchPackage, purchasePackage, type PackageDetail } from "../api";
+import { fetchPackage, purchasePackage, type PackageDetail } from "../api";
 
 type Rule = {
   id?: string;
@@ -20,7 +20,7 @@ function effectClass(effect: string): string {
 
 export default function PackageDetailPage() {
   const { packageId } = useParams();
-  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [pkg, setPkg] = useState<PackageDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -35,6 +35,10 @@ export default function PackageDetailPage() {
 
   async function onBuy() {
     if (!pkg) return;
+    if (!apiKey) {
+      setError("Please sign in to purchase packages");
+      return;
+    }
     setBuying(true);
     setMsg(null);
     setError(null);

@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  DEFAULT_DEV_KEY,
   fetchAgentModels,
   saveAgentModels,
   type AgentModelsConfig,
 } from "../api";
 
 export default function ModelsSettings() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [cfg, setCfg] = useState<AgentModelsConfig | null>(null);
   const [provider, setProvider] = useState("openrouter");
   const [llmKey, setLlmKey] = useState("");
@@ -19,6 +18,10 @@ export default function ModelsSettings() {
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
+    if (!apiKey.trim()) {
+      setError("Please enter your API key");
+      return;
+    }
     setLoading(true);
     setError(null);
     localStorage.setItem("uap_api_key", apiKey);
@@ -37,7 +40,9 @@ export default function ModelsSettings() {
   };
 
   useEffect(() => {
-    load();
+    if (apiKey.trim()) {
+      load();
+    }
   }, []);
 
   const onSave = async () => {
@@ -72,10 +77,16 @@ export default function ModelsSettings() {
       <div className="console-bar">
         <label>
           API Key
-          <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} className="mono" />
+          <input 
+            type="password"
+            value={apiKey} 
+            onChange={(e) => setApiKey(e.target.value)} 
+            className="mono"
+            placeholder="uap_live_…"
+          />
         </label>
-        <button type="button" className="btn btn-secondary" onClick={load} disabled={loading}>
-          Refresh
+        <button type="button" className="btn btn-secondary" onClick={load} disabled={loading || !apiKey.trim()}>
+          Load Config
         </button>
       </div>
 
