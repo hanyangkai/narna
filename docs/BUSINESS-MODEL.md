@@ -10,7 +10,7 @@
 
 | Plan | Price | Agent | Hosted LLM | BYO | ADQA / Memory |
 |------|------:|-------|------------|-----|---------------|
-| **Free Ask** | $0 | Ask web | **None** (mock without key) · **50** turns/mo | ✓ BYOK | Basic DQS + short memory |
+| **Free Ask** | $0 | Ask web | **None** (mock without key) · **unlimited** with BYOK | ✓ BYOK | Basic DQS + short memory |
 | **Personal** (API: `cloud`) | **$20/mo** | ✓ | None (BYOK) | ✓ | Full Decision Memory + ADQA API |
 | **Pro** | later | Multi-model challenge | None | ✓ | Advanced ADQA |
 | **Team** | **$99/seat/mo** | Shared Decision Brain | None | ✓ | Shared priors · governance |

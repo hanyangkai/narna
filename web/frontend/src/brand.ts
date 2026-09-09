@@ -188,12 +188,12 @@ export const PRICING = {
       name: "Free",
       price: "$0",
       period: "",
-      limit: "Desktop unlimited · Cloud 200 Ask/mo",
+      limit: "Desktop unlimited · Cloud unlimited Ask (BYOK only)",
       retention: "Local ~/.narna · forever",
       features: [
         "Full Desktop agent (Mac + Windows)",
         "All tools · ADQA · Decision Memory · BYOK",
-        "Cloud Ask (200 turns/mo)",
+        "Cloud Ask (unlimited with BYOK)",
         "Hosted MCP (100 ADQA/mo)",
       ],
       cta: "Download free",
@@ -243,7 +243,7 @@ export const PRICING = {
     "Desktop stays free: full agent, unlimited local use, BYOK — no license ever.",
     "Pro = Cloud Brain: backup ~/.narna, sync phone + PC, hosted MCP for your IDE.",
     "Pro unlocks Quality/Critical on web Ask, recurring cloud jobs, always-on Telegram/Discord.",
-    "Free cloud: 200 Ask turns/mo. Pro: 20k turns, 30 sync backups/mo, 1yr trace history.",
+    "Free cloud: unlimited Ask turns (BYOK). Pro: 20k turns, 30 sync backups/mo, 1yr trace history.",
   ],
   revenueStreams: [
     "Pro ($20/mo crypto)",

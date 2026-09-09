@@ -371,7 +371,7 @@ export default function Landing() {
               </a>
             </div>
             <p className="land-hero-meta">
-              Free agent on your machine — BYOK. Pro cloud plans not launched yet.
+              Free agent on your machine — BYOK. Pro cloud plans available.
             </p>
             <p className="land-model-row">
               GPT · Claude · Gemini · DeepSeek · Qwen · Local Models
