@@ -49,6 +49,13 @@ export default function Footer() {
       <div className="layout-wide footer-bottom">
         {BRAND.name} · {BRAND.primary} · MIT
       </div>
+      <div className="layout-wide footer-disclaimer">
+        <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginTop: "1rem", textAlign: "center" }}>
+          This service is provided as-is for research and open-source use. Not a certified legal entity.
+          No formal Terms of Service or Privacy Policy. Use at your own risk.
+          For production use, consult legal counsel.
+        </p>
+      </div>
     </footer>
   );
 }

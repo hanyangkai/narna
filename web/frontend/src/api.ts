@@ -724,7 +724,11 @@ export async function fetchPartnerCerts(): Promise<Record<string, unknown>> {
   return res.json();
 }
 
-export const DEFAULT_DEV_KEY = "uap_live_dev_local_key_change_in_prod";
+export function maskApiKey(key: string | null | undefined): string {
+  if (!key) return "";
+  if (key.length < 20) return key.slice(0, 8) + "…";
+  return key.slice(0, 16) + "…";
+}
 
 export const PLAN_PRICES: Record<string, string> = {
   free: "$0",

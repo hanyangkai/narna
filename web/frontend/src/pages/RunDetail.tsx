@@ -1,19 +1,31 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { DEFAULT_DEV_KEY, fetchRun, type RunDetail } from "../api";
+import { fetchRun, type RunDetail } from "../api";
 
 export default function RunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
-  const apiKey = localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY;
+  const apiKey = localStorage.getItem("uap_api_key") || "";
   const [run, setRun] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!runId) return;
+    if (!runId || !apiKey) return;
     fetchRun(apiKey, runId)
       .then(setRun)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, [runId, apiKey]);
+
+  if (!apiKey) {
+    return (
+      <section>
+        <Link to="/console">← Console</Link>
+        <div className="card" style={{ marginTop: "1rem" }}>
+          <h3>Sign in required</h3>
+          <p>Please <Link to="/account">sign in</Link> or <Link to="/signup">sign up</Link> to view runs.</p>
+        </div>
+      </section>
+    );
+  }
 
   if (error) return <div className="error">{error}</div>;
   if (!run) return <p>Loading…</p>;

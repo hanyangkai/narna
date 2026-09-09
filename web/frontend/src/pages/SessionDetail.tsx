@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { DEFAULT_DEV_KEY, fetchSession, type SessionDetail } from "../api";
+import { fetchSession, type SessionDetail } from "../api";
 
 function GraphView({ units }: { units: Array<Record<string, unknown>> }) {
   if (!units.length) {
@@ -31,16 +31,28 @@ function GraphView({ units }: { units: Array<Record<string, unknown>> }) {
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams();
-  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !apiKey) return;
     fetchSession(apiKey, sessionId)
       .then(setSession)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, [apiKey, sessionId]);
+
+  if (!apiKey) {
+    return (
+      <div className="layout-wide">
+        <Link to="/console">← Console</Link>
+        <div className="card" style={{ marginTop: "1rem" }}>
+          <h3>Sign in required</h3>
+          <p>Please <Link to="/account">sign in</Link> or <Link to="/signup">sign up</Link> to view sessions.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

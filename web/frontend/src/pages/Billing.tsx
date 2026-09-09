@@ -2,7 +2,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import PaymentQr from "../components/PaymentQr";
 import {
-  DEFAULT_DEV_KEY,
+  maskApiKey,
   PLAN_PRICES,
   checkoutCrypto,
   fetchBillingStatus,
@@ -33,7 +33,7 @@ function teamPriceLabel(seats: number): string {
 }
 
 export default function Billing() {
-  const [apiKey, setApiKeyState] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey, setApiKeyState] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [networks, setNetworks] = useState<BillingCryptoNetwork[]>([]);
   const [cryptoConfig, setCryptoConfig] = useState<BillingCryptoConfig | null>(null);
@@ -47,6 +47,10 @@ export default function Billing() {
   const [seats, setSeats] = useState(3);
 
   const load = async () => {
+    if (!apiKey.trim()) {
+      setError("Please enter your API key to view billing");
+      return;
+    }
     setLoading(true);
     setError(null);
     localStorage.setItem("uap_api_key", apiKey);
@@ -81,7 +85,9 @@ export default function Billing() {
           { id: "bsc", name: "BNB Smart Chain", chainId: 56, assets: ["usdc", "usdt"], rpcConfigured: false },
         ]);
       });
-    load();
+    if (apiKey.trim()) {
+      load();
+    }
   }, []);
 
   useEffect(() => {
@@ -205,12 +211,36 @@ export default function Billing() {
         <div className="console-bar">
           <label>
             API Key
-            <input value={apiKey} onChange={(e) => setApiKeyState(e.target.value)} className="mono" />
+            <input 
+              type="password"
+              value={apiKey} 
+              onChange={(e) => setApiKeyState(e.target.value)} 
+              className="mono"
+              placeholder="uap_live_…"
+            />
           </label>
-          <button type="button" className="btn btn-primary" onClick={load} disabled={loading}>
-            {loading ? "Loading..." : "Refresh"}
+          <button type="button" className="btn btn-primary" onClick={load} disabled={loading || !apiKey.trim()}>
+            {loading ? "Loading..." : "Load Billing"}
           </button>
         </div>
+        
+        {!apiKey.trim() && !status && !error && (
+          <div className="card" style={{ marginTop: "1rem" }}>
+            <h3>Sign in required</h3>
+            <p>Enter your API key above to view billing, or:</p>
+            <div style={{ marginTop: "1rem" }}>
+              <Link to="/checkout" className="btn btn-primary" style={{ marginRight: "0.5rem" }}>
+                Get Pro — pay with USDC/USDT
+              </Link>
+              <Link to="/signup" className="btn btn-secondary" style={{ marginRight: "0.5rem" }}>
+                Sign up free
+              </Link>
+              <Link to="/account" className="btn btn-secondary">
+                Sign in / Recover key
+              </Link>
+            </div>
+          </div>
+        )}
 
         {error && <div className="error">{error}</div>}
 

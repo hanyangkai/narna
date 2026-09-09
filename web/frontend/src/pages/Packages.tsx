@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { DEFAULT_DEV_KEY, purchasePackage } from "../api";
+import { purchasePackage } from "../api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -26,7 +26,7 @@ export default function Packages() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || DEFAULT_DEV_KEY);
+  const [apiKey] = useState(() => localStorage.getItem("uap_api_key") || "");
   const [searchParams] = useSearchParams();
 
   const load = async () => {
@@ -59,6 +59,10 @@ export default function Packages() {
   }, [searchParams]);
 
   async function onBuy(packageId: string) {
+    if (!apiKey) {
+      setError("Please sign in to purchase packages");
+      return;
+    }
     setMsg(null);
     setError(null);
     try {
