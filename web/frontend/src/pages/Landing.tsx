@@ -1,328 +1,104 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { BRAND, PRICING, SPEC } from "../brand";
 import ParticleNetwork from "../components/effects/ParticleNetwork";
-import ScanGrid from "../components/effects/ScanGrid";
-import GlitchText from "../components/effects/GlitchText";
-import AuroraOrbs from "../components/effects/AuroraOrbs";
-import DataStream from "../components/effects/DataStream";
 import Reveal, { RevealItem, RevealStagger } from "../components/effects/Reveal";
 
-const HeroDecision3D = lazy(() => import("../components/effects/HeroDecision3D"));
+const BOT_STEPS = [
+  {
+    n: "01",
+    title: "Desktop is the bot",
+    body: "Install NARNA on Mac or Windows. Login Claude Code CLI or Codex CLI with your subscription — or paste a BYOK API key.",
+  },
+  {
+    n: "02",
+    title: "Phone is the remote",
+    body: "Scan the pairing QR. Chat, approve, and steer from iOS/Android while the heavy work stays on your PC.",
+  },
+  {
+    n: "03",
+    title: "ADQA is the brake",
+    body: "Before shell, spend, or send-class actions, NARNA scores evidence · risk · policy → ACT / REVIEW / REJECT.",
+  },
+] as const;
+
+const CHANNELS = [
+  "Telegram",
+  "WhatsApp",
+  "Discord",
+  "Slack",
+  "X",
+  "YouTube",
+  "Desktop",
+  "Mobile",
+] as const;
 
 const TRACE_STEPS = [
-  { label: "Context collected", detail: "" },
-  { label: "Evidence verified", detail: "12/12" },
-  { label: "Policy checked", detail: "8/8" },
-  { label: "Risk assessed", detail: "" },
-  { label: "Alternatives evaluated", detail: "" },
+  { label: "Bot received message", detail: "Telegram" },
+  { label: "Plan proposed", detail: "rm invoice.pdf" },
+  { label: "ADQA risk check", detail: "high" },
+  { label: "Human approval", detail: "phone" },
+  { label: "Action executed", detail: "" },
 ] as const;
 
-const PROBLEM_LINES = [
-  { text: '"I have a plan."', ok: true },
-  { text: '"I have tools."', ok: true },
-  { text: '"I can act."', ok: true },
-  { text: "But is it right?", ok: false },
-] as const;
-
-const AGENT_CAPS = [
-  "Reason",
-  "Research",
-  "Remember",
-  "Use tools",
-  "Browse",
-  "Code",
-  "MCP",
-  "Delegate",
-  "Act",
-] as const;
-
-const ADQA_CAPS = [
-  "Evidence",
-  "Context",
-  "Reasoning",
-  "Risk",
-  "Policy",
-  "Alignment",
-  "Confidence",
-  "Outcome",
-] as const;
-
-const MODELS = [
-  "GPT",
-  "Claude",
-  "Gemini",
-  "DeepSeek",
-  "Qwen",
-  "Llama",
-  "Mistral",
-  "Your Model",
-] as const;
-
-const EXTERNAL_AGENTS = [
-  "Hermes Agent",
-  "Custom Agent",
-  "LangGraph",
-  "CrewAI",
-  "Your Agent",
-  "Enterprise Agent",
-] as const;
-
-const DEMO_SCORES = [
-  { key: "Evidence", score: 92 },
-  { key: "Context", score: 97 },
-  { key: "Policy", score: 100 },
-  { key: "Risk", score: 63 },
-  { key: "Alignment", score: 91 },
-  { key: "Confidence", score: 82 },
-] as const;
-
-const MEMORY_FLOW = [
-  "Decision",
-  "Action",
-  "Outcome",
-  "Success / Failure",
-  "Decision Memory",
-  "Future Decision",
-] as const;
-
-const REPLAY_STEPS = [
-  "Original decision",
-  "Original evidence",
-  "Actual outcome",
-  "What went wrong?",
-  "Replay with current knowledge",
-  "Would NARNA decide differently?",
-] as const;
-
-const ARCH_STEPS = [
-  { label: "USER", kind: "node" as const },
-  { label: "NARNA AGENT", kind: "node" as const },
-  { label: "Memory · Tools · MCP", kind: "row" as const },
-  { label: "REASONING → PROPOSED ACTION", kind: "node" as const },
-  {
-    label: "NARNA ADQA — Evidence · Context · Risk · Policy · Alignment · Confidence",
-    kind: "highlight" as const,
-  },
-  { label: "APPROVE · REVIEW → ACT", kind: "node" as const },
-  { label: "OUTCOME → DECISION MEMORY → LEARN", kind: "node" as const },
-];
-
-function DecisionTracePanel() {
+function LiveBotPanel() {
   const [step, setStep] = useState(0);
   const reduce = useReducedMotion();
 
   useEffect(() => {
     if (step >= TRACE_STEPS.length + 1) {
-      const reset = window.setTimeout(() => setStep(0), 2800);
+      const reset = window.setTimeout(() => setStep(0), 2600);
       return () => window.clearTimeout(reset);
     }
-    const t = window.setTimeout(() => setStep((s) => s + 1), step === 0 ? 600 : 700);
+    const t = window.setTimeout(() => setStep((s) => s + 1), step === 0 ? 500 : 700);
     return () => window.clearTimeout(t);
   }, [step]);
 
   const done = step > TRACE_STEPS.length;
 
-  const panel = (
-    <div className="land-trace" aria-label="Live decision trace demonstration">
+  return (
+    <motion.div
+      className="land-trace"
+      aria-label="Live agent bot demonstration"
+      initial={reduce ? false : { opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.15 }}
+    >
       <div className="land-trace-bar">
         <span className="land-trace-dot" />
-        <span>NARNA AGENT</span>
+        <span>NARNA BOT</span>
         <span className="land-trace-live">LIVE</span>
       </div>
       <div className="land-trace-body">
-        <p className="land-trace-user-label">User</p>
-        <p className="land-trace-user">&ldquo;Should we approve this invoice?&rdquo;</p>
+        <p className="land-trace-user-label">You · phone</p>
+        <p className="land-trace-user">&ldquo;Clean up the old invoice file.&rdquo;</p>
         <ul className="land-trace-checks">
           {TRACE_STEPS.map((s, i) => {
             const on = step > i;
             return (
-              <motion.li
-                key={s.label}
-                className={on ? "on" : ""}
-                animate={on ? { opacity: 1, x: 0 } : { opacity: 0.45, x: -4 }}
-                transition={{ duration: 0.25 }}
-              >
+              <li key={s.label} className={on ? "on" : ""}>
                 <span className="land-check">{on ? "✓" : "·"}</span>
                 <span>{s.label}</span>
                 {s.detail ? <span className="land-trace-meta">{s.detail}</span> : null}
-              </motion.li>
+              </li>
             );
           })}
         </ul>
-        <motion.div
-          className={`land-trace-verdict${done ? " land-trace-verdict-on" : ""}`}
-          animate={done ? { scale: [0.98, 1.02, 1], opacity: 1 } : { opacity: 0.35 }}
-          transition={{ duration: 0.45 }}
-        >
+        <div className={`land-trace-verdict${done ? " land-trace-verdict-on" : ""}`}>
           <p className="land-strip-label">Decision Quality</p>
-          <p className="land-dqs">{done ? "91" : "—"} <span>/ 100</span></p>
+          <p className="land-dqs">{done ? "74" : "—"} <span>/ 100</span></p>
           <p className="land-rec">
-            Recommendation: <strong>{done ? "APPROVE" : "…"}</strong>
+            Recommendation: <strong>{done ? "REVIEW" : "…"}</strong>
           </p>
-          <p className="land-conf">Confidence: {done ? "94%" : "—"}</p>
+          <p className="land-conf">Delete needs your Allow on phone</p>
           <div className="land-trace-actions">
-            <span className="land-chip">View reasoning</span>
-            <span className="land-chip land-chip-accent">Execute</span>
+            <span className="land-chip">Reject</span>
+            <span className="land-chip land-chip-accent">Allow</span>
           </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-
-  if (reduce) return panel;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 32, rotateX: 8 }}
-      animate={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      style={{ perspective: 900 }}
-    >
-      {panel}
-    </motion.div>
-  );
-}
-
-function ProblemFlow() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = window.setInterval(() => setI((v) => (v + 1) % (PROBLEM_LINES.length + 2)), 1100);
-    return () => window.clearInterval(t);
-  }, []);
-
-  return (
-    <div className="land-problem-anim" aria-hidden>
-      <p className="land-problem-agent">AI Agent</p>
-      {PROBLEM_LINES.map((line, idx) => (
-        <div key={line.text} className={`land-problem-line${i > idx ? " on" : ""}${!line.ok ? " bad" : ""}`}>
-          {!line.ok && i > idx ? <span className="land-x">✕</span> : null}
-          <span>{line.text}</span>
         </div>
-      ))}
-    </div>
-  );
-}
-
-function AdqaDemo() {
-  const [prompt, setPrompt] = useState("Should I approve this $50,000 payment?");
-  const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
-  const [reveal, setReveal] = useState(0);
-
-  function run() {
-    setPhase("running");
-    setReveal(0);
-    let n = 0;
-    const id = window.setInterval(() => {
-      n += 1;
-      setReveal(n);
-      if (n >= DEMO_SCORES.length) {
-        window.clearInterval(id);
-        setPhase("done");
-      }
-    }, 220);
-  }
-
-  return (
-    <div className="land-demo">
-      <label className="land-demo-label" htmlFor="adqa-demo-input">
-        Ask a decision
-      </label>
-      <div className="land-demo-row">
-        <input
-          id="adqa-demo-input"
-          className="land-demo-input"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") run();
-          }}
-        />
-        <button type="button" className="btn btn-primary" onClick={run} disabled={phase === "running"}>
-          {phase === "running" ? "Scoring…" : "Run ADQA"}
-        </button>
       </div>
-      <div className="land-demo-bars">
-        {DEMO_SCORES.map((s, idx) => {
-          const show = reveal > idx;
-          const width = show ? s.score : 0;
-          return (
-            <div key={s.key} className="land-bar">
-              <span className="land-bar-key">{s.key}</span>
-              <div className="land-bar-track">
-                <motion.div
-                  className={`land-bar-fill${s.score < 70 ? " warn" : ""}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${width}%` }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                />
-              </div>
-              <span className="land-bar-score mono">{show ? s.score : "—"}</span>
-            </div>
-          );
-        })}
-      </div>
-      {phase === "done" ? (
-        <motion.div
-          className="land-demo-result"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <p className="land-dqs land-dqs-sm">
-            Decision Quality: <strong>87</strong> / 100
-          </p>
-          <p className="land-verdict-badge review">REVIEW REQUIRED</p>
-          <p className="land-demo-note">High risk due to unusual bank-account change.</p>
-        </motion.div>
-      ) : (
-        <p className="land-demo-hint">Watch ADQA score evidence, policy, risk, and confidence in real time.</p>
-      )}
-    </div>
-  );
-}
-
-function ReplayDemo() {
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (!open) return;
-    if (step >= REPLAY_STEPS.length) return;
-    const t = window.setTimeout(() => setStep((s) => s + 1), 650);
-    return () => window.clearTimeout(t);
-  }, [open, step]);
-
-  function start() {
-    setOpen(true);
-    setStep(0);
-  }
-
-  return (
-    <div className="land-replay">
-      <p className="land-replay-story">
-        30 days ago, NARNA recommended <strong>supplier A</strong>.
-      </p>
-      <button type="button" className="btn btn-primary" onClick={start}>
-        Replay Decision
-      </button>
-      {open ? (
-        <ol className="land-replay-steps">
-          {REPLAY_STEPS.map((s, i) => (
-            <li key={s} className={step > i ? "on" : ""}>
-              <span className="land-step-n">{String(i + 1).padStart(2, "0")}</span>
-              {s}
-            </li>
-          ))}
-        </ol>
-      ) : null}
-      {open && step >= REPLAY_STEPS.length ? (
-        <p className="land-replay-out">
-          With today&apos;s outcome data: <strong>REVIEW</strong> — supplier A missed SLA. Prefer supplier B.
-        </p>
-      ) : null}
-    </div>
+    </motion.div>
   );
 }
 
@@ -331,7 +107,7 @@ export default function Landing() {
 
   return (
     <>
-      {/* 1. Hero — Decision first + live trace */}
+      {/* Hero — agent bot first */}
       <section className="hero hero-navy land-hero fx-hero">
         <ParticleNetwork className="fx-hero-particles" />
         <div className="layout-wide land-hero-grid fx-hero-content">
@@ -339,120 +115,104 @@ export default function Landing() {
             className="land-hero-copy"
             initial={reduce ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="fx-status-pill">
               <span className="fx-status-dot" />
-              Decision quality infrastructure
+              Open-source AI agent bot
+            </p>
+            <p className="land-brand-mark" aria-hidden>
+              NARNA
             </p>
             <h1 className="land-headline-main">
-              AI Agents can act.
+              Your AI agent bot.
               <br />
-              <span className="land-headline-accent">NARNA makes them decide better.</span>
+              <span className="land-headline-accent">Desktop brain. Phone remote.</span>
             </h1>
             <p className="land-lede">
-              NARNA is an open-source AI Agent and Decision Quality Assurance infrastructure that helps
-              AI agents reason, verify, evaluate risk, and learn from outcomes.
+              Run Claude or Codex on your PC with your subscription — or BYOK. Pair the phone.
+              ADQA stops bad actions before they run. MIT open source.
             </p>
             <div className="land-cta">
               <Link className="btn btn-primary" to="/download">
-                Download free (Mac / Windows)
+                Download Desktop
               </Link>
-              <Link className="btn btn-secondary" to="/ask">
-                Try Ask free
-              </Link>
-              <a
-                className="btn land-btn-ghost"
-                href={BRAND.github}
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub →
+              <a className="btn btn-secondary" href={BRAND.github} target="_blank" rel="noreferrer">
+                GitHub
               </a>
+              <Link className="btn land-btn-ghost" to="/how-it-works">
+                How the bot works
+              </Link>
             </div>
             <p className="land-hero-meta">
-              Free agent on your machine — BYOK. Pro cloud plans available.
-            </p>
-            <p className="land-model-row">
-              GPT · Claude · Gemini · DeepSeek · Qwen · Local Models
+              Free forever on Desktop · Claude CLI / Codex CLI / BYOK · Pro = always-on cloud
             </p>
           </motion.div>
 
           <div className="land-hero-stage">
-            {!reduce ? (
-              <Suspense fallback={<div className="land-hero-3d fx-r3f-fallback" />}>
-                <HeroDecision3D className="land-hero-3d" />
-              </Suspense>
-            ) : null}
-            <div className="land-hero-hud">
-              <DecisionTracePanel />
+            <div className="land-hero-hud land-hero-hud-solo">
+              <LiveBotPanel />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. The problem — core story */}
-      <section className="land-problem">
-        <div className="layout-wide">
-          <Reveal>
-            <h2 className="land-h2 land-h2-wide">
-              AI can be intelligent and still make bad decisions.
-            </h2>
-          </Reveal>
-          <div className="land-problem-grid">
-            <Reveal delay={0.1}>
-              <ProblemFlow />
-            </Reveal>
-            <Reveal delay={0.2}>
-              <div className="land-problem-fix">
-                <h3 className="land-h3">That&apos;s where NARNA comes in.</h3>
-                <ol className="land-flow-list">
-                  <li>Agent</li>
-                  <li>Proposed Decision</li>
-                  <li className="accent">NARNA ADQA</li>
-                  <li>Verify · Challenge · Score</li>
-                  <li className="strong">ACT / REVIEW / REJECT</li>
-                </ol>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Two products */}
+      {/* Model — 3 steps */}
       <section className="land-section">
         <div className="layout-wide">
           <Reveal>
-            <p className="section-label">Products</p>
-            <h2 className="land-h2 land-h2-wide">Two layers. One job: better decisions.</h2>
+            <p className="section-label">The model</p>
+            <h2 className="land-h2 land-h2-wide">Same shape as MausBot — with a decision gate.</h2>
+            <p className="land-desc">
+              The bot lives on Desktop. Your phone (or Telegram / Discord) is the remote. ADQA is
+              why NARNA is safer than a raw CLI agent.
+            </p>
+          </Reveal>
+          <RevealStagger className="land-bot-steps" stagger={0.1}>
+            {BOT_STEPS.map((s) => (
+              <RevealItem key={s.n} className="land-bot-step">
+                <span className="land-bot-n">{s.n}</span>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </RevealItem>
+            ))}
+          </RevealStagger>
+        </div>
+      </section>
+
+      {/* Two paths */}
+      <section className="land-section land-models-sec">
+        <div className="layout-wide">
+          <Reveal>
+            <p className="section-label">Intelligence</p>
+            <h2 className="land-h2 land-h2-wide">Two paths. You pick who runs the brain.</h2>
           </Reveal>
           <RevealStagger className="land-products" stagger={0.12}>
             <RevealItem>
               <div className="land-product">
-                <p className="land-strip-label">NARNA Agent</p>
-                <h3>An agent that works.</h3>
-                <div className="land-cap-cloud">
-                  {AGENT_CAPS.map((c) => (
-                    <span key={c}>{c}</span>
-                  ))}
-                </div>
-                <Link className="btn btn-primary" to="/ask">
-                  Try NARNA Agent →
+                <p className="land-strip-label">Path A · Default</p>
+                <h3>Your AI on Desktop</h3>
+                <p className="land-desc" style={{ marginBottom: "1rem" }}>
+                  Login <strong>Claude Code CLI</strong> or <strong>Codex CLI</strong> with your
+                  Pro subscription — or paste an API key. Phone only pairs; it never logs into
+                  Claude inside the app.
+                </p>
+                <Link className="btn btn-primary" to="/download">
+                  Setup Desktop →
                 </Link>
               </div>
             </RevealItem>
-            <p className="land-products-bridge">Use NARNA Agent. Or bring your own agent.</p>
+            <p className="land-products-bridge">or</p>
             <RevealItem>
               <div className="land-product land-product-adqa">
-                <p className="land-strip-label">NARNA ADQA</p>
-                <h3>A decision layer for every agent.</h3>
-                <div className="land-cap-cloud">
-                  {ADQA_CAPS.map((c) => (
-                    <span key={c}>{c}</span>
-                  ))}
-                </div>
-                <Link className="btn btn-secondary" to="/console/decision">
-                  Explore ADQA →
+                <p className="land-strip-label">Path B · Optional</p>
+                <h3>NARNA Pro cloud</h3>
+                <p className="land-desc" style={{ marginBottom: "1rem" }}>
+                  Always-on when the PC is off: inbox, routines, sync. Still BYOK for model
+                  tokens — Pro is hosting, not a Claude substitute.
+                </p>
+                <Link className="btn btn-secondary" to="/pricing">
+                  See Pro $20 →
                 </Link>
               </div>
             </RevealItem>
@@ -460,195 +220,74 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 5. Architecture diagram */}
-      <section className="land-arch-section">
-        <div className="layout-wide">
-          <Reveal>
-            <p className="section-label">How NARNA works</p>
-            <h2 className="land-h2 land-h2-wide">Think → Verify → Decide → Learn</h2>
-            <p className="land-desc">
-              The agent proposes. ADQA scores. Outcomes become Decision Memory. Next time is better.
-            </p>
-          </Reveal>
-          <RevealStagger as="ol" className="land-arch" stagger={0.07} aria-label="NARNA architecture">
-            {ARCH_STEPS.map((n) => (
-              <RevealItem
-                key={n.label}
-                as="li"
-                className={`land-arch-step land-arch-${n.kind}`}
-              >
-                {n.label}
-              </RevealItem>
-            ))}
-          </RevealStagger>
-        </div>
-      </section>
-
-      {/* 6. Doesn't replace your AI */}
-      <section className="land-section land-models-sec">
+      {/* Channels */}
+      <section className="land-section">
         <div className="layout-wide land-center">
           <Reveal>
-            <h2 className="land-h2 land-h2-wide land-center-text">
-              NARNA doesn&apos;t replace your AI.
-            </h2>
-            <p className="land-lede-dark">
-              Bring the intelligence you trust.
-              <br />
-              NARNA improves how it decides.
-            </p>
+            <p className="section-label">Everywhere</p>
+            <h2 className="land-h2 land-h2-wide land-center-text">One bot. Many doors.</h2>
+            <p className="land-lede-dark">Talk to the same agent from desktop, phone, or social.</p>
           </Reveal>
-          <RevealStagger className="land-logo-grid" stagger={0.05}>
-            {MODELS.map((m) => (
-              <RevealItem key={m}>
-                <span className="land-logo-cell">{m}</span>
-              </RevealItem>
-            ))}
-          </RevealStagger>
-          <Reveal delay={0.15}>
-            <div className="land-stack-arrow" aria-hidden>
-              ↓
-            </div>
-            <p className="land-stack-mid">NARNA ADQA</p>
-            <div className="land-stack-arrow" aria-hidden>
-              ↓
-            </div>
-            <p className="land-stack-end">Better Decisions</p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* 7. Bring your agent */}
-      <section className="land-section land-bya">
-        <div className="layout-wide">
-          <Reveal>
-            <h2 className="land-h2 land-h2-wide">Don&apos;t replace your agent. Upgrade it.</h2>
-          </Reveal>
-          <div className="land-bya-grid">
-            <RevealStagger as="ul" className="land-bya-list" stagger={0.06}>
-              {EXTERNAL_AGENTS.map((a) => (
-                <RevealItem key={a} as="li">
-                  <span>{a}</span>
-                  <span className="land-bya-line" aria-hidden />
-                </RevealItem>
-              ))}
-            </RevealStagger>
-            <Reveal delay={0.2}>
-              <div className="land-bya-target">
-                <strong>NARNA ADQA</strong>
-                <p>One API. Any Agent. Better Decisions.</p>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* 8. Interactive ADQA demo */}
-      <section className="land-section land-demo-sec">
-        <div className="layout-wide">
-          <Reveal>
-            <p className="section-label">Live demo</p>
-            <h2 className="land-h2 land-h2-wide">See decision quality in 15 seconds.</h2>
-            <p className="land-desc">
-              No docs required. Run a sample decision and watch ADQA score it.
-            </p>
-          </Reveal>
-          <Reveal delay={0.12}>
-            <AdqaDemo />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* 9. Memory */}
-      <section className="land-section">
-        <div className="layout-wide land-split-mem">
-          <Reveal>
-            <div>
-              <p className="section-label">Decision Memory</p>
-              <h2 className="land-h2">Agents remember. NARNA learns from decisions.</h2>
-              <p className="land-desc">
-                Memory helps an agent remember what happened. NARNA helps it understand what it should
-                do differently next time.
-              </p>
-            </div>
-          </Reveal>
-          <RevealStagger as="ol" className="land-mem-flow" stagger={0.08}>
-            {MEMORY_FLOW.map((s) => (
-              <RevealItem key={s} as="li">
-                {s}
+          <RevealStagger className="land-logo-grid" stagger={0.04}>
+            {CHANNELS.map((c) => (
+              <RevealItem key={c}>
+                <span className="land-logo-cell">{c}</span>
               </RevealItem>
             ))}
           </RevealStagger>
         </div>
       </section>
 
-      {/* 10. Decision Replay */}
-      <section className="land-section land-replay-sec">
-        <div className="layout-wide">
-          <Reveal>
-            <p className="section-label">Decision Replay</p>
-            <h2 className="land-h2 land-h2-wide">Not a chatbot. A decision system.</h2>
-            <p className="land-desc">
-              Replay past decisions against today’s knowledge. See what would change — and why.
-            </p>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <ReplayDemo />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* 11. Developers */}
+      {/* Open source */}
       <section className="land-section land-dev">
         <div className="layout-wide">
           <Reveal>
-            <h2 className="land-h2 land-h2-wide">Open source. Model agnostic. Built for agents.</h2>
-          </Reveal>
-          <RevealStagger className="land-dev-grid" stagger={0.1}>
-            <RevealItem>
-              <pre className="code-block">{SPEC.install}</pre>
-            </RevealItem>
-            <RevealItem>
-              <pre className="code-block">{`// OpenClaw ~/.openclaw/openclaw.json
-"mcp": { "servers": { "narna": {
-  "url": "https://api.narna.org/mcp",
-  "headers": { "Authorization": "Bearer uap_live_…" }
-}}}}`}</pre>
-            </RevealItem>
-            <RevealItem>
-              <pre className="code-block">narna evaluate · narna_agent_ask (MCP)</pre>
-            </RevealItem>
-          </RevealStagger>
-          <Reveal delay={0.12}>
-            <p className="land-desc" style={{ marginTop: "1rem" }}>
-              OpenClaw skill:{" "}
-              <a href={`${BRAND.github}/blob/main/plugins/narna-openclaw/SKILL.md`} target="_blank" rel="noreferrer">
-                plugins/narna-openclaw
+            <p className="section-label">Open source</p>
+            <h2 className="land-h2 land-h2-wide">MIT. Inspect the bot. Fork the gate.</h2>
+            <p className="land-desc">
+              Runtime, ADQA, Desktop, gateway, and mobile companion live in one public repo.
+              Read the canonical model:{" "}
+              <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
+                docs/AGENT-BOT-MODEL.md
               </a>
+              .
             </p>
           </Reveal>
-          <Reveal delay={0.15}>
+          <RevealStagger className="land-dev-grid" stagger={0.08}>
+            <RevealItem>
+              <pre className="code-block">{SPEC.install}
+narna desktop
+# Claude CLI / Codex CLI login → Pair QR</pre>
+            </RevealItem>
+            <RevealItem>
+              <pre className="code-block">{`narna gateway run
+# Telegram · Discord · Slack · …`}</pre>
+            </RevealItem>
+            <RevealItem>
+              <pre className="code-block">{`# ADQA before act
+ACT · REVIEW · REJECT`}</pre>
+            </RevealItem>
+          </RevealStagger>
+          <Reveal delay={0.1}>
             <div className="land-cta">
-              <Link className="btn btn-secondary" to="/how-it-works">
-                How it works
-              </Link>
-              <Link className="btn btn-secondary" to="/docs">
-                Read the Docs
-              </Link>
               <a className="btn btn-primary" href={BRAND.github} target="_blank" rel="noreferrer">
                 Star on GitHub
               </a>
+              <Link className="btn btn-secondary" to="/docs">
+                Docs
+              </Link>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* 12. Pricing — free-first */}
+      {/* Pricing */}
       <section className="land-section" id="pricing">
         <div className="layout-wide">
           <Reveal>
             <p className="section-label">Pricing</p>
-            <h2 className="land-h2">Free agent. Pro later.</h2>
-            <p className="land-desc">{PRICING.subline}</p>
+            <h2 className="land-h2">Bot free. Cloud optional.</h2>
+            <p className="land-desc">{PRICING.philosophy}</p>
           </Reveal>
           <RevealStagger className="land-price-row land-price-row-3" stagger={0.08}>
             {PRICING.plans.map((p) => (
@@ -656,14 +295,7 @@ export default function Landing() {
                 key={p.id}
                 className={`land-price${p.featured ? " land-price-featured" : ""}`}
               >
-                <h3>
-                  {p.name}
-                  {"comingSoon" in p && p.comingSoon ? (
-                    <span className="land-price-limit" style={{ display: "inline", marginLeft: "0.35rem" }}>
-                      · soon
-                    </span>
-                  ) : null}
-                </h3>
+                <h3>{p.name}</h3>
                 <p className="land-price-amt">
                   {p.price}
                   {p.period ? <span>{p.period}</span> : null}
@@ -683,31 +315,26 @@ export default function Landing() {
               </RevealItem>
             ))}
           </RevealStagger>
-          <p className="land-desc" style={{ marginTop: "1.25rem" }}>
-            Need private deploy?{" "}
-            <Link to="/enterprise">Enterprise contact</Link> — no Pro checkout required to use the agent.
-          </p>
         </div>
       </section>
 
-      {/* 13. Final CTA */}
+      {/* Final */}
       <section className="land-final-strong">
         <ParticleNetwork className="fx-final-particles" />
         <div className="layout-wide land-center fx-final-content">
           <Reveal y={16}>
             <h2 className="land-final-h">
-              The next generation of AI won&apos;t just act.
+              An agent that can act —
               <br />
-              <span className="land-final-accent">It will know when it should.</span>
+              <span className="land-final-accent">and knows when to wait for you.</span>
             </h2>
-            <p className="land-final-cta-label">Build with NARNA.</p>
             <div className="land-cta land-center-cta">
               <Link className="btn btn-primary" to="/download">
-                Download free
+                Download Desktop
               </Link>
-              <Link className="btn land-btn-ghost" to="/ask">
-                Try Ask
-              </Link>
+              <a className="btn land-btn-ghost" href={BRAND.github} target="_blank" rel="noreferrer">
+                GitHub
+              </a>
             </div>
           </Reveal>
         </div>

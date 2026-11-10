@@ -1,0 +1,40 @@
+# Snapshot configuration for NARNA iOS
+# Automated screenshot generation
+
+# Devices to test on
+devices([
+  "iPhone 15 Pro Max",
+  "iPhone 15",
+  "iPad Pro (12.9-inch) (6th generation)"
+])
+
+# Languages
+languages([
+  "en-US"
+])
+
+# Scheme to use
+scheme("NARNA")
+
+# Clear previous screenshots before generating new ones
+clear_previous_screenshots(true)
+
+# Override status bar to show perfect time/battery
+override_status_bar(true)
+
+# Number of retries if screenshot fails
+number_of_retries(3)
+
+# Output directory
+output_directory("./fastlane/screenshots")
+
+# Test target
+test_without_building(false)
+
+# Screenshots to capture (implement in UI tests)
+# 1. Pairing screen with QR code
+# 2. Bot list with active bots
+# 3. Chat conversation
+# 4. Approval card
+# 5. Settings screen
+# 6. Real-time updates

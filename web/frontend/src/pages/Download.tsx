@@ -3,28 +3,28 @@ import { BRAND, SPEC } from "../brand";
 
 const steps = [
   {
-    title: "Download",
-    win: "Windows or macOS zip — no Python needed",
-    unix: "Or: pip install narna[desktop]",
-    alt: "Hermes-like local agent on your PC",
+    title: "Download Desktop",
+    win: "macOS or Windows zip — no Python needed",
+    unix: `Or: ${SPEC.install}`,
+    alt: "This machine is the agent bot",
   },
   {
-    title: "Launch",
-    win: "NARNA-Desktop.exe / NARNA-Desktop",
-    unix: "narna desktop",
-    alt: "Opens http://127.0.0.1:8765/",
+    title: "Connect AI",
+    win: "Claude Code CLI or Codex CLI → login with your subscription",
+    unix: "Or paste OpenAI / Anthropic / OpenRouter / Ollama key",
+    alt: "Keys stay under ~/.narna — BYOK",
   },
   {
-    title: "Bring your key",
-    win: "Setup wizard → paste OpenRouter / OpenAI / Ollama",
-    unix: "Saved only under ~/.narna",
-    alt: "BYOK — your keys never leave your machine",
+    title: "Pair phone",
+    win: "Desktop → Pairing → show QR",
+    unix: "iOS / Android NARNA app scans QR",
+    alt: "Phone remotes the bot — does not login Claude",
   },
   {
-    title: "Chat + tools",
-    win: "Shell, browser, memory, ADQA scoring",
-    unix: "Same agent runtime as cloud gateway",
-    alt: "Optional: narna gateway run for Telegram later",
+    title: "Chat + approve",
+    win: "Tools, browser, memory, ADQA scoring",
+    unix: "Risky actions need Allow on phone",
+    alt: "Optional: narna gateway run for Telegram",
   },
 ];
 
@@ -32,12 +32,12 @@ export default function Download() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Desktop · Free</p>
-        <h1>MacBook + Windows — free agent</h1>
+        <p className="pill-label">Desktop · Agent bot</p>
+        <h1>Install the bot on your machine</h1>
         <p>
-          Portable apps for <strong>macOS</strong> and <strong>Windows</strong>. Local agent on{" "}
-          <strong>127.0.0.1</strong> — Ask, tools, ADQA, Decision Memory. Your LLM key stays on disk.
-          No NARNA Pro fee. No cloud account required.
+          NARNA Desktop is the <strong>agent bot</strong>. Use{" "}
+          <strong>Claude CLI / Codex CLI</strong> (your subscription) or BYOK. Pair the phone with
+          QR. No NARNA Pro fee required for local use.
         </p>
       </header>
 
@@ -59,100 +59,54 @@ export default function Download() {
           >
             Download for Windows
           </a>
-          <Link className="btn btn-secondary" to="/ask">
-            Use in browser
-          </Link>
+          <a className="btn btn-secondary" href={BRAND.github} target="_blank" rel="noreferrer">
+            Source on GitHub
+          </a>
         </div>
 
-        <h2>MacBook / macOS — portable (no Python)</h2>
-        <p className="section-desc">
-          Download <code>NARNA-Desktop-macos.zip</code> from{" "}
-          <a
-            href="https://github.com/hanyangkai/narna/releases/latest"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub Releases
-          </a>
-          , unzip, run <code>NARNA-Desktop</code> (or double-click in Finder).
-        </p>
-        <pre className="code-block">{`# Or build from source (maintainers)
-bash scripts/build_desktop_mac.sh`}</pre>
-
-        <h2>Windows — portable (no Python)</h2>
-        <p className="section-desc">
-          Latest release:{" "}
-          <a
-            href="https://github.com/hanyangkai/narna/releases/latest"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub Releases
-          </a>
-          — download <code>NARNA-Desktop-windows.zip</code>, unzip, run{" "}
-          <code>NARNA-Desktop.exe</code>.
-        </p>
-        <pre className="code-block">{`# Or build from source (maintainers)
-.\\scripts\\build_desktop_exe.ps1`}</pre>
-
-        <h2>Windows — with Python</h2>
-        <pre className="code-block">{`# PowerShell
-irm https://raw.githubusercontent.com/hanyangkai/narna/main/desktop/install.ps1 | iex
-narna desktop`}</pre>
-
-        <h2>macOS / Linux</h2>
-        <pre className="code-block">{`curl -fsSL https://raw.githubusercontent.com/hanyangkai/narna/main/desktop/install.sh | bash
-narna desktop`}</pre>
-
-        <h2>Any OS — one-liner (like Hermes)</h2>
-        <pre className="code-block">{`curl -fsSL https://raw.githubusercontent.com/hanyangkai/narna/main/scripts/install.sh | bash
-narna desktop
-narna browser setup    # optional Playwright
-narna daemon install   # optional always-on`}</pre>
-
-        <h2>Any OS (pip)</h2>
-        <pre className="code-block">{`${SPEC.install.replace("narna", 'narna[desktop]')}
-narna desktop
-# opens http://127.0.0.1:8765/`}</pre>
-      </section>
-
-      <section className="section">
-        <h2>How it works</h2>
-        <ol className="land-howto">
-          {steps.map((s, i) => (
-            <li key={s.title} className="land-howto-item">
-              <div className="land-howto-copy">
-                <span className="land-step-n">0{i + 1}</span>
-                <h3>{s.title}</h3>
-                <p>
-                  {s.win}
-                  <br />
-                  <span style={{ color: "var(--muted)" }}>{s.unix}</span>
-                </p>
-              </div>
-              <pre className="code-block land-howto-term">{s.alt}</pre>
-            </li>
+        <h2>Setup</h2>
+        <div className="download-steps">
+          {steps.map((s) => (
+            <article key={s.title} className="card feature-card">
+              <h3>{s.title}</h3>
+              <p>{s.win}</p>
+              <p className="section-desc">{s.unix}</p>
+              <p className="section-desc">
+                <em>{s.alt}</em>
+              </p>
+            </article>
           ))}
-        </ol>
+        </div>
       </section>
 
       <section className="section">
-        <h2>Also available</h2>
-        <ul className="land-diy">
-          <li>
-            <code>narna desktop --tui</code> — fullscreen terminal UI
-          </li>
-          <li>
-            <code>narna chat</code> — simple REPL
-          </li>
-          <li>
-            <a href={`${BRAND.github}/tree/main/desktop`} target="_blank" rel="noreferrer">
-              desktop/ on GitHub
-            </a>
-          </li>
-        </ul>
-        <p style={{ color: "var(--muted)", marginTop: "1rem" }}>
-          Portable exe needs no Python. Pip path needs Python 3.11+. Data: <code>~/.narna</code>.
+        <h2>CLI</h2>
+        <pre className="code-block">{`${SPEC.install}
+narna desktop
+narna gateway status`}</pre>
+        <p className="section-desc" style={{ marginTop: "1rem" }}>
+          Model explained:{" "}
+          <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
+            AGENT-BOT-MODEL.md
+          </a>{" "}
+          · AI connect:{" "}
+          <Link to="/docs">docs</Link> ·{" "}
+          <Link to="/how-it-works">How it works</Link>
+        </p>
+      </section>
+
+      <section className="section">
+        <h2>MacBook / Windows — portable</h2>
+        <p className="section-desc">
+          Grab zips from{" "}
+          <a
+            href="https://github.com/hanyangkai/narna/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub Releases
+          </a>
+          . Runs on <code>127.0.0.1</code> — Ask, tools, ADQA, Decision Memory.
         </p>
       </section>
     </div>
