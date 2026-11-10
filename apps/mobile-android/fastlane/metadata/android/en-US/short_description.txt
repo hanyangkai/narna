@@ -1,1 +1,1 @@
-Remote control for AI agents
+Agent bot remote — pair Desktop, approve actions

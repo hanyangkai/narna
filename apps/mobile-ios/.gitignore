@@ -1,10 +1,11 @@
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html
-fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/.env
 .env
+
+# Store screenshots are committed under fastlane/screenshots/
 
 # Build artifacts
 build/

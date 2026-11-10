@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PRICING } from "../brand";
+import { BRAND, PRICING } from "../brand";
 
 export default function Pricing() {
   return (
@@ -45,25 +45,31 @@ export default function Pricing() {
       <p style={{ color: "var(--muted)" }}>{PRICING.enterpriseNote}</p>
 
       <section className="section">
-        <h2>Free covers the agent</h2>
+        <h2>Agent bot vs Pro</h2>
         <ul className="land-price-features" style={{ maxWidth: "42rem" }}>
           {PRICING.whyUpgrade.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
+        <p className="section-desc" style={{ marginTop: "1rem" }}>
+          Full model:{" "}
+          <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
+            AGENT-BOT-MODEL.md
+          </a>
+        </p>
       </section>
 
       <section className="section">
         <h2>Get started</h2>
         <div className="two-col">
           <div className="card feature-card">
-            <h3>Desktop (recommended)</h3>
-            <p>macOS + Windows portable zips — full agent, no NARNA fee, BYOK.</p>
+            <h3>Desktop bot (recommended)</h3>
+            <p>Mac + Windows — Claude CLI / Codex / BYOK. Pair phone by QR.</p>
             <Link to="/download">Download →</Link>
           </div>
           <div className="card feature-card">
             <h3>Ask in browser</h3>
-            <p>Paste your LLM key. Or use mock mode. Pro billing is not required.</p>
+            <p>Paste your LLM key. Pro hosting is optional.</p>
             <Link to="/ask">Open Ask →</Link>
           </div>
         </div>

@@ -14,46 +14,47 @@ export default function Footer() {
             />
           </Link>
           <p>
-            {BRAND.tagline} Agent + ADQA + Decision Memory. {SPEC.install}.
+            {BRAND.oneLiner} {SPEC.install}. MIT open source.
           </p>
         </div>
         <div className="footer-col">
           <h4>Product</h4>
-          <Link to="/signup">Sign up</Link>
-          <Link to="/how-it-works">How it works</Link>
-          <Link to="/ask">Ask Agent</Link>
-          <Link to="/download">Desktop (Mac / Windows)</Link>
-          <Link to="/pricing">Free</Link>
-          <Link to="/settings/models">BYOK Models</Link>
+          <Link to="/how-it-works">Agent bot model</Link>
+          <Link to="/download">Desktop bot</Link>
+          <Link to="/pricing">Pricing</Link>
+          <Link to="/ask">Ask (browser)</Link>
           <Link to="/console/decision">Decision Console</Link>
         </div>
         <div className="footer-col">
-          <h4>Developers</h4>
-          <Link to="/docs">Docs</Link>
-          <Link to="/sdk">SDK · evaluate()</Link>
-          <Link to="/compatibility">Integrations</Link>
-          <Link to="/benchmark">Benchmark</Link>
-          <Link to="/specification">Specification</Link>
-        </div>
-        <div className="footer-col">
-          <h4>Community</h4>
+          <h4>Open source</h4>
           <a href={BRAND.github} target="_blank" rel="noreferrer">
             GitHub
           </a>
+          <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
+            AGENT-BOT-MODEL.md
+          </a>
+          <Link to="/docs">Docs</Link>
+          <Link to="/sdk">SDK</Link>
+          <Link to="/compatibility">Integrations</Link>
+        </div>
+        <div className="footer-col">
+          <h4>Community</h4>
           <a href={BRAND.discord} target="_blank" rel="noreferrer">
             Discord
           </a>
           <Link to="/docs/quickstart">Quickstart</Link>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/support">Support</Link>
+          <Link to="/enterprise">Enterprise</Link>
         </div>
       </div>
       <div className="layout-wide footer-bottom">
-        {BRAND.name} · {BRAND.primary} · MIT
+        {BRAND.name} · Open-source AI agent bot · MIT
       </div>
       <div className="layout-wide footer-disclaimer">
         <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginTop: "1rem", textAlign: "center" }}>
-          This service is provided as-is for research and open-source use. Not a certified legal entity.
-          No formal Terms of Service or Privacy Policy. Use at your own risk.
-          For production use, consult legal counsel.
+          Provided as-is for research and open-source use. Claude / ChatGPT subscriptions are billed
+          by Anthropic / OpenAI via Desktop CLI or API keys — NARNA Pro is hosting only.
         </p>
       </div>
     </footer>

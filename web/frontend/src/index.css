@@ -3161,3 +3161,72 @@ table.data-table th {
   color: var(--muted);
   font-weight: normal;
 }
+
+/* Agent bot landing */
+.land-brand-mark {
+  font-family: "Sora", system-ui, sans-serif;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #fff;
+  margin: 0 0 0.35rem;
+  line-height: 1;
+}
+
+.land-hero-hud-solo {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin-left: auto;
+}
+
+.land-bot-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.land-bot-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.35rem 1.25rem;
+  border-radius: 4px;
+}
+
+.land-bot-step h3 {
+  font-family: "Sora", system-ui, sans-serif;
+  margin: 0.5rem 0 0.65rem;
+  font-size: 1.15rem;
+}
+
+.land-bot-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.land-bot-n {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--accent-hover);
+  letter-spacing: 0.06em;
+}
+
+.download-steps {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .land-bot-steps,
+  .download-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .land-hero-hud-solo {
+    margin: 1.5rem auto 0;
+  }
+}

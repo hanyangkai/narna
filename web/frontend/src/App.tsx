@@ -24,12 +24,14 @@ import PassportPage from "./pages/PassportPage";
 import Playground from "./pages/Playground";
 import Plugins from "./pages/Plugins";
 import Pricing from "./pages/Pricing";
+import Privacy from "./pages/Privacy";
 import Registry from "./pages/Registry";
 import Rfcs from "./pages/Rfcs";
 import RunDetail from "./pages/RunDetail";
 import Sdk from "./pages/Sdk";
 import SessionDetail from "./pages/SessionDetail";
 import Specification from "./pages/Specification";
+import Support from "./pages/Support";
 
 export default function App() {
   return (
@@ -61,6 +63,8 @@ export default function App() {
           <Route path="/passport/:agentId" element={<PassportPage />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/support" element={<Support />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/console" element={<Console />} />
           <Route path="/console/decision" element={<DecisionConsole />} />
