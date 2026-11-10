@@ -9,37 +9,33 @@ const BOT_STEPS = [
   {
     n: "01",
     title: "Desktop is the bot",
-    body: "Install NARNA on Mac or Windows. Login Claude Code CLI or Codex CLI with your subscription — or paste a BYOK API key.",
+    body: "Install NARNA on Mac or Windows. Login Claude Code CLI or Codex CLI — or paste a BYOK API key.",
   },
   {
     n: "02",
     title: "Phone is the remote",
-    body: "Scan the pairing QR. Chat, approve, and steer from iOS/Android while the heavy work stays on your PC.",
+    body: "iOS / Android app pairs by QR. Chat, Allow/Deny, routines — heavy work stays on the PC.",
   },
   {
     n: "03",
     title: "ADQA is the brake",
-    body: "Before shell, spend, or send-class actions, NARNA scores evidence · risk · policy → ACT / REVIEW / REJECT.",
+    body: "Risky tools score evidence · risk · policy → ACT / REVIEW / REJECT before they run.",
   },
 ] as const;
 
-const CHANNELS = [
-  "Telegram",
-  "WhatsApp",
-  "Discord",
-  "Slack",
-  "X",
-  "YouTube",
-  "Desktop",
-  "Mobile",
+const APP_SHOTS = [
+  { src: "/store/01-onboarding.png", label: "Onboarding" },
+  { src: "/store/02-bots.png", label: "Bots" },
+  { src: "/store/03-inbox.png", label: "Inbox · Allow/Deny" },
+  { src: "/store/04-chat.png", label: "Chat" },
 ] as const;
 
 const TRACE_STEPS = [
-  { label: "Bot received message", detail: "Telegram" },
-  { label: "Plan proposed", detail: "rm invoice.pdf" },
-  { label: "ADQA risk check", detail: "high" },
-  { label: "Human approval", detail: "phone" },
-  { label: "Action executed", detail: "" },
+  { label: "Bot got your message", detail: "phone" },
+  { label: "Plan proposed", detail: "rm file" },
+  { label: "ADQA risk", detail: "high" },
+  { label: "Waiting Allow", detail: "Inbox" },
+  { label: "Done", detail: "" },
 ] as const;
 
 function LiveBotPanel() {
@@ -71,7 +67,7 @@ function LiveBotPanel() {
         <span className="land-trace-live">LIVE</span>
       </div>
       <div className="land-trace-body">
-        <p className="land-trace-user-label">You · phone</p>
+        <p className="land-trace-user-label">You · phone app</p>
         <p className="land-trace-user">&ldquo;Clean up the old invoice file.&rdquo;</p>
         <ul className="land-trace-checks">
           {TRACE_STEPS.map((s, i) => {
@@ -91,9 +87,8 @@ function LiveBotPanel() {
           <p className="land-rec">
             Recommendation: <strong>{done ? "REVIEW" : "…"}</strong>
           </p>
-          <p className="land-conf">Delete needs your Allow on phone</p>
           <div className="land-trace-actions">
-            <span className="land-chip">Reject</span>
+            <span className="land-chip">Deny</span>
             <span className="land-chip land-chip-accent">Allow</span>
           </div>
         </div>
@@ -107,7 +102,6 @@ export default function Landing() {
 
   return (
     <>
-      {/* Hero — agent bot first */}
       <section className="hero hero-navy land-hero fx-hero">
         <ParticleNetwork className="fx-hero-particles" />
         <div className="layout-wide land-hero-grid fx-hero-content">
@@ -125,48 +119,127 @@ export default function Landing() {
               NARNA
             </p>
             <h1 className="land-headline-main">
-              Your AI agent bot.
+              Agent bot on Desktop.
               <br />
-              <span className="land-headline-accent">Desktop brain. Phone remote.</span>
+              <span className="land-headline-accent">Remote from iOS &amp; Android.</span>
             </h1>
             <p className="land-lede">
-              Run Claude or Codex on your PC with your subscription — or BYOK. Pair the phone.
-              ADQA stops bad actions before they run. MIT open source.
+              MausBot-style: Claude / Codex CLI on your PC (or BYOK). Phone app pairs by QR —
+              chat, approve, routines. ADQA stops bad actions first.
             </p>
             <div className="land-cta">
-              <Link className="btn btn-primary" to="/download">
+              <a className="btn btn-primary" href="#get-app">
+                Get the app
+              </a>
+              <Link className="btn btn-secondary" to="/download">
                 Download Desktop
               </Link>
-              <a className="btn btn-secondary" href={BRAND.github} target="_blank" rel="noreferrer">
+              <a className="btn land-btn-ghost" href={BRAND.github} target="_blank" rel="noreferrer">
                 GitHub
               </a>
-              <Link className="btn land-btn-ghost" to="/how-it-works">
-                How the bot works
-              </Link>
             </div>
             <p className="land-hero-meta">
-              Free forever on Desktop · Claude CLI / Codex CLI / BYOK · Pro = always-on cloud
+              Free Desktop forever · App Store &amp; Google Play listing ready · Pro optional
             </p>
           </motion.div>
 
           <div className="land-hero-stage">
-            <div className="land-hero-hud land-hero-hud-solo">
+            <div className="land-hero-phones" aria-hidden>
+              <img
+                className="land-phone-shot land-phone-shot-back"
+                src="/store/03-inbox.png"
+                alt=""
+                width={220}
+                height={440}
+              />
+              <img
+                className="land-phone-shot land-phone-shot-front"
+                src="/store/02-bots.png"
+                alt="NARNA mobile bots screen"
+                width={240}
+                height={480}
+              />
+            </div>
+            <div className="land-hero-hud">
               <LiveBotPanel />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Model — 3 steps */}
+      {/* App UI gallery */}
+      <section className="land-section" id="app-ui">
+        <div className="layout-wide">
+          <Reveal>
+            <p className="section-label">Bot app UI</p>
+            <h2 className="land-h2 land-h2-wide">What you get on the phone</h2>
+            <p className="land-desc">
+              Onboarding (Desktop AI vs NARNA Pro) · Bots · Inbox Allow/Deny · Chat — same companion
+              on iOS and Android.
+            </p>
+          </Reveal>
+          <RevealStagger className="land-shot-row" stagger={0.08}>
+            {APP_SHOTS.map((s) => (
+              <RevealItem key={s.src} className="land-shot-card">
+                <img src={s.src} alt={s.label} width={270} height={480} loading="lazy" />
+                <p>{s.label}</p>
+              </RevealItem>
+            ))}
+          </RevealStagger>
+        </div>
+      </section>
+
+      {/* Get the app — iOS / Play / Desktop */}
+      <section className="land-section land-get-app" id="get-app">
+        <div className="layout-wide">
+          <Reveal>
+            <p className="section-label">Download</p>
+            <h2 className="land-h2 land-h2-wide">Get NARNA on every device</h2>
+          </Reveal>
+          <RevealStagger className="land-store-grid" stagger={0.1}>
+            <RevealItem className="land-store-card">
+              <p className="land-strip-label">iOS</p>
+              <h3>App Store</h3>
+              <p className="land-desc">
+                Bundle <code>{BRAND.bundleId}</code>. Listing assets ready — submit from your Apple
+                account to go live.
+              </p>
+              <a className="btn btn-primary" href={BRAND.appStoreUrl} target="_blank" rel="noreferrer">
+                Open App Store search
+              </a>
+              <p className="land-store-note">Status: ready to upload · awaiting Submit for Review</p>
+            </RevealItem>
+            <RevealItem className="land-store-card">
+              <p className="land-strip-label">Android</p>
+              <h3>Google Play</h3>
+              <p className="land-desc">
+                Package <code>{BRAND.bundleId}</code>. Feature graphic + screenshots packed in repo.
+              </p>
+              <a className="btn btn-primary" href={BRAND.playStoreUrl} target="_blank" rel="noreferrer">
+                Open Play listing
+              </a>
+              <p className="land-store-note">Status: ready to upload · awaiting Send for review</p>
+            </RevealItem>
+            <RevealItem className="land-store-card land-store-card-accent">
+              <p className="land-strip-label">Desktop · available now</p>
+              <h3>Mac &amp; Windows bot</h3>
+              <p className="land-desc">
+                The brain of the agent. Claude CLI / Codex / BYOK. Pair the phone after install.
+              </p>
+              <Link className="btn btn-secondary" to="/download">
+                Download Desktop →
+              </Link>
+              <p className="land-store-note">Free forever · no NARNA fee</p>
+            </RevealItem>
+          </RevealStagger>
+        </div>
+      </section>
+
       <section className="land-section">
         <div className="layout-wide">
           <Reveal>
             <p className="section-label">The model</p>
-            <h2 className="land-h2 land-h2-wide">Same shape as MausBot — with a decision gate.</h2>
-            <p className="land-desc">
-              The bot lives on Desktop. Your phone (or Telegram / Discord) is the remote. ADQA is
-              why NARNA is safer than a raw CLI agent.
-            </p>
+            <h2 className="land-h2 land-h2-wide">Desktop bot · phone remote · ADQA gate</h2>
           </Reveal>
           <RevealStagger className="land-bot-steps" stagger={0.1}>
             {BOT_STEPS.map((s) => (
@@ -180,12 +253,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Two paths */}
       <section className="land-section land-models-sec">
         <div className="layout-wide">
           <Reveal>
             <p className="section-label">Intelligence</p>
-            <h2 className="land-h2 land-h2-wide">Two paths. You pick who runs the brain.</h2>
+            <h2 className="land-h2 land-h2-wide">Two paths. You pick the brain.</h2>
           </Reveal>
           <RevealStagger className="land-products" stagger={0.12}>
             <RevealItem>
@@ -193,9 +265,8 @@ export default function Landing() {
                 <p className="land-strip-label">Path A · Default</p>
                 <h3>Your AI on Desktop</h3>
                 <p className="land-desc" style={{ marginBottom: "1rem" }}>
-                  Login <strong>Claude Code CLI</strong> or <strong>Codex CLI</strong> with your
-                  Pro subscription — or paste an API key. Phone only pairs; it never logs into
-                  Claude inside the app.
+                  Claude Code CLI or Codex CLI with your subscription — or BYOK. Phone never logs
+                  into Claude inside the app.
                 </p>
                 <Link className="btn btn-primary" to="/download">
                   Setup Desktop →
@@ -206,10 +277,9 @@ export default function Landing() {
             <RevealItem>
               <div className="land-product land-product-adqa">
                 <p className="land-strip-label">Path B · Optional</p>
-                <h3>NARNA Pro cloud</h3>
+                <h3>NARNA Pro</h3>
                 <p className="land-desc" style={{ marginBottom: "1rem" }}>
-                  Always-on when the PC is off: inbox, routines, sync. Still BYOK for model
-                  tokens — Pro is hosting, not a Claude substitute.
+                  Always-on cloud via App Store / Play IAP. Hosting only — model tokens stay BYOK.
                 </p>
                 <Link className="btn btn-secondary" to="/pricing">
                   See Pro $20 →
@@ -220,68 +290,29 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Channels */}
-      <section className="land-section">
-        <div className="layout-wide land-center">
-          <Reveal>
-            <p className="section-label">Everywhere</p>
-            <h2 className="land-h2 land-h2-wide land-center-text">One bot. Many doors.</h2>
-            <p className="land-lede-dark">Talk to the same agent from desktop, phone, or social.</p>
-          </Reveal>
-          <RevealStagger className="land-logo-grid" stagger={0.04}>
-            {CHANNELS.map((c) => (
-              <RevealItem key={c}>
-                <span className="land-logo-cell">{c}</span>
-              </RevealItem>
-            ))}
-          </RevealStagger>
-        </div>
-      </section>
-
-      {/* Open source */}
       <section className="land-section land-dev">
         <div className="layout-wide">
           <Reveal>
             <p className="section-label">Open source</p>
-            <h2 className="land-h2 land-h2-wide">MIT. Inspect the bot. Fork the gate.</h2>
-            <p className="land-desc">
-              Runtime, ADQA, Desktop, gateway, and mobile companion live in one public repo.
-              Read the canonical model:{" "}
-              <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
-                docs/AGENT-BOT-MODEL.md
-              </a>
-              .
-            </p>
+            <h2 className="land-h2 land-h2-wide">MIT. Bot + ADQA + mobile in one repo.</h2>
           </Reveal>
           <RevealStagger className="land-dev-grid" stagger={0.08}>
             <RevealItem>
               <pre className="code-block">{SPEC.install}
-narna desktop
-# Claude CLI / Codex CLI login → Pair QR</pre>
+narna desktop</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block">{`narna gateway run
-# Telegram · Discord · Slack · …`}</pre>
+              <pre className="code-block">{`# Pair phone QR
+# Inbox Allow / Deny`}</pre>
             </RevealItem>
             <RevealItem>
-              <pre className="code-block">{`# ADQA before act
-ACT · REVIEW · REJECT`}</pre>
+              <pre className="code-block">{`pip / GitHub
+apps/mobile-ios · android`}</pre>
             </RevealItem>
           </RevealStagger>
-          <Reveal delay={0.1}>
-            <div className="land-cta">
-              <a className="btn btn-primary" href={BRAND.github} target="_blank" rel="noreferrer">
-                Star on GitHub
-              </a>
-              <Link className="btn btn-secondary" to="/docs">
-                Docs
-              </Link>
-            </div>
-          </Reveal>
         </div>
       </section>
 
-      {/* Pricing */}
       <section className="land-section" id="pricing">
         <div className="layout-wide">
           <Reveal>
@@ -318,23 +349,22 @@ ACT · REVIEW · REJECT`}</pre>
         </div>
       </section>
 
-      {/* Final */}
       <section className="land-final-strong">
         <ParticleNetwork className="fx-final-particles" />
         <div className="layout-wide land-center fx-final-content">
           <Reveal y={16}>
             <h2 className="land-final-h">
-              An agent that can act —
+              Desktop brain. Phone remote.
               <br />
-              <span className="land-final-accent">and knows when to wait for you.</span>
+              <span className="land-final-accent">ADQA before it acts.</span>
             </h2>
             <div className="land-cta land-center-cta">
-              <Link className="btn btn-primary" to="/download">
-                Download Desktop
-              </Link>
-              <a className="btn land-btn-ghost" href={BRAND.github} target="_blank" rel="noreferrer">
-                GitHub
+              <a className="btn btn-primary" href="#get-app">
+                Get the app
               </a>
+              <Link className="btn land-btn-ghost" to="/download">
+                Desktop
+              </Link>
             </div>
           </Reveal>
         </div>

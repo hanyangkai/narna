@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NARNA</string>
+    
+    <!-- Pairing -->
+    <string name="pairing_title">Pair with Desktop</string>
+    <string name="pairing_scan_qr">Scan QR Code</string>
+    <string name="pairing_or">OR</string>
+    <string name="pairing_enter_code">Enter 6-digit code</string>
+    <string name="pairing_code_hint">123456</string>
+    <string name="pairing_verify">Verify</string>
+    <string name="pairing_success">Paired successfully!</string>
+    <string name="pairing_error">Pairing failed. Please try again.</string>
+    <string name="pairing_invalid_code">Invalid or expired code</string>
+    <string name="camera_permission_required">Camera permission required for QR scanning</string>
+    
+    <!-- Bot List -->
+    <string name="bots_title">My Bots</string>
+    <string name="bots_empty">No bots available</string>
+    <string name="bot_status_idle">Idle</string>
+    <string name="bot_status_working">Working</string>
+    <string name="bot_status_waiting_approval">Waiting for approval</string>
+    
+    <!-- Chat -->
+    <string name="chat_input_hint">Message %s</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_empty">Start a conversation</string>
+    <string name="chat_connecting">Connecting…</string>
+    <string name="chat_connected">Connected</string>
+    <string name="chat_disconnected">Disconnected</string>
+    <string name="chat_error">Connection error</string>
+    
+    <!-- Approvals -->
+    <string name="approval_title">Approval Required</string>
+    <string name="approval_allow">Allow</string>
+    <string name="approval_deny">Deny</string>
+    <string name="approval_shell_command">Shell Command</string>
+    <string name="approval_file_edit">File Edit</string>
+    <string name="approval_web_action">Web Action</string>
+    <string name="approval_details">Details</string>
+    <string name="approval_no_pending">No pending approvals</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_api_keys">API Keys</string>
+    <string name="settings_openai_key">OpenAI API Key</string>
+    <string name="settings_anthropic_key">Anthropic API Key</string>
+    <string name="settings_preferences">Preferences</string>
+    <string name="settings_dark_theme">Dark Theme</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_unpair">Unpair Device</string>
+    <string name="settings_unpair_confirm">Are you sure you want to unpair this device?</string>
+    <string name="settings_version">Version %s</string>
+    
+    <!-- Common -->
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="error">Error</string>
+    <string name="loading">Loading…</string>
+    <string name="refresh">Refresh</string>
+</resources>
