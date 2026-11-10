@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @Binding var isPaired: Bool
@@ -32,6 +33,7 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 connectionSection
+                subscriptionSection
                 remoteAccessSection
                 connectedAppsSection
                 notificationsSection
@@ -69,6 +71,23 @@ struct SettingsView: View {
     }
     
     // MARK: - Sections
+
+    private var subscriptionSection: some View {
+        Section {
+            LabeledContent("Pro", value: "$19.99/mo · $159.99/yr")
+            LabeledContent("Team", value: "$99.99/seat/mo")
+            Text("Subscriptions are billed only through the App Store. Crypto and web USDC/USDT checkout are not available in this app.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Button("Manage in App Store") {
+                if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } header: {
+            Text("Subscription")
+        }
+    }
     
     private var connectionSection: some View {
         Section("Connection") {

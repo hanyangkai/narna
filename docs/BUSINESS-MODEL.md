@@ -30,19 +30,20 @@ NARNA does **not** sell foundation-model tokens — users BYOK. We sell **cloud 
 
 ## Payment
 
-| Rail | Plans |
-|------|-------|
-| **USDC / USDT** (5 EVM chains) | Pro · Team · Business on web |
-| **App Store / Play IAP** | Pro monthly · Pro yearly |
-| Cards / Stripe / Paddle | **Removed** |
+| Client | Rail | Plans |
+|--------|------|-------|
+| **Web** | **USDC / USDT** (5 EVM chains) | Pro · Team · Business |
+| **iOS app** | **App Store IAP only** | Pro monthly/yearly · Team seat (store products) |
+| **Android app** | **Google Play Billing only** | Pro monthly/yearly · Team seat (store products) |
+| Cards / Stripe / Paddle | **Removed** | — |
 
-- Checkout: `POST /v1/billing/crypto/checkout-session` · UI: `/checkout` · `/billing`
-- Paid Pro/Team lasts per `plan_expires_at` (default 30 days for monthly crypto)
+- Web checkout: `POST /v1/billing/crypto/checkout-session` · UI: `/checkout` · `/billing`
+- **Mobile apps: no crypto UI, no USDC/USDT, no web crypto deep-link paywall**
+- Same `Organization.plan` after store receipt verify or web crypto confirm
 - Team: **$99 × seats** (3–50)
-- App and web share `Organization.plan` — restore via billing status / account
 
 ---
 
 ## Mobile
 
-App is free to download. Upgrade to **Pro** or **Team** uses the **same** plan IDs and prices as web. See [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md).
+App download free. Upgrades **only** via Apple / Google. Same plan IDs as web — see [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md).

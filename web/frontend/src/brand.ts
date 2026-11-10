@@ -247,9 +247,9 @@ export const PRICING = {
     "One entitlement everywhere: GET /v1/billing/status — Free · Pro (cloud) · Team · Business.",
   ],
   revenueStreams: [
-    "Pro $20/mo (web crypto + iOS/Android IAP)",
-    "Pro annual ~$160 (store IAP)",
-    "Team $99/seat/mo (web crypto)",
-    "Business $199/mo · Enterprise custom",
+    "Pro $20/mo — web USDC/USDT · iOS App Store · Android Play Billing",
+    "Pro annual ~$160 — App Store / Play only",
+    "Team $99/seat — web crypto · in-app via Apple/Google only (no crypto in apps)",
+    "Business $199/mo · Enterprise custom (web)",
   ],
 } as const;

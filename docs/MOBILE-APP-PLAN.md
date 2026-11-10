@@ -266,18 +266,19 @@ Desktop Agent                     Mobile App
 
 ---
 
-## 7. Monetization (Unified with Web)
+## 7. Monetization (Unified prices · store payments on mobile)
 
-**Canonical:** [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md) — **no separate mobile price list**.
+**Canonical:** [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md)
 
-| Tier | Price | Plan ID | Mobile |
-|------|------:|---------|--------|
-| **Free** | $0 | `free` | Pair · chat · basic approve · BYOK |
-| **Pro** | **$20/mo** (IAP $19.99) · **~$160/yr** | `cloud` | Cloud always-on · inbox · routines · voice · push |
-| **Team** | **$99/seat/mo** (min 3) | `team` | Shared bots · org inbox (pay on web, restore in app) |
-| **Business** | **$199/mo** | `business` | Web primary |
+| Tier | Price | Plan ID | How to pay **in app** |
+|------|------:|---------|------------------------|
+| **Free** | $0 | `free` | — |
+| **Pro** | $20/mo · ~$160/yr | `cloud` | **App Store / Play Billing only** ($19.99 / $159.99) |
+| **Team** | $99/seat/mo | `team` | **App Store / Play Billing only** (seat products) |
+| **Business** | $199/mo | `business` | Web (not in mobile v1) |
 
-App download is free. Entitlement = same `Organization.plan` as narna.org.
+**Hard rule:** iOS & Android **must not** offer crypto (USDC/USDT), wallet QR, or in-app web crypto checkout.  
+Web keeps crypto; mobile keeps Apple/Google only. Same `Organization.plan` after receipt verify.
 
 ---
 

@@ -71,6 +71,24 @@ fun SettingsScreen(
 
             Divider()
 
+            SettingsSection(title = "Subscription") {
+                SettingsInfoItem(label = "Pro", value = "$19.99/mo · $159.99/yr")
+                SettingsInfoItem(label = "Team", value = "$99.99/seat/mo")
+                Text(
+                    text = "Billing is only through Google Play. Crypto and web USDC/USDT checkout are not available in this app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Manage subscription in Google Play → Payments & subscriptions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Divider()
+
             SettingsSection(title = "Remote Access") {
                 Text(
                     text = "Choose how the phone reaches your desktop agent.",

@@ -4,123 +4,101 @@
 **Effective:** 2026-11-10  
 **Backend:** `web/backend/app/billing.py` → `PLANS`
 
-Everything customer-facing (narna.org, App Store, Google Play, checkout, restore) **must use this table**. Do not invent separate mobile prices.
+Same **plan names & dollars** everywhere. **Payment rails differ by client** (see below).
 
 ---
 
 ## Catalog (locked)
 
-| Display name | Plan ID (API) | Price | Billing | Channels |
-|--------------|---------------|------:|---------|----------|
-| **Free** | `free` | **$0** | — | Web · iOS · Android · Desktop |
-| **Pro** | `cloud` (alias `pro`) | **$20 / mo** | 30-day period | Web (USDC/USDT) · iOS IAP · Play Billing |
-| **Pro Annual** | `cloud` | **$160 / yr** (~$13.33/mo) | 365-day period | iOS IAP · Play Billing · Web crypto optional |
-| **Team** | `team` | **$99 / seat / mo** | min **3** seats, max **50** | Web primary · App restore via account |
-| **Business** | `business` | **$199 / mo** | fixed | Web primary · sales-assisted |
+| Display name | Plan ID (API) | Price | Period |
+|--------------|---------------|------:|--------|
+| **Free** | `free` | **$0** | — |
+| **Pro** | `cloud` (alias `pro`) | **$20 / mo** | 30 days |
+| **Pro Annual** | `cloud` | **$160 / yr** (~$13.33/mo) | 365 days |
+| **Team** | `team` | **$99 / seat / mo** | min 3 · max 50 seats |
+| **Business** | `business` | **$199 / mo** | fixed |
 
-### IAP SKU mapping (must match dollars above)
+### Store product IDs (mobile)
 
-| Store product ID (suggested) | Maps to plan | Store price |
-|------------------------------|--------------|-------------|
-| `narna_pro_monthly` | `cloud` | **$19.99** ≈ $20 |
-| `narna_pro_yearly` | `cloud` | **$159.99** ≈ $160 |
-| Team seats | `team` | **Web only (phase 1)** — App Store seat IAP later if needed |
-| Business | `business` | Web only |
+| Product ID | Plan | Listed price |
+|------------|------|--------------|
+| `narna_pro_monthly` | `cloud` | **$19.99** |
+| `narna_pro_yearly` | `cloud` | **$159.99** |
+| `narna_team_seat_monthly` | `team` | **$99.99 / seat** (when Team sold in-app) |
 
-> Store list price uses .99 endings; entitlement is identical to web `$20` / `$160` Pro.
+---
+
+## Payment rails (CRITICAL)
+
+| Client | Allowed payment | Forbidden in that client |
+|--------|-----------------|---------------------------|
+| **Web** (narna.org) | **USDC / USDT** crypto checkout | — |
+| **iOS app** | **App Store IAP / subscriptions only** | ❌ Crypto, ❌ USDC/USDT UI, ❌ open web crypto checkout to unlock |
+| **Android app** | **Google Play Billing only** | ❌ Crypto, ❌ USDC/USDT UI, ❌ open web crypto checkout to unlock |
+| **Desktop** | Free local; optional cloud via account entitlement | No crypto UI required |
+
+### Mobile rule (Apple + Google)
+
+1. Upgrade / subscribe / restore **only** through StoreKit 2 (iOS) or Play Billing Library (Android).  
+2. **Do not** show wallet address, chain picker, USDC/USDT, or `/checkout` crypto flow inside the apps.  
+3. Receipt / purchase token → server verifies → set `Organization.plan` (`cloud` / `team`) + expiry.  
+4. Web crypto purchases remain for **web** customers; mobile apps must not push users into crypto paywalls.
 
 ---
 
 ## What each plan includes
 
 ### Free — `$0` · `free`
-- Desktop agent **forever** (Mac/Windows), BYOK
-- Mobile companion: pair 1 desktop, chat, basic approvals
-- Cloud Ask with BYOK (quota per `billing.py`)
-- **No** always-on cloud agent, routines, voice, multi-seat
+- Desktop agent forever, BYOK  
+- Mobile: pair, chat, basic approvals  
+- No always-on cloud, routines, voice, multi-seat  
 
 ### Pro — `$20/mo` · `cloud`
-- Everything in Free
-- **Cloud brain** + backup / sync / multi-device
-- Mobile: inbox, routines, voice UI, remote Tailscale/HTTPS, push approvals
-- Higher GU / ADQA / agent-turn caps (see `PLANS["cloud"]`)
-- BYOK still required for model tokens (NARNA does **not** resell Claude/GPT)
+- Cloud brain, sync, multi-device  
+- Mobile full: inbox, routines, voice, remote, push  
+- BYOK for model tokens (NARNA does not resell Claude/GPT)  
 
 ### Team — `$99/seat/mo` · `team`
-- Everything in Pro
-- Shared org, shared bots, shared inbox / approvals
-- Seats 3–50 (`usd_per_seat: 99`)
-- Checkout: `seats × $99` USDC/USDT on web; app restores via same org API key / account
+- Shared bots, org inbox, seats 3–50  
+- **Web:** crypto checkout  
+- **iOS/Android:** Play/App Store subscription products only (no crypto)  
 
 ### Business — `$199/mo` · `business`
-- Higher caps, more seats baseline
-- Web checkout / sales
-- Not required on mobile store listing v1
+- Web / sales primary  
 
 ---
 
-## Payment rails (unified)
-
-| Rail | Used for |
-|------|----------|
-| **USDC / USDT** (Ethereum, Polygon, Base, Arbitrum, BSC) | Web `/checkout` · `/billing` — source of truth today |
-| **App Store IAP** | Pro monthly / yearly |
-| **Google Play Billing** | Pro monthly / yearly |
-| **Cards / Stripe / Paddle** | **Removed** — do not reintroduce without explicit decision |
-
-**Rule:** Paying on **any** rail sets the same `Organization.plan` (`free` \| `cloud` \| `team` \| `business`) + `plan_expires_at`.  
-App and web both call `GET /v1/billing/status` — one entitlement.
-
----
-
-## Naming rules (no more confusion)
-
-| ❌ Do not say | ✅ Say |
-|---------------|--------|
-| Personal $20 | **Pro** $20 (`cloud`) |
-| Cloud $20 as display name | **Pro** (API id still `cloud`) |
-| Pro $30–50 (old market doc) | **Pro $20** only |
-| Mobile Pro $19.99 as different product | Same **Pro**; IAP cosmetic .99 |
-| Team $12.99/seat on app | **Team $99/seat** (same as web) |
-
-Aliases kept in code only: `pro` → `cloud`, `personal` → treat as `cloud` in UI prices.
-
----
-
-## Entitlement check (all clients)
+## Entitlement
 
 ```
-GET /v1/billing/status
-→ plan, planExpiresAt, seatCount, features…
+GET /v1/billing/status → plan, planExpiresAt, seatCount, features
 ```
 
 | Client | How user upgrades |
 |--------|-------------------|
-| Web | Crypto checkout → plan flipped on payment confirm |
-| iOS / Android | IAP → server verify receipt → set `cloud` · **or** open web checkout + paste API key |
-| Desktop | Free local; optional login to Pro cloud sync |
+| Web | Crypto checkout → plan on payment confirm |
+| iOS | App Store subscription → verify transaction → `cloud` / `team` |
+| Android | Play Billing → verify purchase token → `cloud` / `team` |
+| Desktop | Free local; cloud features follow account plan |
 
 ---
 
 ## Anti-patterns (forbidden)
 
-1. Different feature matrix on web vs mobile for the same plan id  
-2. Charging for Claude/ChatGPT tokens (BYOK only)  
-3. “Lifetime forever” Pro license that bypasses `plan_expires_at` without finance sign-off  
-4. Showing Team as “Soon” while API already bills `$99/seat`
+1. Crypto paywall or “Pay with USDC” inside iOS/Android  
+2. Deep-link from app to web crypto checkout to unlock the same digital features (avoid App Review / Play policy risk)  
+3. Different feature matrix for the same plan id on web vs app  
+4. Selling Claude/GPT tokens  
 
 ---
 
-## Doc / code sync checklist
+## Doc sync
 
-- [x] `billing.py` — prices  
-- [ ] `web/frontend/src/brand.ts` — show Team $99/seat (not Soon)  
-- [ ] `docs/BUSINESS-MODEL.md` — align names to Free / Pro / Team / Business  
-- [ ] `docs/NARNA-MARKET-PLAN.md` — remove Pro $30–50  
-- [ ] Mobile paywall copy — use this doc only  
-- [ ] App Store / Play listing — Pro $19.99 / $159.99  
+- [x] `billing.py` plan dollars  
+- [x] Web Pricing (`brand.ts`) Free / Pro $20 / Team $99  
+- [x] Mobile: IAP/Play only — no crypto  
+- [ ] Implement StoreKit + Play Billing + server receipt verify  
 
 ---
 
-**Owner:** Product + Billing  
-**One line:** *Free $0 · Pro $20/mo · Team $99/seat · Business $199 — same everywhere.*
+**One line:** *Same plans everywhere — Web pays crypto; iOS pays Apple; Android pays Google Play.*
