@@ -6,10 +6,11 @@ FEATURES:
 • Approve shell commands & file edits
 • Real-time WebSocket updates
 • QR code pairing
+• Secure encryption
 
 BRING YOUR OWN AI:
 • Claude Pro / API key
-• ChatGPT Plus / API key
+• ChatGPT Plus / API key  
 • Gemini / API key
 
 FREE & OPEN SOURCE (MIT)
