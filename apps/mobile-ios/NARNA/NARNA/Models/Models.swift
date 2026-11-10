@@ -527,6 +527,250 @@ struct PushRegisterResponse: Codable {
     let note: String?
 }
 
+// MARK: - Onboarding Models
+
+struct OnboardingStatusResponse: Codable {
+    let ok: Bool
+    let paired: Bool
+    let plan: String
+    let orgId: Int?
+    let aiReady: Bool
+    let needsOnboarding: Bool
+    let paths: [OnboardingPath]
+    let providers: [AIProviderInfo]
+    let pairing: OnboardingPairingInfo?
+    let billingPolicy: OnboardingBillingPolicy?
+    
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case paired
+        case plan
+        case orgId = "org_id"
+        case aiReady = "ai_ready"
+        case needsOnboarding = "needs_onboarding"
+        case paths
+        case providers
+        case pairing
+        case billingPolicy = "billing_policy"
+    }
+}
+
+struct OnboardingPath: Codable, Identifiable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let recommended: Bool
+    let steps: [String]
+    let cta: String
+    let products: [OnboardingProductPreview]?
+}
+
+struct OnboardingProductPreview: Codable, Identifiable {
+    let productId: String
+    let plan: String
+    let price: String
+    let period: String
+    
+    var id: String { productId }
+    
+    enum CodingKeys: String, CodingKey {
+        case productId = "product_id"
+        case plan
+        case price
+        case period
+    }
+}
+
+struct OnboardingPairingInfo: Codable {
+    let how: String
+    let desktopCommand: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case how
+        case desktopCommand = "desktop_command"
+    }
+}
+
+struct OnboardingBillingPolicy: Codable {
+    let mobile: String
+    let web: String
+    let modelTokens: String
+    
+    enum CodingKeys: String, CodingKey {
+        case mobile
+        case web
+        case modelTokens = "model_tokens"
+    }
+}
+
+// MARK: - AI Provider Models
+
+struct AIProvidersResponse: Codable {
+    let ok: Bool
+    let defaultProvider: String?
+    let providers: [AIProviderInfo]
+    let note: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case defaultProvider = "default_provider"
+        case providers
+        case note
+    }
+}
+
+struct AIProviderInfo: Codable, Identifiable {
+    let id: String
+    let name: String
+    let modes: [String]
+    let hint: String
+    let env: String?
+    let connected: Bool
+    let maskedKey: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case modes
+        case hint
+        case env
+        case connected
+        case maskedKey = "masked_key"
+    }
+    
+    var systemIcon: String {
+        switch id.lowercased() {
+        case "anthropic": return "brain.head.profile"
+        case "openai": return "sparkles"
+        case "openrouter": return "arrow.triangle.branch"
+        case "google": return "g.circle"
+        default: return "key.fill"
+        }
+    }
+}
+
+struct AIProviderConfigureRequest: Codable {
+    let apiKey: String
+    let setAsDefault: Bool
+    let model: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case apiKey = "api_key"
+        case setAsDefault = "set_as_default"
+        case model
+    }
+}
+
+struct AIProviderConfigureResponse: Codable {
+    let ok: Bool
+    let provider: String
+    let connected: Bool
+    let maskedKey: String?
+    let defaultProvider: String?
+    let message: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case provider
+        case connected
+        case maskedKey = "masked_key"
+        case defaultProvider = "default_provider"
+        case message
+    }
+}
+
+struct AIProviderClearResponse: Codable {
+    let ok: Bool
+    let provider: String
+    let connected: Bool
+}
+
+// MARK: - Subscription Product Models
+
+struct SubscriptionProductsResponse: Codable {
+    let ok: Bool
+    let storeOnly: Bool
+    let cryptoInApp: Bool
+    let products: [SubscriptionProduct]
+    let manageUrls: SubscriptionManageURLs?
+    
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case storeOnly = "store_only"
+        case cryptoInApp = "crypto_in_app"
+        case products
+        case manageUrls = "manage_urls"
+    }
+}
+
+struct SubscriptionProduct: Codable, Identifiable {
+    let productId: String
+    let plan: String
+    let title: String
+    let price: String
+    let period: String
+    let includes: [String]?
+    
+    var id: String { productId }
+    
+    enum CodingKeys: String, CodingKey {
+        case productId = "product_id"
+        case plan
+        case title
+        case price
+        case period
+        case includes
+    }
+    
+    var periodLabel: String {
+        switch period.lowercased() {
+        case "month": return "/mo"
+        case "year": return "/yr"
+        case "seat/month": return "/seat/mo"
+        default: return "/\(period)"
+        }
+    }
+}
+
+struct SubscriptionManageURLs: Codable {
+    let ios: String?
+    let android: String?
+}
+
+struct StoreVerifyRequest: Codable {
+    let platform: String
+    let productId: String
+    let transactionId: String
+    let receiptData: String?
+    let purchaseToken: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case platform
+        case productId = "product_id"
+        case transactionId = "transaction_id"
+        case receiptData = "receipt_data"
+        case purchaseToken = "purchase_token"
+    }
+}
+
+struct StoreVerifyResponse: Codable {
+    let ok: Bool
+    let plan: String?
+    let planExpiresAt: String?
+    let productId: String?
+    let verified: Bool?
+    let message: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case ok
+        case plan
+        case planExpiresAt = "plan_expires_at"
+        case productId = "product_id"
+        case verified
+        case message
+    }
+}
+
 // MARK: - Generic OK
 
 struct OKResponse: Codable {

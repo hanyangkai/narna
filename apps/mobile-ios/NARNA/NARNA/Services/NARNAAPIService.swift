@@ -198,6 +198,72 @@ class NARNAAPIService: ObservableObject {
         return try await post(endpoint: "/v1/mobile/push/register?mobile_token=\(token)", body: body)
     }
     
+    // MARK: - Onboarding
+    
+    func getOnboardingStatus() async throws -> OnboardingStatusResponse {
+        if let token = KeychainService.shared.getMobileToken() {
+            return try await get(endpoint: "/v1/mobile/onboarding/status?mobile_token=\(token)")
+        }
+        return try await get(endpoint: "/v1/mobile/onboarding/status")
+    }
+    
+    // MARK: - AI Providers
+    
+    func listAIProviders() async throws -> AIProvidersResponse {
+        let token = try mobileToken
+        return try await get(endpoint: "/v1/mobile/ai/providers?mobile_token=\(token)")
+    }
+    
+    func configureAIProvider(
+        providerId: String,
+        apiKey: String,
+        setAsDefault: Bool = true,
+        model: String? = nil
+    ) async throws -> AIProviderConfigureResponse {
+        let token = try mobileToken
+        let body = AIProviderConfigureRequest(
+            apiKey: apiKey,
+            setAsDefault: setAsDefault,
+            model: model
+        )
+        return try await post(
+            endpoint: "/v1/mobile/ai/providers/\(providerId)/configure?mobile_token=\(token)",
+            body: body
+        )
+    }
+    
+    func clearAIProvider(providerId: String) async throws -> AIProviderClearResponse {
+        let token = try mobileToken
+        return try await delete(
+            endpoint: "/v1/mobile/ai/providers/\(providerId)?mobile_token=\(token)"
+        )
+    }
+    
+    // MARK: - Subscription Products
+    
+    func getSubscriptionProducts() async throws -> SubscriptionProductsResponse {
+        try await get(endpoint: "/v1/mobile/subscription/products")
+    }
+    
+    func verifyStorePurchase(
+        productId: String,
+        transactionId: String,
+        receiptData: String? = nil
+    ) async throws -> StoreVerifyResponse {
+        let token = try mobileToken
+        let body = StoreVerifyRequest(
+            platform: "ios",
+            productId: productId,
+            transactionId: transactionId,
+            receiptData: receiptData,
+            purchaseToken: nil
+        )
+        return try await post(
+            endpoint: "/v1/billing/store/verify?mobile_token=\(token)",
+            body: body
+        )
+    }
+    
     // MARK: - Generic HTTP Methods
     
     private func get<T: Decodable>(endpoint: String) async throws -> T {
@@ -212,6 +278,10 @@ class NARNAAPIService: ObservableObject {
     private func put<T: Encodable, R: Decodable>(endpoint: String, body: T) async throws -> R {
         let data = try encoder.encode(body)
         return try await request(method: "PUT", endpoint: endpoint, bodyData: data)
+    }
+    
+    private func delete<R: Decodable>(endpoint: String) async throws -> R {
+        try await request(method: "DELETE", endpoint: endpoint, bodyData: nil)
     }
     
     private func request<R: Decodable>(method: String, endpoint: String, bodyData: Data?) async throws -> R {
