@@ -4,8 +4,7 @@ import { BRAND } from "../brand";
 
 const links = [
   { to: "/how-it-works", label: "How it works" },
-  { to: "/download", label: "Desktop" },
-  { to: "/docs", label: "Docs" },
+  { to: "/download", label: "Download" },
   { to: "/pricing", label: "Pricing" },
 ];
 
@@ -34,6 +33,9 @@ export default function Nav() {
         {!isConsole && (
           <>
             <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
+              <a href="/#get-app" onClick={() => setOpen(false)}>
+                Get app
+              </a>
               {links.map((l) => (
                 <Link
                   key={l.to}
@@ -61,9 +63,9 @@ export default function Nav() {
               >
                 GitHub
               </a>
-              <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Download bot
-              </Link>
+              <a href="/#get-app" className="btn btn-primary" onClick={() => setOpen(false)}>
+                Get app
+              </a>
             </div>
           </>
         )}

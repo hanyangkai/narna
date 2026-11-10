@@ -15,15 +15,15 @@ const steps = [
     alt: "Keys stay under ~/.narna — BYOK",
   },
   {
-    title: "Pair phone",
-    win: "Desktop → Pairing → show QR",
-    unix: "iOS / Android NARNA app scans QR",
+    title: "Install phone app",
+    win: "iOS App Store / Google Play — package org.narna.mobile",
+    unix: "Or build from apps/mobile-ios · apps/mobile-android",
     alt: "Phone remotes the bot — does not login Claude",
   },
   {
-    title: "Chat + approve",
-    win: "Tools, browser, memory, ADQA scoring",
-    unix: "Risky actions need Allow on phone",
+    title: "Pair + approve",
+    win: "Desktop → Pairing → QR → chat & Inbox Allow/Deny",
+    unix: "ADQA scores risky tools before they run",
     alt: "Optional: narna gateway run for Telegram",
   },
 ];
@@ -32,16 +32,51 @@ export default function Download() {
   return (
     <div className="layout-wide">
       <header className="page-header">
-        <p className="pill-label">Desktop · Agent bot</p>
-        <h1>Install the bot on your machine</h1>
+        <p className="pill-label">Download · Agent bot</p>
+        <h1>Desktop bot + iOS / Android remote</h1>
         <p>
-          NARNA Desktop is the <strong>agent bot</strong>. Use{" "}
-          <strong>Claude CLI / Codex CLI</strong> (your subscription) or BYOK. Pair the phone with
-          QR. No NARNA Pro fee required for local use.
+          Desktop is the brain. The phone app is the remote. Use{" "}
+          <strong>Claude CLI / Codex CLI</strong> or BYOK on the PC, then pair by QR.
         </p>
       </header>
 
+      <section className="section" id="mobile">
+        <h2>Mobile companion</h2>
+        <div className="land-store-grid" style={{ marginTop: "1rem" }}>
+          <article className="land-store-card">
+            <p className="land-strip-label">iOS</p>
+            <h3>App Store</h3>
+            <p className="section-desc">
+              Bundle ID <code>{BRAND.bundleId}</code>. Screenshots &amp; metadata in repo — submit
+              from App Store Connect.
+            </p>
+            <a className="btn btn-primary" href={BRAND.appStoreUrl} target="_blank" rel="noreferrer">
+              App Store search
+            </a>
+          </article>
+          <article className="land-store-card">
+            <p className="land-strip-label">Android</p>
+            <h3>Google Play</h3>
+            <p className="section-desc">
+              Package <code>{BRAND.bundleId}</code>. Feature graphic + phone shots ready to upload.
+            </p>
+            <a className="btn btn-primary" href={BRAND.playStoreUrl} target="_blank" rel="noreferrer">
+              Play listing
+            </a>
+          </article>
+          <article className="land-store-card land-store-card-accent">
+            <p className="land-strip-label">See the UI</p>
+            <h3>App screenshots</h3>
+            <p className="section-desc">Onboarding · Bots · Inbox · Chat</p>
+            <Link className="btn btn-secondary" to="/#app-ui">
+              View on homepage →
+            </Link>
+          </article>
+        </div>
+      </section>
+
       <section className="section">
+        <h2>Desktop (available now)</h2>
         <div className="land-cta" style={{ marginBottom: "1.5rem" }}>
           <a
             className="btn btn-primary"
@@ -64,7 +99,6 @@ export default function Download() {
           </a>
         </div>
 
-        <h2>Setup</h2>
         <div className="download-steps">
           {steps.map((s) => (
             <article key={s.title} className="card feature-card">
@@ -85,28 +119,11 @@ export default function Download() {
 narna desktop
 narna gateway status`}</pre>
         <p className="section-desc" style={{ marginTop: "1rem" }}>
-          Model explained:{" "}
+          Model:{" "}
           <a href={BRAND.modelDoc} target="_blank" rel="noreferrer">
             AGENT-BOT-MODEL.md
           </a>{" "}
-          · AI connect:{" "}
-          <Link to="/docs">docs</Link> ·{" "}
-          <Link to="/how-it-works">How it works</Link>
-        </p>
-      </section>
-
-      <section className="section">
-        <h2>MacBook / Windows — portable</h2>
-        <p className="section-desc">
-          Grab zips from{" "}
-          <a
-            href="https://github.com/hanyangkai/narna/releases/latest"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub Releases
-          </a>
-          . Runs on <code>127.0.0.1</code> — Ask, tools, ADQA, Decision Memory.
+          · <Link to="/how-it-works">How it works</Link> · <Link to="/privacy">Privacy</Link>
         </p>
       </section>
     </div>

@@ -42,6 +42,10 @@ export const BRAND = {
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
   modelDoc: "https://github.com/hanyangkai/narna/blob/main/docs/AGENT-BOT-MODEL.md",
+  /** Public store destinations (package reserved; listing goes live after review). */
+  appStoreUrl: "https://apps.apple.com/search?term=NARNA%20Mobile",
+  playStoreUrl: "https://play.google.com/store/apps/details?id=org.narna.mobile",
+  bundleId: "org.narna.mobile",
 } as const;
 
 /** Open standard (public). Formerly UAP workflow name. */
