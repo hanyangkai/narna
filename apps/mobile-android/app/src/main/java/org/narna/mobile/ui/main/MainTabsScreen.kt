@@ -1,5 +1,7 @@
 package org.narna.mobile.ui.main
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Forum
@@ -29,6 +31,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import org.narna.mobile.ui.bots.BotListScreen
 import org.narna.mobile.ui.inbox.InboxScreen
+import org.narna.mobile.ui.onboarding.ConnectAiBanner
+import org.narna.mobile.ui.onboarding.ConnectAiSheet
 import org.narna.mobile.ui.routines.RoutinesScreen
 import org.narna.mobile.ui.settings.SettingsScreen
 import org.narna.mobile.ui.voice.VoiceScreen
@@ -59,9 +63,11 @@ fun MainTabsScreen(
 ) {
     val tabNavController = rememberNavController()
     val pendingCount by viewModel.pendingCount.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.refreshInboxBadge()
+        viewModel.refreshOnboardingStatus()
     }
 
     Scaffold(
@@ -72,30 +78,72 @@ fun MainTabsScreen(
             )
         }
     ) { paddingValues ->
-        NavHost(
-            navController = tabNavController,
-            startDestination = MainTab.Bots.route,
-            modifier = Modifier.padding(paddingValues)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            composable(MainTab.Bots.route) {
-                BotListScreen(
-                    onBotClick = onBotClick,
-                    showSettingsAction = false
+            if (uiState.needsAiConnect) {
+                ConnectAiBanner(
+                    onClick = { viewModel.openConnectSheet() }
                 )
             }
-            composable(MainTab.Inbox.route) {
-                InboxScreen()
-            }
-            composable(MainTab.Routines.route) {
-                RoutinesScreen()
-            }
-            composable(MainTab.Voice.route) {
-                VoiceScreen()
-            }
-            composable(MainTab.Settings.route) {
-                SettingsScreen(onUnpaired = onUnpaired)
+            NavHost(
+                navController = tabNavController,
+                startDestination = MainTab.Bots.route,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                composable(MainTab.Bots.route) {
+                    BotListScreen(
+                        onBotClick = onBotClick,
+                        showSettingsAction = false
+                    )
+                }
+                composable(MainTab.Inbox.route) {
+                    InboxScreen()
+                }
+                composable(MainTab.Routines.route) {
+                    RoutinesScreen()
+                }
+                composable(MainTab.Voice.route) {
+                    VoiceScreen()
+                }
+                composable(MainTab.Settings.route) {
+                    SettingsScreen(onUnpaired = onUnpaired)
+                }
             }
         }
+    }
+
+    if (uiState.showConnectSheet) {
+        ConnectAiSheet(
+            paths = uiState.paths,
+            providers = uiState.providers,
+            products = uiState.products,
+            onDismiss = { viewModel.dismissConnectSheet() },
+            onOpenSettingsProviders = {
+                viewModel.dismissConnectSheet()
+                tabNavController.navigate(MainTab.Settings.route) {
+                    popUpTo(tabNavController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            onOpenSubscription = {
+                viewModel.dismissConnectSheet()
+                tabNavController.navigate(MainTab.Settings.route) {
+                    popUpTo(tabNavController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        )
     }
 }
 

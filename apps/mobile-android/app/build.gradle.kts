@@ -134,6 +134,9 @@ dependencies {
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    // Google Play Billing (subscription only — no crypto checkout in-app)
+    implementation("com.android.billingclient:billing-ktx:6.2.1")
+
     // Accompanist (for system UI controller, etc.)
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
