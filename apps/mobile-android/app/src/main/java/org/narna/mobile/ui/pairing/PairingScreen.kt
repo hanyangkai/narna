@@ -24,13 +24,14 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PairingScreen(
     onPaired: () -> Unit,
@@ -48,7 +49,7 @@ fun PairingScreen(
         }
     }
 
-    if (showScanner && cameraPermission.hasPermission) {
+    if (showScanner && cameraPermission.status.isGranted) {
         QRScannerView(
             onQRCodeScanned = { qrData ->
                 // Parse narna://pair?code=123456&org=dev
@@ -104,7 +105,7 @@ fun PairingScreen(
 
                 Button(
                     onClick = {
-                        if (cameraPermission.hasPermission) {
+                        if (cameraPermission.status.isGranted) {
                             showScanner = true
                         } else {
                             cameraPermission.launchPermissionRequest()

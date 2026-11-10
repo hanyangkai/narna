@@ -28,3 +28,10 @@
 
 # Keep ML Kit
 -keep class com.google.mlkit.** { *; }
+
+# R8 missing classes from Ktor / SLF4J (not present on Android)
+-dontwarn java.lang.management.ManagementFactory
+-dontwarn java.lang.management.RuntimeMXBean
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+-dontwarn org.slf4j.impl.StaticMDCBinder
+-dontwarn org.slf4j.impl.StaticMarkerBinder

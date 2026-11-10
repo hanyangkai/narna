@@ -7,6 +7,8 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.narna.mobile.data.model.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -134,7 +136,7 @@ class WebSocketManager @Inject constructor(
         try {
             // Parse the event type first
             val jsonElement = json.parseToJsonElement(text)
-            val eventType = jsonElement.jsonObject["type"]?.toString()?.trim('"')
+            val eventType = jsonElement.jsonObject["type"]?.jsonPrimitive?.content
 
             val event: WebSocketEvent? = when (eventType) {
                 "connected" -> json.decodeFromString<ConnectedEvent>(text)
