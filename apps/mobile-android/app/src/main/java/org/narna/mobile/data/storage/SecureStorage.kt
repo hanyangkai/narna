@@ -32,6 +32,7 @@ class SecureStorage @Inject constructor(
         private const val KEY_DESKTOP_API_KEY = "desktop_api_key"
         private const val KEY_OPENAI_API_KEY = "openai_api_key"
         private const val KEY_ANTHROPIC_API_KEY = "anthropic_api_key"
+        private const val KEY_OPENAI_VOICE_KEY = "openai_voice_key"
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -100,6 +101,15 @@ class SecureStorage @Inject constructor(
 
     fun getAnthropicKey(): String? {
         return sharedPreferences.getString(KEY_ANTHROPIC_API_KEY, null)
+    }
+
+    fun saveOpenAIVoiceKey(key: String) {
+        sharedPreferences.edit().putString(KEY_OPENAI_VOICE_KEY, key).apply()
+    }
+
+    fun getOpenAIVoiceKey(): String? {
+        return sharedPreferences.getString(KEY_OPENAI_VOICE_KEY, null)
+            ?: getOpenAIKey()
     }
 
     // ──────────────────────────────────────────────────────────────

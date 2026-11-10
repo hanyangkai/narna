@@ -27,7 +27,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BotListScreen(
     onBotClick: (String) -> Unit,
-    onSettingsClick: () -> Unit,
+    onSettingsClick: (() -> Unit)? = null,
+    showSettingsAction: Boolean = onSettingsClick != null,
     viewModel: BotListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -37,8 +38,10 @@ fun BotListScreen(
             TopAppBar(
                 title = { Text("My Bots") },
                 actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    if (showSettingsAction && onSettingsClick != null) {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
                     }
                 }
             )

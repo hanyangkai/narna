@@ -6,17 +6,19 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import org.narna.mobile.ui.bots.BotListScreen
 import org.narna.mobile.ui.chat.ChatScreen
+import org.narna.mobile.ui.main.MainTabsScreen
 import org.narna.mobile.ui.pairing.PairingScreen
-import org.narna.mobile.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Pairing : Screen("pairing")
-    object BotList : Screen("bot_list")
+    object Main : Screen("main")
     object Chat : Screen("chat/{botId}") {
         fun createRoute(botId: String) = "chat/$botId"
     }
+
+    /** @deprecated Prefer [Main] tab shell after pairing. */
+    object BotList : Screen("bot_list")
     object Settings : Screen("settings")
 }
 
@@ -32,20 +34,22 @@ fun NavGraph(
         composable(Screen.Pairing.route) {
             PairingScreen(
                 onPaired = {
-                    navController.navigate(Screen.BotList.route) {
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Pairing.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(Screen.BotList.route) {
-            BotListScreen(
+        composable(Screen.Main.route) {
+            MainTabsScreen(
                 onBotClick = { botId ->
                     navController.navigate(Screen.Chat.createRoute(botId))
                 },
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
+                onUnpaired = {
+                    navController.navigate(Screen.Pairing.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
@@ -60,19 +64,6 @@ fun NavGraph(
                 botId = it.arguments?.getString("botId") ?: "",
                 onNavigateBack = {
                     navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onUnpaired = {
-                    navController.navigate(Screen.Pairing.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
                 }
             )
         }

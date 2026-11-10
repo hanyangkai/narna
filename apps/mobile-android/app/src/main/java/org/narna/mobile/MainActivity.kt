@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val startDestination = if (secureStorage.isPaired()) {
-                        Screen.BotList.route
+                        Screen.Main.route
                     } else {
                         Screen.Pairing.route
                     }

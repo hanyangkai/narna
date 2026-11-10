@@ -22,6 +22,10 @@ class UserPreferences @Inject constructor(
         val KEY_DARK_THEME = booleanPreferencesKey("dark_theme")
         val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val KEY_AUTO_CONNECT = booleanPreferencesKey("auto_connect")
+        val KEY_REMOTE_MODE = stringPreferencesKey("remote_mode")
+        val KEY_REMOTE_HOST = stringPreferencesKey("remote_host")
+        val KEY_REMOTE_BASE_URL = stringPreferencesKey("remote_base_url")
+        val KEY_PUSH_DEVICE_TOKEN = stringPreferencesKey("push_device_token")
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -63,6 +67,44 @@ class UserPreferences @Inject constructor(
     suspend fun setAutoConnect(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[KEY_AUTO_CONNECT] = enabled
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Remote Access
+    // ──────────────────────────────────────────────────────────────
+
+    val remoteMode: Flow<String> = dataStore.data.map { prefs ->
+        prefs[KEY_REMOTE_MODE] ?: "local"
+    }
+
+    val remoteHost: Flow<String> = dataStore.data.map { prefs ->
+        prefs[KEY_REMOTE_HOST] ?: ""
+    }
+
+    val remoteBaseUrl: Flow<String> = dataStore.data.map { prefs ->
+        prefs[KEY_REMOTE_BASE_URL] ?: ""
+    }
+
+    suspend fun setRemoteAccess(mode: String, host: String, baseUrl: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_REMOTE_MODE] = mode
+            prefs[KEY_REMOTE_HOST] = host
+            prefs[KEY_REMOTE_BASE_URL] = baseUrl
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Push device token (local placeholder until FCM is wired)
+    // ──────────────────────────────────────────────────────────────
+
+    val pushDeviceToken: Flow<String?> = dataStore.data.map { prefs ->
+        prefs[KEY_PUSH_DEVICE_TOKEN]
+    }
+
+    suspend fun setPushDeviceToken(token: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_PUSH_DEVICE_TOKEN] = token
         }
     }
 }

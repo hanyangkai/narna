@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Singleton
 class NARNAApiService @Inject constructor(
-    private val baseUrl: String
+    private val serverConfig: ServerConfig
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -28,24 +28,24 @@ class NARNAApiService @Inject constructor(
         install(ContentNegotiation) {
             json(json)
         }
-        
+
         install(Logging) {
             logger = Logger.DEFAULT
             level = LogLevel.INFO
         }
-        
+
         install(WebSockets) {
             pingInterval = 30_000
         }
-        
+
         install(HttpTimeout) {
             requestTimeoutMillis = 30_000
             connectTimeoutMillis = 10_000
             socketTimeoutMillis = 30_000
         }
-        
+
         defaultRequest {
-            url(baseUrl)
+            url(serverConfig.currentBaseUrl())
             contentType(ContentType.Application.Json)
         }
     }
@@ -54,7 +54,7 @@ class NARNAApiService @Inject constructor(
     // Health Check
     // ──────────────────────────────────────────────────────────────
 
-    suspend fun healthCheck(): Result<Map<String, Any>> = runCatching {
+    suspend fun healthCheck(): Result<Map<String, String>> = runCatching {
         client.get("/v1/mobile/health").body()
     }
 
@@ -145,6 +145,152 @@ class NARNAApiService @Inject constructor(
         approvalId: String
     ): Result<ApprovalDecisionResponse> = runCatching {
         client.post("/v1/mobile/approvals/$approvalId/deny") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Inbox
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun getInbox(mobileToken: String): Result<InboxResponse> = runCatching {
+        client.get("/v1/mobile/inbox") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Routines
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun listRoutines(mobileToken: String): Result<RoutinesResponse> = runCatching {
+        client.get("/v1/mobile/routines") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun createRoutine(
+        mobileToken: String,
+        request: RoutineCreateRequest
+    ): Result<RoutineInfo> = runCatching {
+        client.post("/v1/mobile/routines") {
+            parameter("mobile_token", mobileToken)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun toggleRoutine(
+        mobileToken: String,
+        routineId: String
+    ): Result<RoutineInfo> = runCatching {
+        client.post("/v1/mobile/routines/$routineId/toggle") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun deleteRoutine(
+        mobileToken: String,
+        routineId: String
+    ): Result<RoutineDeleteResponse> = runCatching {
+        client.delete("/v1/mobile/routines/$routineId") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Voice
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun startVoice(
+        mobileToken: String,
+        request: VoiceStartRequest
+    ): Result<VoiceSession> = runCatching {
+        client.post("/v1/mobile/voice/start") {
+            parameter("mobile_token", mobileToken)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun stopVoice(
+        mobileToken: String,
+        sessionId: String
+    ): Result<VoiceStopResponse> = runCatching {
+        client.post("/v1/mobile/voice/stop") {
+            parameter("mobile_token", mobileToken)
+            parameter("session_id", sessionId)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Remote access
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun getRemoteStatus(mobileToken: String): Result<RemoteStatusResponse> = runCatching {
+        client.get("/v1/mobile/remote/status") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun updateRemoteConfig(
+        mobileToken: String,
+        update: RemoteConfigUpdate
+    ): Result<RemoteStatusResponse> = runCatching {
+        client.put("/v1/mobile/remote/config") {
+            parameter("mobile_token", mobileToken)
+            setBody(update)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Connected apps
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun listConnectedApps(mobileToken: String): Result<ConnectedAppsResponse> = runCatching {
+        client.get("/v1/mobile/connected-apps") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun connectApp(
+        mobileToken: String,
+        app: String,
+        accountLabel: String? = null
+    ): Result<ConnectedAppMutationResponse> = runCatching {
+        client.post("/v1/mobile/connected-apps/$app/connect") {
+            parameter("mobile_token", mobileToken)
+            setBody(ConnectedAppAction(accountLabel = accountLabel))
+        }.body()
+    }
+
+    suspend fun disconnectApp(
+        mobileToken: String,
+        app: String
+    ): Result<ConnectedAppMutationResponse> = runCatching {
+        client.post("/v1/mobile/connected-apps/$app/disconnect") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Push
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun registerPush(
+        mobileToken: String,
+        request: PushRegisterRequest
+    ): Result<PushRegisterResponse> = runCatching {
+        client.post("/v1/mobile/push/register") {
+            parameter("mobile_token", mobileToken)
+            setBody(request)
+        }.body()
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Parity
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun getParityStatus(mobileToken: String): Result<ParityStatusResponse> = runCatching {
+        client.get("/v1/mobile/parity") {
             parameter("mobile_token", mobileToken)
         }.body()
     }

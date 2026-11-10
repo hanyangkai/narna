@@ -6,8 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import org.narna.mobile.BuildConfig
-import org.narna.mobile.data.api.NARNAApiService
+import org.narna.mobile.data.api.ServerConfig
 import org.narna.mobile.data.preferences.UserPreferences
 import org.narna.mobile.data.storage.SecureStorage
 import org.narna.mobile.data.websocket.WebSocketManager
@@ -19,18 +18,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideBaseUrl(): String = BuildConfig.BASE_URL
-
-    @Provides
-    @Singleton
-    fun provideNARNAApiService(baseUrl: String): NARNAApiService {
-        return NARNAApiService(baseUrl)
-    }
-
-    @Provides
-    @Singleton
-    fun provideWebSocketManager(baseUrl: String): WebSocketManager {
-        return WebSocketManager(baseUrl)
+    fun provideWebSocketManager(serverConfig: ServerConfig): WebSocketManager {
+        return WebSocketManager(serverConfig.currentBaseUrl())
     }
 
     @Provides
