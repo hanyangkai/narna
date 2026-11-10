@@ -69,6 +69,7 @@ from .metrics import METRICS
 from .mcp_http import router as mcp_router
 from .mobile import router as mobile_router
 from .mobile_parity import router as mobile_parity_router
+from .mobile_onboarding import router as mobile_onboarding_router
 from .plan_features import feature_enabled, plan_features_payload, require_feature
 from .quota import bump_adqa_usage, bump_agent_turns, enforce_plan_limit
 from .tenants import tenant_id_for_org, tenant_workspace
@@ -154,6 +155,7 @@ app = FastAPI(title="NARNA Cloud API", version="0.2.0")
 app.include_router(mcp_router)
 app.include_router(mobile_router)
 app.include_router(mobile_parity_router)
+app.include_router(mobile_onboarding_router)
 
 app.add_middleware(
     CORSMiddleware,
