@@ -1,0 +1,38 @@
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/.env
+.env
+
+# Build artifacts
+build/
+*.ipa
+*.dSYM.zip
+*.xcarchive
+
+# Xcode
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+!default.xcworkspace
+xcuserdata/
+*.moved-aside
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Ruby
+.bundle/
+vendor/bundle/
+
+# macOS
+.DS_Store
+
+# Certificates
+*.p8
+*.p12
+*.cer
+*.mobileprovision

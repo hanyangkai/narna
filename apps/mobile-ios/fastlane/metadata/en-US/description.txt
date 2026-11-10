@@ -1,0 +1,16 @@
+Control powerful AI agents from your phone.
+
+FEATURES:
+• Connect to desktop or cloud agents
+• Chat with Claude, ChatGPT, Gemini
+• Approve shell commands & file edits
+• Real-time WebSocket updates
+• QR code pairing
+
+BRING YOUR OWN AI:
+• Claude Pro / API key
+• ChatGPT Plus / API key
+• Gemini / API key
+
+FREE & OPEN SOURCE (MIT)
+Visit narna.org
