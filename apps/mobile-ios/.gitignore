@@ -1,14 +1,11 @@
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html
-# store submission screenshots tracked:
-!# tracked for store submission
-!fastlane/screenshots/**/*.png
-# # tracked for store submission
-!fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/.env
 .env
+
+# Store screenshots are committed under fastlane/screenshots/
 
 # Build artifacts
 build/
