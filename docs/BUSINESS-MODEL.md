@@ -1,20 +1,20 @@
 # NARNA Business Model — Agent-first
 
-**Status:** Active  
-**Date:** 2026-08-25  
+**Status:** Active · **Canonical prices:** [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md)  
 **Product:** [`NARNA-AGENT.md`](./NARNA-AGENT.md)
 
 ---
 
-## Ladder
+## Ladder (Web = iOS = Android)
 
-| Plan | Price | Agent | Hosted LLM | BYO | ADQA / Memory |
-|------|------:|-------|------------|-----|---------------|
-| **Free Ask** | $0 | Ask web | **None** (mock without key) · **unlimited** with BYOK | ✓ BYOK | Basic DQS + short memory |
-| **Personal** (API: `cloud`) | **$20/mo** | ✓ | None (BYOK) | ✓ | Full Decision Memory + ADQA API |
-| **Pro** | later | Multi-model challenge | None | ✓ | Advanced ADQA |
-| **Team** | **$99/seat/mo** | Shared Decision Brain | None | ✓ | Shared priors · governance |
-| **Enterprise** | Custom | Private + own LLM | — | ✓ | On-prem · SSO · SLA |
+| Plan | Price | Plan ID | Agent | Hosted LLM | BYOK | Notes |
+|------|------:|---------|-------|------------|------|-------|
+| **Free** | $0 | `free` | Desktop + mobile basic | None | ✓ | Local forever |
+| **Pro** | **$20/mo** (IAP $19.99) | `cloud` (alias `pro`) | Cloud + mobile full | None | ✓ | Always-on · sync · routines |
+| **Pro Annual** | **~$160/yr** (IAP $159.99) | `cloud` | Same as Pro | None | ✓ | Store annual |
+| **Team** | **$99/seat/mo** | `team` | Shared Decision Brain | None | ✓ | Min 3 seats |
+| **Business** | **$199/mo** | `business` | Higher caps | None | ✓ | Web primary |
+| **Enterprise** | Custom | — | Private + own LLM | — | ✓ | SSO · on-prem · SLA |
 
 OSS runtime (`pip install narna`) remains free for local ADQA.
 
@@ -24,17 +24,25 @@ OSS runtime (`pip install narna`) remains free for local ADQA.
 
 **Ask NARNA is the funnel. ADQA Cloud is Decision Quality. Team is shared Decision Intelligence.**
 
-Two products, one core: consumer Agent + paid ADQA infra. NARNA does not sell foundation-model tokens as the hero metric — it sells **decision quality**.
+NARNA does **not** sell foundation-model tokens — users BYOK. We sell **cloud connectivity + decision quality + team governance**.
 
 ---
 
 ## Payment
 
-**USDC / USDT only** (no Stripe / card / Paddle).
+| Rail | Plans |
+|------|-------|
+| **USDC / USDT** (5 EVM chains) | Pro · Team · Business on web |
+| **App Store / Play IAP** | Pro monthly · Pro yearly |
+| Cards / Stripe / Paddle | **Removed** |
 
-Chains: Ethereum · Polygon · Base · Arbitrum · BSC.
-
-- Checkout: `POST /v1/billing/crypto/checkout-session` · UI: `/billing`
-- Auto-confirm on-chain (exact amount + unique cents)
-- Paid plan lasts **30 days** (`plan_expires_at`), then drops to free
+- Checkout: `POST /v1/billing/crypto/checkout-session` · UI: `/checkout` · `/billing`
+- Paid Pro/Team lasts per `plan_expires_at` (default 30 days for monthly crypto)
 - Team: **$99 × seats** (3–50)
+- App and web share `Organization.plan` — restore via billing status / account
+
+---
+
+## Mobile
+
+App is free to download. Upgrade to **Pro** or **Team** uses the **same** plan IDs and prices as web. See [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md).

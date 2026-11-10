@@ -178,15 +178,16 @@ Full physical move only after a stable release — aliases first.
 
 ## Track C — Business / GTM (align with BUSINESS-MODEL.md)
 
-| Tier | Agent | ADQA | Trace | Replay | Hosted |
-|------|-------|------|-------|--------|--------|
-| **Free OSS** | ✓ local BYOK | basic | basic trace | — | — |
-| **Cloud $20** | hosted Ask | full ADQA API | cloud traces | — | memory sync |
-| **Pro $30–50** | multi-model | advanced | replay | ✓ | routing |
-| **Team $99/seat** | shared brain | governance | team traces | ✓ | SSO later |
+| Tier | Price | Agent | ADQA | Trace | Hosted |
+|------|------:|-------|------|-------|--------|
+| **Free** | $0 | local BYOK + mobile basic | basic | local | — |
+| **Pro** (`cloud`) | **$20/mo** | cloud + mobile full | full API | cloud traces | sync · always-on |
+| **Team** | **$99/seat** | shared brain | governance | team traces | org inbox |
+| **Business** | **$199/mo** | higher caps | advanced | long retention | web primary |
 
-**Free forever:** Agent + Memory + MCP + Basic ADQA + Basic Trace + BYOK.  
-**Never:** company-hosted LLM as default.
+**Canonical:** [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md) — same prices on web · iOS · Android.  
+**Free forever:** Desktop agent + Memory + MCP + Basic ADQA + BYOK.  
+**Never:** company-hosted LLM as default · never separate “mobile-only” price list.
 
 ---
 

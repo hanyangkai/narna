@@ -266,15 +266,18 @@ Desktop Agent                     Mobile App
 
 ---
 
-## 7. Monetization (Optional)
+## 7. Monetization (Unified with Web)
 
-Following MausBot model (free app + optional cloud):
+**Canonical:** [`PRICING-UNIFIED.md`](./PRICING-UNIFIED.md) — **no separate mobile price list**.
 
-| Tier | Price | Features |
-|------|-------|----------|
-| **Free** | $0 | Desktop agent + mobile companion, BYOK only |
-| **NARNA Cloud** | $15-20/mo | Hosted agent (computer stays off), unlimited bots |
-| **NARNA Pro** | $99/mo | Team features, priority support, white-label |
+| Tier | Price | Plan ID | Mobile |
+|------|------:|---------|--------|
+| **Free** | $0 | `free` | Pair · chat · basic approve · BYOK |
+| **Pro** | **$20/mo** (IAP $19.99) · **~$160/yr** | `cloud` | Cloud always-on · inbox · routines · voice · push |
+| **Team** | **$99/seat/mo** (min 3) | `team` | Shared bots · org inbox (pay on web, restore in app) |
+| **Business** | **$199/mo** | `business` | Web primary |
+
+App download is free. Entitlement = same `Organization.plan` as narna.org.
 
 ---
 
