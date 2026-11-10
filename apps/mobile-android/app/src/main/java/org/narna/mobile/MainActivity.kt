@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     val startDestination = if (secureStorage.isPaired()) {
                         Screen.Main.route
                     } else {
-                        Screen.Pairing.route
+                        Screen.Onboarding.route
                     }
 
                     NavGraph(

@@ -26,6 +26,8 @@ class UserPreferences @Inject constructor(
         val KEY_REMOTE_HOST = stringPreferencesKey("remote_host")
         val KEY_REMOTE_BASE_URL = stringPreferencesKey("remote_base_url")
         val KEY_PUSH_DEVICE_TOKEN = stringPreferencesKey("push_device_token")
+        val KEY_ONBOARDING_PATH = stringPreferencesKey("onboarding_path")
+        val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -105,6 +107,32 @@ class UserPreferences @Inject constructor(
     suspend fun setPushDeviceToken(token: String) {
         dataStore.edit { prefs ->
             prefs[KEY_PUSH_DEVICE_TOKEN] = token
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Onboarding path (external_ai | narna_pro)
+    // ──────────────────────────────────────────────────────────────
+
+    val onboardingPath: Flow<String?> = dataStore.data.map { prefs ->
+        prefs[KEY_ONBOARDING_PATH]
+    }
+
+    val onboardingCompleted: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_ONBOARDING_COMPLETED] ?: false
+    }
+
+    suspend fun setOnboardingPath(pathId: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_ONBOARDING_PATH] = pathId
+            prefs[KEY_ONBOARDING_COMPLETED] = true
+        }
+    }
+
+    suspend fun clearOnboarding() {
+        dataStore.edit { prefs ->
+            prefs.remove(KEY_ONBOARDING_PATH)
+            prefs.remove(KEY_ONBOARDING_COMPLETED)
         }
     }
 }

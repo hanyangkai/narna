@@ -295,6 +295,59 @@ class NARNAApiService @Inject constructor(
         }.body()
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Onboarding / AI providers / subscription
+    // ──────────────────────────────────────────────────────────────
+
+    suspend fun getOnboardingStatus(mobileToken: String? = null): Result<OnboardingStatusResponse> =
+        runCatching {
+            client.get("/v1/mobile/onboarding/status") {
+                if (!mobileToken.isNullOrBlank()) {
+                    parameter("mobile_token", mobileToken)
+                }
+            }.body()
+        }
+
+    suspend fun listAiProviders(mobileToken: String): Result<AiProvidersResponse> = runCatching {
+        client.get("/v1/mobile/ai/providers") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun configureAiProvider(
+        mobileToken: String,
+        providerId: String,
+        request: AiProviderConfigureRequest
+    ): Result<AiProviderConfigureResponse> = runCatching {
+        client.post("/v1/mobile/ai/providers/$providerId/configure") {
+            parameter("mobile_token", mobileToken)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun clearAiProvider(
+        mobileToken: String,
+        providerId: String
+    ): Result<AiProviderClearResponse> = runCatching {
+        client.delete("/v1/mobile/ai/providers/$providerId") {
+            parameter("mobile_token", mobileToken)
+        }.body()
+    }
+
+    suspend fun getSubscriptionProducts(): Result<SubscriptionProductsResponse> = runCatching {
+        client.get("/v1/mobile/subscription/products").body()
+    }
+
+    suspend fun verifyStorePurchase(
+        mobileToken: String,
+        request: StoreVerifyRequest
+    ): Result<StoreVerifyResponse> = runCatching {
+        client.post("/v1/billing/store/verify") {
+            parameter("mobile_token", mobileToken)
+            setBody(request)
+        }.body()
+    }
+
     fun close() {
         client.close()
     }

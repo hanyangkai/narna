@@ -1,5 +1,8 @@
 package org.narna.mobile.ui.settings
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -9,13 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.narna.mobile.BuildConfig
+import org.narna.mobile.data.model.AiProviderInfo
 import org.narna.mobile.data.model.ConnectedApp
+import org.narna.mobile.data.model.SubscriptionProduct
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +33,13 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val activity = context as? Activity
 
-    var openAIKey by remember(uiState.openAIKey) { mutableStateOf(uiState.openAIKey.orEmpty()) }
-    var anthropicKey by remember(uiState.anthropicKey) { mutableStateOf(uiState.anthropicKey.orEmpty()) }
     var voiceKey by remember(uiState.openAIVoiceKey) { mutableStateOf(uiState.openAIVoiceKey.orEmpty()) }
     var remoteHost by remember(uiState.remoteHost) { mutableStateOf(uiState.remoteHost) }
     var remoteBaseUrl by remember(uiState.remoteBaseUrl) { mutableStateOf(uiState.remoteBaseUrl) }
+    var providerDrafts by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     LaunchedEffect(uiState.message, uiState.error) {
         (uiState.message ?: uiState.error)?.let {
@@ -67,24 +74,100 @@ fun SettingsScreen(
                     label = "Connected to",
                     value = uiState.agentName ?: "Unknown"
                 )
+                SettingsInfoItem(
+                    label = "Plan",
+                    value = uiState.plan.replaceFirstChar { it.uppercase() }
+                )
+                SettingsInfoItem(
+                    label = "AI ready",
+                    value = if (uiState.aiReady) "Yes" else "No"
+                )
+            }
+
+            Divider()
+
+            SettingsSection(title = "AI Providers") {
+                Text(
+                    text = uiState.aiProvidersNote
+                        ?: "CLI logins stay on Desktop. API keys here power the cloud agent (BYOK).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (uiState.isLoadingProviders && uiState.aiProviders.isEmpty()) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                } else {
+                    uiState.aiProviders.forEach { provider ->
+                        AiProviderCard(
+                            provider = provider,
+                            draftKey = providerDrafts[provider.id].orEmpty(),
+                            isBusy = uiState.configuringProviderId == provider.id,
+                            onDraftChange = { value ->
+                                providerDrafts = providerDrafts + (provider.id to value)
+                            },
+                            onSave = {
+                                viewModel.configureProvider(
+                                    provider.id,
+                                    providerDrafts[provider.id].orEmpty()
+                                )
+                            },
+                            onClear = { viewModel.clearProvider(provider.id) }
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
             }
 
             Divider()
 
             SettingsSection(title = "Subscription") {
-                SettingsInfoItem(label = "Pro", value = "$19.99/mo · $159.99/yr")
-                SettingsInfoItem(label = "Team", value = "$99.99/seat/mo")
                 Text(
                     text = "Billing is only through Google Play. Crypto and web USDC/USDT checkout are not available in this app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Manage subscription in Google Play → Payments & subscriptions.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (uiState.isLoadingProducts && uiState.subscriptionProducts.isEmpty()) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                } else {
+                    uiState.subscriptionProducts.forEach { product ->
+                        SubscriptionProductCard(
+                            product = product,
+                            playPrice = uiState.playProductDetails[product.productId]
+                                ?.subscriptionOfferDetails
+                                ?.firstOrNull()
+                                ?.pricingPhases
+                                ?.pricingPhaseList
+                                ?.firstOrNull()
+                                ?.formattedPrice,
+                            isPurchasing = uiState.purchasingProductId == product.productId,
+                            playReady = uiState.playBillingReady &&
+                                uiState.playProductDetails.containsKey(product.productId),
+                            onPurchase = {
+                                activity?.let { viewModel.purchaseProduct(it, product.productId) }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                }
+                if (!uiState.playBillingReady) {
+                    Text(
+                        text = "Google Play Billing is unavailable on this device/build. Install from Play Store to subscribe.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val url = uiState.manageSubscriptionUrl
+                            ?: "https://play.google.com/store/account/subscriptions"
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Manage in Google Play")
+                }
             }
 
             Divider()
@@ -100,23 +183,17 @@ fun SettingsScreen(
                     RemoteModeOption(
                         label = "Local",
                         selected = uiState.remoteMode == "local",
-                        onClick = {
-                            viewModel.updateRemoteDraft(mode = "local")
-                        }
+                        onClick = { viewModel.updateRemoteDraft(mode = "local") }
                     )
                     RemoteModeOption(
                         label = "Tailscale hostname",
                         selected = uiState.remoteMode == "tailscale",
-                        onClick = {
-                            viewModel.updateRemoteDraft(mode = "tailscale")
-                        }
+                        onClick = { viewModel.updateRemoteDraft(mode = "tailscale") }
                     )
                     RemoteModeOption(
                         label = "Custom HTTPS base URL",
                         selected = uiState.remoteMode == "custom",
-                        onClick = {
-                            viewModel.updateRemoteDraft(mode = "custom")
-                        }
+                        onClick = { viewModel.updateRemoteDraft(mode = "custom") }
                     )
                 }
 
@@ -192,47 +269,7 @@ fun SettingsScreen(
 
             Divider()
 
-            SettingsSection(title = "API Keys") {
-                OutlinedTextField(
-                    value = openAIKey,
-                    onValueChange = { openAIKey = it },
-                    label = { Text("OpenAI API Key") },
-                    placeholder = { Text("sk-…") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { viewModel.saveOpenAIKey(openAIKey) },
-                    enabled = openAIKey.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Save OpenAI Key")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = anthropicKey,
-                    onValueChange = { anthropicKey = it },
-                    label = { Text("Anthropic API Key") },
-                    placeholder = { Text("sk-ant-…") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { viewModel.saveAnthropicKey(anthropicKey) },
-                    enabled = anthropicKey.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Save Anthropic Key")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+            SettingsSection(title = "Voice key (local)") {
                 OutlinedTextField(
                     value = voiceKey,
                     onValueChange = { voiceKey = it },
@@ -316,6 +353,135 @@ fun SettingsScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun AiProviderCard(
+    provider: AiProviderInfo,
+    draftKey: String,
+    isBusy: Boolean,
+    onDraftChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onClear: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(provider.name, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        text = if (provider.connected) {
+                            provider.maskedKey ?: "Connected"
+                        } else {
+                            provider.hint ?: "Not connected"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Modes: ${provider.modes.joinToString()}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (isBusy) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                }
+            }
+
+            if (provider.modes.contains("api_key")) {
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = draftKey,
+                    onValueChange = onDraftChange,
+                    label = { Text("${provider.name} API key") },
+                    placeholder = { Text(provider.env ?: "API key") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = onSave,
+                        enabled = draftKey.isNotBlank() && !isBusy,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(if (provider.connected) "Update key" else "Save key")
+                    }
+                    if (provider.connected) {
+                        OutlinedButton(
+                            onClick = onClear,
+                            enabled = !isBusy,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Clear")
+                        }
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Use Desktop CLI subscription, then pair this phone.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionProductCard(
+    product: SubscriptionProduct,
+    playPrice: String?,
+    isPurchasing: Boolean,
+    playReady: Boolean,
+    onPurchase: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(product.title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = "${playPrice ?: product.price} / ${product.period}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            product.includes.forEach { item ->
+                Text(
+                    text = "• $item",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(
+                onClick = onPurchase,
+                enabled = playReady && !isPurchasing,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isPurchasing) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(if (playReady) "Subscribe with Google Play" else "Unavailable on Play")
+                }
+            }
+        }
     }
 }
 

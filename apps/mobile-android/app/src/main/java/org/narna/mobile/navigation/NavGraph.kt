@@ -8,9 +8,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import org.narna.mobile.ui.chat.ChatScreen
 import org.narna.mobile.ui.main.MainTabsScreen
+import org.narna.mobile.ui.onboarding.OnboardingScreen
 import org.narna.mobile.ui.pairing.PairingScreen
 
 sealed class Screen(val route: String) {
+    object Onboarding : Screen("onboarding")
     object Pairing : Screen("pairing")
     object Main : Screen("main")
     object Chat : Screen("chat/{botId}") {
@@ -31,11 +33,21 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(
+                onContinueToPairing = {
+                    navController.navigate(Screen.Pairing.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Pairing.route) {
             PairingScreen(
                 onPaired = {
                     navController.navigate(Screen.Main.route) {
-                        popUpTo(Screen.Pairing.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -47,7 +59,7 @@ fun NavGraph(
                     navController.navigate(Screen.Chat.createRoute(botId))
                 },
                 onUnpaired = {
-                    navController.navigate(Screen.Pairing.route) {
+                    navController.navigate(Screen.Onboarding.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
