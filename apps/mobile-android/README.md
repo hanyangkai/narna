@@ -334,6 +334,37 @@ See [MOBILE-API.md](../../docs/MOBILE-API.md) for full API specification.
 4. Add loading states to all async actions
 5. Test on API 26 (min) and API 34 (target)
 
+## Google Play Store Submission
+
+The app is ready for Google Play Store submission. See:
+
+- **[PLAY_STORE_QUICK_START.md](PLAY_STORE_QUICK_START.md)** - Quick build and upload guide
+- **[GOOGLE_PLAY_CHECKLIST.md](GOOGLE_PLAY_CHECKLIST.md)** - Complete submission checklist
+
+**Quick Build for Play Store:**
+
+```bash
+# Install Android SDK (first time only)
+# See PLAY_STORE_QUICK_START.md for instructions
+
+# Build signed AAB
+./build-release.sh
+
+# Upload to Play Console
+bundle exec fastlane android release
+# OR upload manually at play.google.com/console
+```
+
+**Store Listing:**
+- **Package:** `org.narna.mobile`
+- **Title:** NARNA Mobile - AI Agent Bot
+- **Category:** Productivity
+- **Rating:** Everyone
+- **Privacy Policy:** Required before submission
+
+Once published, the app will be available at:  
+https://play.google.com/store/apps/details?id=org.narna.mobile
+
 ## License
 
 See root repository LICENSE file.
@@ -343,3 +374,4 @@ See root repository LICENSE file.
 - **Issues**: GitHub Issues
 - **API Docs**: `docs/MOBILE-API.md`
 - **Backend**: `web/backend/app/mobile.py`
+- **Play Store:** [GOOGLE_PLAY_CHECKLIST.md](GOOGLE_PLAY_CHECKLIST.md)

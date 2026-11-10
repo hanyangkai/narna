@@ -1,0 +1,23 @@
+Control powerful AI agents from your phone.
+
+FEATURES:
+• Connect to desktop or cloud agents
+• Chat with Claude, ChatGPT, Gemini bots
+• Approve shell commands and file edits
+• Real-time updates via WebSocket
+• QR code pairing
+• Secure end-to-end encryption
+
+BRING YOUR OWN AI:
+• Claude Pro / API key
+• ChatGPT Plus / API key
+• Gemini / API key
+• DeepSeek, Qwen, local models
+
+PERFECT FOR:
+• Developers running AI agents on servers
+• Automation enthusiasts
+• Power users who want mobile access
+
+FREE AND OPEN SOURCE
+NARNA is MIT licensed. Visit narna.org to learn more.

@@ -25,6 +25,15 @@ android {
         buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8765\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "../narna-release.keystore")
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "narnarelease2024"
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "narna"
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: "narnarelease2024"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -33,6 +42,7 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("String", "BASE_URL", "\"https://api.narna.org\"")
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8765\"")
