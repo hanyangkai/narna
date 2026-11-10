@@ -22,6 +22,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>NARNA needs camera access to scan QR codes for pairing with your desktop agent.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NARNA needs microphone access for live voice calls with your bots.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

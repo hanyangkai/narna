@@ -23,6 +23,12 @@
 		A1000000001B /* BotListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000001C /* BotListViewModel.swift */; };
 		A1000000001D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000001E /* ChatViewModel.swift */; };
 		A1000000001F /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000020 /* QRScannerView.swift */; };
+		A10000000040 /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000041 /* InboxView.swift */; };
+		A10000000042 /* RoutinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000043 /* RoutinesView.swift */; };
+		A10000000044 /* VoiceCallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000045 /* VoiceCallView.swift */; };
+		A10000000046 /* InboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000047 /* InboxViewModel.swift */; };
+		A10000000048 /* RoutinesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000049 /* RoutinesViewModel.swift */; };
+		A1000000004A /* VoiceCallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000004B /* VoiceCallViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +50,12 @@
 		A1000000001E /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		A10000000020 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		A10000000021 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000041 /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
+		A10000000043 /* RoutinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesView.swift; sourceTree = "<group>"; };
+		A10000000045 /* VoiceCallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCallView.swift; sourceTree = "<group>"; };
+		A10000000047 /* InboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewModel.swift; sourceTree = "<group>"; };
+		A10000000049 /* RoutinesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesViewModel.swift; sourceTree = "<group>"; };
+		A1000000004B /* VoiceCallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCallViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +105,9 @@
 			children = (
 				A10000000008 /* PairingView.swift */,
 				A1000000000A /* BotListView.swift */,
+				A10000000041 /* InboxView.swift */,
+				A10000000043 /* RoutinesView.swift */,
+				A10000000045 /* VoiceCallView.swift */,
 				A1000000000C /* ChatView.swift */,
 				A1000000000E /* ApprovalCardView.swift */,
 				A10000000010 /* SettingsView.swift */,
@@ -107,6 +122,9 @@
 				A1000000001A /* PairingViewModel.swift */,
 				A1000000001C /* BotListViewModel.swift */,
 				A1000000001E /* ChatViewModel.swift */,
+				A10000000047 /* InboxViewModel.swift */,
+				A10000000049 /* RoutinesViewModel.swift */,
+				A1000000004B /* VoiceCallViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -202,6 +220,9 @@
 				A10000000001 /* NARNAApp.swift in Sources */,
 				A10000000007 /* PairingView.swift in Sources */,
 				A10000000009 /* BotListView.swift in Sources */,
+				A10000000040 /* InboxView.swift in Sources */,
+				A10000000042 /* RoutinesView.swift in Sources */,
+				A10000000044 /* VoiceCallView.swift in Sources */,
 				A1000000000B /* ChatView.swift in Sources */,
 				A1000000000D /* ApprovalCardView.swift in Sources */,
 				A1000000000F /* SettingsView.swift in Sources */,
@@ -212,6 +233,9 @@
 				A10000000019 /* PairingViewModel.swift in Sources */,
 				A1000000001B /* BotListViewModel.swift in Sources */,
 				A1000000001D /* ChatViewModel.swift in Sources */,
+				A10000000046 /* InboxViewModel.swift in Sources */,
+				A10000000048 /* RoutinesViewModel.swift in Sources */,
+				A1000000004A /* VoiceCallViewModel.swift in Sources */,
 				A1000000001F /* QRScannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -5,11 +5,15 @@ Native iOS companion app for NARNA desktop agent, built with SwiftUI following t
 ## Features
 
 ✅ **QR Code Pairing** - Scan QR or enter 6-digit code to pair with desktop agent  
-✅ **Bot Management** - View and interact with active NARNA bots  
+✅ **Tabbed Shell** - Bots, Inbox, Routines, Voice, and Settings after pairing  
+✅ **Bot Management** - View and chat with active NARNA bots  
+✅ **Cross-bot Inbox** - Approvals + pending messages with inline Allow/Deny  
+✅ **Routines** - List, create, and toggle scheduled bot routines  
+✅ **Voice Calls** - Start/stop live call UI with transcript placeholder  
+✅ **Remote Access** - Local / Tailscale / Custom HTTPS host configuration  
+✅ **Connected Apps** - Gmail, Slack, GitHub, Notion, Linear connect stubs  
+✅ **Push Registration** - Device token stub for approval notifications  
 ✅ **Real-time Chat** - WebSocket-powered conversation with bots  
-✅ **Approval Gates** - Review and approve shell commands, file edits, web actions  
-✅ **Dark Mode** - Native dark mode support  
-✅ **Pull-to-refresh** - Keep bot list up to date  
 ✅ **Secure Storage** - Mobile tokens stored in iOS Keychain  
 
 ## Requirements
@@ -27,11 +31,11 @@ apps/mobile-ios/NARNA/
 └── NARNA/
     ├── Info.plist             # App configuration
     ├── NARNAApp.swift         # App entry point
-    ├── ContentView.swift      # Root view with pairing check
+    ├── ContentView.swift      # Pairing gate + TabView shell
     ├── Assets.xcassets/       # Images and colors
     │
     ├── Models/
-    │   └── Models.swift       # Data models (Bot, Message, Approval, etc.)
+    │   └── Models.swift       # Data models (Bot, Inbox, Routine, Voice, etc.)
     │
     ├── Services/
     │   ├── NARNAAPIService.swift    # REST API client
@@ -39,17 +43,23 @@ apps/mobile-ios/NARNA/
     │   └── KeychainService.swift    # Secure token storage
     │
     ├── ViewModels/
-    │   ├── PairingViewModel.swift   # Pairing logic
-    │   ├── BotListViewModel.swift   # Bot list management
-    │   └── ChatViewModel.swift      # Chat & WebSocket handling
+    │   ├── PairingViewModel.swift
+    │   ├── BotListViewModel.swift
+    │   ├── ChatViewModel.swift
+    │   ├── InboxViewModel.swift
+    │   ├── RoutinesViewModel.swift
+    │   └── VoiceCallViewModel.swift
     │
     └── Views/
-        ├── PairingView.swift        # QR scanner + code entry
-        ├── QRScannerView.swift      # AVFoundation QR scanner
-        ├── BotListView.swift        # List of active bots
-        ├── ChatView.swift           # Conversation UI
-        ├── ApprovalCardView.swift   # Approval bottom sheet
-        └── SettingsView.swift       # Settings & configuration
+        ├── PairingView.swift
+        ├── QRScannerView.swift
+        ├── BotListView.swift        # Bots tab
+        ├── InboxView.swift          # Inbox tab
+        ├── RoutinesView.swift       # Routines tab
+        ├── VoiceCallView.swift      # Voice tab
+        ├── ChatView.swift
+        ├── ApprovalCardView.swift
+        └── SettingsView.swift       # Settings tab
 ```
 
 ## Build Instructions
@@ -105,28 +115,15 @@ uvicorn app.main:app --reload --port 8765
 
 4. **Success!**
    - Mobile token stored securely in Keychain
-   - Now you can see your bots and chat with them
+   - Tab bar appears: **Bots · Inbox · Routines · Voice · Settings**
 
 ### Daily Usage
 
-1. **View Bots**
-   - Pull down to refresh bot list
-   - Tap any bot to open chat
-
-2. **Chat with Bot**
-   - Type messages and send
-   - Real-time updates via WebSocket
-   - See bot status (idle/working/waiting approval)
-
-3. **Handle Approvals**
-   - Pending approvals shown at top of bot list
-   - Review action details
-   - Tap "Allow" or "Deny"
-
-4. **Settings**
-   - Change API base URL (for remote access)
-   - View device info
-   - Unpair device
+1. **Bots** — Pull to refresh, tap a bot to chat
+2. **Inbox** — Cross-bot approvals and pending items; Allow/Deny inline (badge shows pending count)
+3. **Routines** — Create cron schedules, toggle enabled/paused
+4. **Voice** — Start/stop a live call; transcript placeholder until Realtime audio is wired
+5. **Settings** — Remote access, connected apps, push toggle, OpenAI voice key, unpair
 
 ## API Integration
 
@@ -134,9 +131,7 @@ uvicorn app.main:app --reload --port 8765
 
 Default: `http://localhost:8765`
 
-For remote access:
-1. Expose backend with ngrok/cloudflare tunnel
-2. Update base URL in Settings
+For remote access, use Settings → Remote Access (Local / Tailscale / Custom HTTPS).
 
 ### Endpoints Used
 
@@ -150,14 +145,26 @@ For remote access:
 | `/v1/mobile/approvals` | GET | List pending approvals |
 | `/v1/mobile/approvals/{id}/allow` | POST | Allow action |
 | `/v1/mobile/approvals/{id}/deny` | POST | Deny action |
+| `/v1/mobile/inbox` | GET | Cross-bot inbox |
+| `/v1/mobile/routines` | GET/POST | List / create routines |
+| `/v1/mobile/routines/{id}/toggle` | POST | Enable/disable routine |
+| `/v1/mobile/voice/start` | POST | Start voice session |
+| `/v1/mobile/voice/stop` | POST | Stop voice session |
+| `/v1/mobile/remote/status` | GET | Remote access status |
+| `/v1/mobile/remote/config` | PUT | Save remote access config |
+| `/v1/mobile/connected-apps` | GET | List connected apps |
+| `/v1/mobile/connected-apps/{app}/connect` | POST | Connect app |
+| `/v1/mobile/connected-apps/{app}/disconnect` | POST | Disconnect app |
+| `/v1/mobile/push/register` | POST | Register push device token |
 
 ## Security
 
 - **Mobile Token**: Stored in iOS Keychain (not UserDefaults)
+- **Voice API key**: Stored in App Storage on-device only; never logged
 - **Keychain Service**: `org.narna.mobile`
 - **Token Format**: `narna_mobile_<random_32_bytes>`
 - **Token Expiry**: 30 days (renewable)
-- **Camera Permission**: Required for QR scanning (NSCameraUsageDescription in Info.plist)
+- **Camera / Mic**: Required for QR scanning and voice (`Info.plist` usage strings)
 
 ## Troubleshooting
 
@@ -170,49 +177,17 @@ For remote access:
 ### QR Scanner Not Working
 
 - Grant camera permission in iOS Settings
-- Check "Camera" permission prompt
 - Try manual code entry as fallback
 
 ### WebSocket Connection Failed
 
 - Verify backend WebSocket endpoint is accessible
-- Check firewall/network settings
 - WebSocket URL should be `ws://` (not `wss://` for localhost)
 
 ### "Invalid mobile token" Error
 
-- Token expired (30 days)
-- Backend was restarted (in-memory tokens cleared)
+- Token expired (30 days) or backend restarted
 - Solution: Unpair and re-pair device
-
-## Development Tips
-
-### Preview in Xcode
-
-Most views have `#Preview` blocks for live previews:
-
-```swift
-#Preview {
-    BotListView()
-}
-```
-
-### Debug Logging
-
-Services print debug logs with emoji prefixes:
-- ✅ Success
-- ❌ Error
-- 📨 WebSocket event
-- 🔌 Connection status
-
-### Modify API Base URL
-
-For development, change base URL in `SettingsView` or:
-
-```swift
-// In NARNAAPIService.swift
-@Published var baseURL: String = "http://192.168.1.100:8765"
-```
 
 ## Architecture
 
@@ -223,42 +198,9 @@ For development, change base URL in `SettingsView` or:
 - **ViewModels**: Business logic + state management
 - **Services**: API calls, WebSocket, Keychain
 
-### State Management
-
-- `@StateObject`: ViewModel lifecycle
-- `@ObservedObject`: ViewModel passed from parent
-- `@EnvironmentObject`: App-wide services (APIService)
-- `@AppStorage`: Simple persisted settings
-- `Keychain`: Sensitive data (tokens)
-
 ### Async/Await
 
-All API calls use Swift concurrency:
-
-```swift
-Task {
-    let bots = try await apiService.listBots()
-    // Update UI
-}
-```
-
-## Future Enhancements
-
-- [ ] Push notifications (APNs)
-- [ ] Voice call support (OpenAI Realtime API)
-- [ ] E2E encryption for sensitive data
-- [ ] iPad-optimized layout
-- [ ] Rich message formatting (markdown, code blocks)
-- [ ] File upload/download
-- [ ] Biometric authentication
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test on iOS Simulator + physical device
-5. Submit a pull request
+All API calls use Swift concurrency via `NARNAAPIService`.
 
 ## License
 
@@ -268,7 +210,6 @@ MIT License - see [LICENSE](../../LICENSE) file
 
 - **Documentation**: [docs/MOBILE-API.md](../../docs/MOBILE-API.md)
 - **Issues**: https://github.com/narna/narna/issues
-- **Discord**: https://discord.gg/narna
 
 ---
 

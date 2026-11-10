@@ -9,12 +9,14 @@ import SwiftUI
 
 struct BotListView: View {
     @StateObject private var viewModel = BotListViewModel()
-    @State private var showSettings = false
+    @EnvironmentObject var apiService: NARNAAPIService
     @State private var selectedBot: BotInfo?
     
     var body: some View {
         NavigationView {
             ZStack {
+                Color(.systemGroupedBackground).ignoresSafeArea()
+                
                 if viewModel.isLoading && viewModel.bots.isEmpty {
                     ProgressView("Loading bots...")
                 } else if viewModel.bots.isEmpty {
@@ -44,17 +46,7 @@ struct BotListView: View {
                     }
                 }
             }
-            .navigationTitle("NARNA Bots")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showSettings = true }) {
-                        Image(systemName: "gear")
-                    }
-                }
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView()
-            }
+            .navigationTitle("Bots")
             .sheet(item: $selectedBot) { bot in
                 ChatView(bot: bot)
             }
@@ -70,7 +62,13 @@ struct BotListView: View {
             .onDisappear {
                 viewModel.stopAutoRefresh()
             }
+            .onChange(of: viewModel.pendingApprovals.count) { count in
+                if count > apiService.inboxPendingCount {
+                    apiService.inboxPendingCount = count
+                }
+            }
         }
+        .navigationViewStyle(.stack)
     }
 }
 
@@ -100,9 +98,10 @@ struct BotCard: View {
                     .foregroundColor(.secondary)
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 8, y: 2)
     }
     
     private func formatDate(_ isoString: String) -> String {
@@ -204,4 +203,5 @@ struct EmptyBotsView: View {
 
 #Preview {
     BotListView()
+        .environmentObject(NARNAAPIService.shared)
 }
