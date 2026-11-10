@@ -1,7 +1,11 @@
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html
-fastlane/screenshots/**/*.png
+# store submission screenshots tracked:
+!# tracked for store submission
+!fastlane/screenshots/**/*.png
+# # tracked for store submission
+!fastlane/screenshots/**/*.png
 fastlane/test_output
 fastlane/.env
 .env

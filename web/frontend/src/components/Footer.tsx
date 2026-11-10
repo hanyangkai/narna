@@ -43,6 +43,8 @@ export default function Footer() {
             Discord
           </a>
           <Link to="/docs/quickstart">Quickstart</Link>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/support">Support</Link>
           <Link to="/enterprise">Enterprise</Link>
         </div>
       </div>

@@ -1,0 +1,1 @@
+First release: pair Desktop NARNA bot by QR, chat, inbox Allow/Deny, dual-path AI (CLI/BYOK or NARNA Pro).
