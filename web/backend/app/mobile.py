@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import secrets
+import sys
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -14,9 +17,16 @@ from sqlalchemy.orm import Session
 
 from .auth import get_org_from_api_key
 from .database import get_db
-from .models import Organization
+from .models import ApprovalRequest, MobileDevice, Organization
+from .redis_client import get_pairing_code, store_pairing_code
+from .websocket_manager import get_ws_manager
 
 router = APIRouter()
+
+# Add UAP/NARNA agent runtime to path
+_src_path = Path(__file__).resolve().parent.parent.parent.parent / "src"
+if _src_path.exists() and str(_src_path) not in sys.path:
+    sys.path.insert(0, str(_src_path))
 
 
 # ── Pairing Models ──
