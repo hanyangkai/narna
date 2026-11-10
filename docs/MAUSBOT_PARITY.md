@@ -9,13 +9,15 @@
 | QR / code pairing | ✅ | ✅ | Done |
 | Bot list + chat | ✅ | ✅ | Done |
 | Approval Allow/Deny | ✅ | ✅ | Done |
-| Cross-bot Inbox | ✅ | ✅ | API + UI (agents) |
-| Routines / schedule | ✅ | ✅ | API + UI (agents) |
-| Voice / Live call | ✅ | ✅ | Session API + UI shell (Realtime key BYOK) |
+| Cross-bot Inbox | ✅ | ✅ | API + iOS/Android tabs |
+| Routines / schedule | ✅ | ✅ | API + iOS/Android tabs |
+| Voice / Live call | ✅ | ✅ | Session API + UI shell (Realtime BYOK later) |
 | Remote (Tailscale / HTTPS) | ✅ | ✅ | Config API + Settings |
 | Connected apps | ✅ | ✅ | Placeholder connect (OAuth later) |
-| Push approvals | ✅ | ✅ | Device register API (APNs/FCM wire later) |
+| Push approvals | ✅ | ✅ | Register API + Settings toggle (APNs/FCM later) |
+| 5-tab shell (Bots/Inbox/Routines/Voice/Settings) | ✅ | ✅ | iOS `edacaf5` · Android `381115f` |
 | Multi-bot channels | ✅ | 🟡 | Multi-bot list; channel rooms TBD |
+| Pricing (web=app) | — | ✅ | Free / Pro $20 / Team $99 — `PRICING-UNIFIED.md` |
 
 ## New APIs (`web/backend/app/mobile_parity.py`)
 
