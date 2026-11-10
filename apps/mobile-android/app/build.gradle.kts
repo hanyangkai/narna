@@ -118,6 +118,9 @@ dependencies {
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
 
+    // Security - Encrypted SharedPreferences
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
