@@ -30,6 +30,29 @@ def _migrate_schema() -> None:
 
     insp = inspect(engine)
     tables = insp.get_table_names()
+    
+    # Add mobile_devices table columns if needed
+    if "mobile_devices" in tables:
+        cols = {c["name"] for c in insp.get_columns("mobile_devices")}
+        alterations = []
+        if "last_seen_at" not in cols:
+            col_type = "DATETIME" if DATABASE_URL.startswith("sqlite") else "TIMESTAMP WITH TIME ZONE"
+            alterations.append(f"ADD COLUMN last_seen_at {col_type}")
+        if alterations:
+            with engine.begin() as conn:
+                for clause in alterations:
+                    conn.execute(text(f"ALTER TABLE mobile_devices {clause}"))
+    
+    # Add approval_requests table columns if needed
+    if "approval_requests" in tables:
+        cols = {c["name"] for c in insp.get_columns("approval_requests")}
+        alterations = []
+        if "session_id" not in cols:
+            alterations.append("ADD COLUMN session_id VARCHAR(128)")
+        if alterations:
+            with engine.begin() as conn:
+                for clause in alterations:
+                    conn.execute(text(f"ALTER TABLE approval_requests {clause}"))
 
     if "payment_invoices" in tables:
         cols = {c["name"] for c in insp.get_columns("payment_invoices")}
