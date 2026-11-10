@@ -1,31 +1,32 @@
-# User AI connect flow — External AI vs NARNA Pro
+# User AI connect flow — Agent bot model
 
-## Two ways to use AI Agent
+Canonical overview: [`docs/AGENT-BOT-MODEL.md`](./AGENT-BOT-MODEL.md)
+
+## Two ways to power the bot
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  PATH A — AI ngoài (MausBot-style)                      │
-│  Claude Pro / ChatGPT sub hoặc API key trên Desktop     │
-│  → Pair app phone (QR)                                  │
-│  → User trả phí model cho Anthropic/OpenAI              │
+│  PATH A — Your AI on Desktop (default · MausBot-style)  │
+│  Claude Code CLI / Codex CLI (subscription) or API key  │
+│  → Pair phone (QR)                                      │
+│  → You pay Anthropic / OpenAI for model use             │
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
-│  PATH B — Mua NARNA Pro (App Store / Play only)         │
-│  Mở cloud always-on, inbox, routines, voice, sync       │
-│  → Gắn API key vào cloud (Settings) để agent chạy       │
-│    khi máy tắt  HOẶC  vẫn pair Desktop CLI              │
-│  → NARNA Pro ≠ hết phí Claude/GPT (vẫn BYOK)            │
+│  PATH B — NARNA Pro (App Store / Play / web crypto)     │
+│  Cloud always-on, inbox, routines, voice, sync          │
+│  → Still attach BYOK for tokens when cloud runs         │
+│  → NARNA Pro ≠ Claude/GPT subscription                  │
 └─────────────────────────────────────────────────────────┘
 ```
 
-## What happens when user downloads the app
+## What happens when user opens the app
 
-1. **Không** tự login Claude/ChatGPT trong app.  
-2. Onboarding hiện **2 thẻ**: Dùng AI của bạn · Mua NARNA Pro.  
-3. Path A → hướng dẫn Desktop login CLI → Pair QR.  
-4. Path B → Subscribe Apple/Google → (optional) dán API key cloud.  
-5. Desktop mở pairing có thể gọi `POST /v1/mobile/pairing/invite` để chuẩn bị push “Sẵn sàng ghép nối”.
+1. **No** Claude/ChatGPT login inside the mobile app.  
+2. Onboarding shows **2 cards**: Use your AI · Subscribe NARNA Pro.  
+3. Path A → Desktop: CLI login → Pair QR.  
+4. Path B → Apple/Google (or web crypto) → optional cloud API key.  
+5. Desktop can `POST /v1/mobile/pairing/invite` to nudge the phone.
 
 ## APIs
 
@@ -39,11 +40,11 @@
 
 ## Money
 
-| Ai thu | Cái gì |
-|--------|--------|
-| Anthropic / OpenAI | Token / subscription model |
-| Apple / Google → NARNA | Pro $19.99/mo · Team seats |
-| Web crypto | Pro/Team trên web only — **không** trong app |
+| Who bills | For what |
+|-----------|----------|
+| Anthropic / OpenAI | Model tokens / CLI subscription |
+| Apple / Google → NARNA | Pro hosting on mobile |
+| Web crypto → NARNA | Pro/Team on web only — **not** inside apps |
 
 ## Desktop CLI (Path A)
 

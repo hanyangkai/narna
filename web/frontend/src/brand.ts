@@ -1,54 +1,54 @@
-/** NARNA — Better decisions for AI agents. */
+/** NARNA — Open-source AI agent bot. */
 
 export const BRAND = {
   name: "NARNA",
   expand: "Neural Autonomous Rules Native Architecture",
   letters: ["Neural", "Autonomous", "Rules", "Native", "Architecture"] as const,
-  /** Public category */
-  tagline: "AI Agents can act. NARNA makes them decide better.",
-  categoryFull: "Decision Quality Infrastructure for AI Agents",
+  /** Public category — agent bot first */
+  tagline: "Open-source AI agent bot. Desktop brain. Phone remote. ADQA before it acts.",
+  categoryFull: "Open-source AI Agent Bot + Decision Quality (ADQA)",
   productCore: "ADQA",
   productCoreExpand: "Autonomous Decision Quality Assurance",
-  altTagline: "NARNA Agent — better decisions. NARNA ADQA — for any agent.",
+  altTagline: "Run Claude / Codex on Desktop. Control from your phone. Every action scored.",
   heroTitle: "NARNA",
-  heroLead: "AI Agents can act. NARNA makes them decide better.",
+  heroLead: "Your AI agent bot — on your machine.",
   heroSub:
-    "Open-source AI Agent and Decision Quality Assurance infrastructure that helps agents reason, verify, evaluate risk, and learn from outcomes.",
+    "Like MausBot: Desktop runs Claude CLI or Codex CLI (your subscription) or BYOK. Pair the phone. ADQA scores risky actions before they execute.",
   northStar:
-    "Every autonomous decision is evidence-based, policy-compliant, risk-aware, and human-aligned.",
-  primary: "Sell better decisions. Agent is the door. ADQA is the difference.",
+    "Every autonomous action is evidence-based, policy-compliant, risk-aware, and human-approved when needed.",
+  primary: "Ship the agent bot. ADQA is why it is safer than a raw CLI.",
   oneLiner:
-    "NARNA is an AI Agent that can quality-check its own decisions — and ADQA can protect other agents too.",
+    "NARNA is an open-source agent bot: Desktop engines + mobile remote + ADQA decision gate.",
   mission:
-    "Make Decision Quality the standard for AI agents — the way CI became the standard for shipping code.",
+    "Make open agent bots usable day-to-day — with decision quality as the default safety layer.",
   vision:
-    "Make ADQA the quality standard for autonomous decisions — the way SSL became the security standard for the Internet.",
+    "Every personal and team agent bot verifies before it acts — the way CI verifies before you ship.",
   elevator:
-    "NARNA Agent does the work. NARNA ADQA scores whether the decision was good enough to act on. Decision Memory compounds lessons. Use NARNA Agent — or bring your own.",
+    "Install NARNA Desktop. Login Claude or Codex CLI (or paste an API key). Pair your phone. The bot works; ADQA decides when to ask you first.",
   contrast:
-    "Other agents optimize for tool count. NARNA optimizes for decision quality.",
-  cognitive: "Think → Verify → Decide → Learn.",
-  adqa: "Autonomous Decision Quality Assurance — wrap any agent.",
+    "Other bots maximize tools. NARNA bots maximize correct action — ACT / REVIEW / REJECT.",
+  cognitive: "Chat → Plan → ADQA → Act → Learn.",
+  adqa: "Autonomous Decision Quality Assurance — brake before shell, spend, or send.",
   decisionIntelligence: "Decision Intelligence — DQS is the KPI.",
-  enterprise: "Trust Every Agentic Decision.",
-  decisionOs: "Connect data. Score decisions. Keep humans in control.",
+  enterprise: "Trust every agentic action.",
+  decisionOs: "Connect channels. Score decisions. Keep humans in control.",
   guardian: "Decision Guardian: ACT · REVIEW · REJECT.",
   technical:
     "Evidence. Policy. Context. Memory. Risk. Alignment. Capability. Compliance. Confidence. Explanation.",
-  community: "Open quality standard for autonomous decisions.",
-  category: "AI Agent + ADQA + Decision Memory — Trace · Replay · Learn.",
-  closing:
-    "The next generation of AI won't just act. It will know when it should.",
+  community: "MIT open-source agent bot — Desktop, gateway, ADQA, mobile companion.",
+  category: "Agent Bot · Desktop CLI · Mobile Remote · ADQA · Social Gateway.",
+  closing: "An agent that can act — and knows when to wait for you.",
   github: "https://github.com/hanyangkai/narna",
   discord: "https://discord.gg/narna",
   emailEnterprise: "enterprise@narna.ai",
+  modelDoc: "https://github.com/hanyangkai/narna/blob/main/docs/AGENT-BOT-MODEL.md",
 } as const;
 
 /** Open standard (public). Formerly UAP workflow name. */
 export const SPEC = {
   name: "UGS",
   expand: "Universal Governance Specification",
-  install: "pip install narna",
+  install: 'pip install "narna[desktop]"',
   sdkPackage: "narna",
   pillars: ["Identity", "Governance", "Evidence", "Trust"] as const,
 } as const;
@@ -85,21 +85,21 @@ export const AGENTIC_TREND = [
   { year: "2023", label: "LLM" },
   { year: "2024", label: "RAG" },
   { year: "2025", label: "AI Agents" },
-  { year: "2026+", label: "Decision Quality" },
+  { year: "2026+", label: "Agent Bots + Decision Quality" },
 ] as const;
 
 export const AGENTIC_TRAITS = [
-  "Multi-Agent",
-  "Long-running Tasks",
-  "Memory",
-  "Planning",
+  "Desktop Bot",
+  "Mobile Remote",
+  "CLI Subscription Path",
+  "BYOK",
   "Human Approval",
   "Tool Calling",
-  "Autonomous Workflow",
+  "Social Channels",
 ] as const;
 
 export const AGENTIC_QUESTIONS = [
-  "Is this decision evidence-based?",
+  "Is this action safe to run?",
   "What is the DQS?",
   "Who may approve?",
   "What is the risk?",
@@ -133,53 +133,49 @@ export const MARKETPLACE_PACKAGES = [
 export const POSITIONING = [
   { company: "OpenAI", owns: "Intelligence" },
   { company: "Anthropic", owns: "Safety models" },
-  { company: "NVIDIA", owns: "Compute" },
+  { company: "MausBot", owns: "Mobile remote + CLI engines" },
+  { company: "Hermes / OpenClaw", owns: "Agent runtimes" },
   { company: "LangGraph", owns: "Agent orchestration" },
-  { company: "CrewAI", owns: "Multi-agent crews" },
-  { company: "n8n", owns: "Workflow automation" },
-  { company: "Docker", owns: "Containers" },
-  { company: "Kubernetes", owns: "Orchestration" },
-  { company: "OpenTelemetry", owns: "Observability" },
   { company: "MCP", owns: "Tool protocol" },
-  { company: "NARNA", owns: "Decision Quality (ADQA)" },
+  { company: "NARNA", owns: "Agent bot + ADQA decision gate" },
 ] as const;
 
 export const PRODUCT_FAMILY = [
+  "NARNA Desktop Bot",
+  "Mobile Companion",
   "ADQA Core (DQS)",
   "Decision Guardian",
-  "Decision OS",
-  "Decision Packages",
-  "NARNA Runtime",
+  "Social Gateway",
   "NARNA SDK / CLI",
-  "Guardian Network",
-  "UGS Passport",
-  "NARNA Cloud",
+  "Hosted MCP",
+  "NARNA Cloud (Pro)",
   "NARNA Enterprise",
 ] as const;
 
 export const COMPATIBILITY = [
+  "Claude Code CLI",
+  "Codex CLI",
   "OpenAI",
   "Anthropic",
   "Google",
   "LangGraph",
   "CrewAI",
-  "AutoGen",
-  "Semantic Kernel",
-  "LlamaIndex",
   "MCP",
-  "CMEM",
-  "OpenTelemetry",
   "OpenClaw",
+  "Hermes",
+  "Telegram",
+  "WhatsApp",
+  "Discord",
   "Docker",
-  "Kubernetes",
 ] as const;
 
 /** Pricing — Desktop free forever; Pro = Cloud Brain */
 export const PRICING = {
-  tagline: "Desktop agent free forever. Pro is your cloud brain.",
+  tagline: "Desktop agent bot free forever. Pro keeps it always-on.",
   subline:
-    "Full agent on Mac/Windows — unlimited, BYOK, no account. Pro adds backup, sync, hosted MCP, and always-on cloud.",
-  philosophy: "Local agent free. Pro unlocks connectivity — not features removed from Desktop.",
+    "Full bot on Mac/Windows — Claude CLI, Codex CLI, or BYOK. Phone pairs by QR. Pro adds cloud brain, sync, and always-on channels.",
+  philosophy:
+    "Local bot free. Model cost stays with your Claude/GPT subscription or API key. Pro unlocks cloud — not a Claude substitute.",
   unit: "agent turns",
   freeFirst: true,
   plans: [
@@ -188,15 +184,15 @@ export const PRICING = {
       name: "Free",
       price: "$0",
       period: "",
-      limit: "Desktop unlimited · Cloud unlimited Ask (BYOK only)",
+      limit: "Desktop unlimited · pair phone · BYOK / CLI",
       retention: "Local ~/.narna · forever",
       features: [
-        "Full Desktop agent (Mac + Windows)",
-        "All tools · ADQA · Decision Memory · BYOK",
-        "Cloud Ask (unlimited with BYOK)",
-        "Hosted MCP (100 ADQA/mo)",
+        "Full Desktop agent bot (Mac + Windows)",
+        "Claude CLI · Codex CLI · BYOK keys",
+        "ADQA · Decision Memory · tools",
+        "Mobile pair (QR) · social gateway",
       ],
-      cta: "Download free",
+      cta: "Download Desktop",
       ctaTo: "/download",
       featured: true,
     },
@@ -205,16 +201,15 @@ export const PRICING = {
       name: "Pro",
       price: "$20",
       period: "/mo",
-      limit: "USDC / USDT · 5 EVM chains",
-      retention: "Cloud backup · 1yr traces · multi-device",
+      limit: "Web USDC/USDT · App Store / Play on mobile",
+      retention: "Cloud backup · sync · always-on",
       features: [
-        "Cloud Memory Backup & sync (Desktop ↔ cloud)",
-        "Hosted MCP — Cursor / Claude Code ADQA",
-        "Quality & Critical modes on web Ask",
-        "Recurring cloud jobs · always-on channels",
-        "20k Ask turns/mo · 10k ADQA/mo",
+        "Cloud brain when PC is off",
+        "Inbox · routines · voice · push",
+        "Hosted MCP for Cursor / Claude Code",
+        "Still BYOK for model tokens",
       ],
-      cta: "Pay with USDC",
+      cta: "Get Pro",
       ctaTo: "/checkout",
       featured: false,
       comingSoon: false,
@@ -224,12 +219,12 @@ export const PRICING = {
       name: "Team",
       price: "$99",
       period: "/seat/mo",
-      limit: "Min 3 seats · max 50 · USDC/USDT",
-      retention: "Shared Decision Brain · org inbox · shared bots",
+      limit: "Min 3 seats · max 50",
+      retention: "Shared bots · org inbox",
       features: [
         "Everything in Pro",
         "Shared bots + cross-seat approvals",
-        "Org cloud quotas (Team caps)",
+        "Org cloud quotas",
         "Mobile + web same entitlement",
       ],
       cta: "Get Team",
@@ -241,10 +236,10 @@ export const PRICING = {
   enterpriseNote:
     "Business $199/mo · Enterprise custom (SSO · on-prem · SLA). Same plan IDs on web and mobile — see docs/PRICING-UNIFIED.md.",
   whyUpgrade: [
-    "Desktop stays free: full agent, unlimited local use, BYOK — no license ever.",
-    "Pro $20/mo = Cloud Brain: backup, sync phone + PC, hosted MCP, routines, always-on.",
-    "Team $99/seat = shared bots + org approvals (web checkout; app restores same plan).",
-    "One entitlement everywhere: GET /v1/billing/status — Free · Pro (cloud) · Team · Business.",
+    "Desktop stays free: full agent bot, CLI or BYOK — no NARNA license fee.",
+    "Claude / ChatGPT Pro subscriptions work via Desktop CLI — not inside the mobile app.",
+    "Pro $20/mo = cloud brain: always-on, sync phone + PC, hosted MCP, routines.",
+    "Team $99/seat = shared bots + org approvals.",
   ],
   revenueStreams: [
     "Pro $20/mo — web USDC/USDT · iOS App Store · Android Play Billing",
