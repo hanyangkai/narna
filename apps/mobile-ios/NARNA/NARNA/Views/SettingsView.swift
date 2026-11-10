@@ -29,10 +29,24 @@ struct SettingsView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     
+    // AI Providers
+    @State private var aiProviders: [AIProviderInfo] = []
+    @State private var providersNote: String?
+    @State private var isLoadingProviders = false
+    @State private var draftKeys: [String: String] = [:]
+    @State private var savingProviderId: String?
+    @State private var clearingProviderId: String?
+    
+    // Subscription
+    @State private var subscriptionProducts: [SubscriptionProduct] = []
+    @State private var manageSubscriptionsURL = "https://apps.apple.com/account/subscriptions"
+    @State private var isLoadingProducts = false
+    
     var body: some View {
         NavigationView {
             Form {
                 connectionSection
+                aiProvidersSection
                 subscriptionSection
                 remoteAccessSection
                 connectedAppsSection
@@ -65,6 +79,8 @@ struct SettingsView: View {
                 apiBaseURL = apiService.baseURL
                 loadRemoteStatus()
                 loadConnectedApps()
+                loadAIProviders()
+                loadSubscriptionProducts()
             }
         }
         .navigationViewStyle(.stack)
@@ -72,20 +88,129 @@ struct SettingsView: View {
     
     // MARK: - Sections
 
+    private var aiProvidersSection: some View {
+        Section {
+            if isLoadingProviders && aiProviders.isEmpty {
+                ProgressView()
+            } else if aiProviders.isEmpty {
+                Text("Pair device để cấu hình API key cho cloud agent.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(aiProviders) { provider in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 10) {
+                            Image(systemName: provider.systemIcon)
+                                .foregroundColor(.accentColor)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(provider.name)
+                                    .font(.body.weight(.semibold))
+                                Text(provider.hint)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            Text(provider.connected ? "Connected" : "Not set")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(provider.connected ? .green : .secondary)
+                        }
+                        
+                        if let masked = provider.maskedKey, provider.connected {
+                            LabeledContent("Key", value: masked)
+                                .font(.caption)
+                        }
+                        
+                        SecureField("Paste API key", text: bindingForProviderKey(provider.id))
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .textContentType(.password)
+                        
+                        HStack {
+                            Button {
+                                saveProviderKey(provider)
+                            } label: {
+                                if savingProviderId == provider.id {
+                                    ProgressView()
+                                } else {
+                                    Text("Save")
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(
+                                savingProviderId != nil
+                                || clearingProviderId != nil
+                                || (draftKeys[provider.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).count < 8
+                            )
+                            
+                            if provider.connected {
+                                Button(role: .destructive) {
+                                    clearProviderKey(provider)
+                                } label: {
+                                    if clearingProviderId == provider.id {
+                                        ProgressView()
+                                    } else {
+                                        Text("Clear")
+                                            .font(.subheadline.weight(.semibold))
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(savingProviderId != nil || clearingProviderId != nil)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        } header: {
+            Text("AI Providers")
+        } footer: {
+            Text(providersNote ?? "CLI subscription (Claude/ChatGPT) ở trên Desktop. API key lưu cho cloud agent — không log ra client.")
+        }
+    }
+    
     private var subscriptionSection: some View {
         Section {
-            LabeledContent("Pro", value: "$19.99/mo · $159.99/yr")
-            LabeledContent("Team", value: "$99.99/seat/mo")
+            if isLoadingProducts && subscriptionProducts.isEmpty {
+                ProgressView()
+            } else if subscriptionProducts.isEmpty {
+                LabeledContent("Pro", value: "$19.99/mo · $159.99/yr")
+                LabeledContent("Team", value: "$99.99/seat/mo")
+            } else {
+                ForEach(subscriptionProducts) { product in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(product.title)
+                                .font(.body.weight(.semibold))
+                            Spacer()
+                            Text("\(product.price)\(product.periodLabel)")
+                                .font(.subheadline.weight(.bold))
+                        }
+                        if let includes = product.includes, !includes.isEmpty {
+                            Text(includes.joined(separator: " · "))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            
             Text("Subscriptions are billed only through the App Store. Crypto and web USDC/USDT checkout are not available in this app.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Button("Manage in App Store") {
-                if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+            
+            Button("Subscribe / Manage in App Store") {
+                if let url = URL(string: manageSubscriptionsURL) {
                     UIApplication.shared.open(url)
                 }
             }
         } header: {
             Text("Subscription")
+        } footer: {
+            Text("After purchasing Pro, attach your Claude/OpenAI API key in AI Providers so the cloud agent can run.")
         }
     }
     
@@ -247,6 +372,88 @@ struct SettingsView: View {
     }
     
     // MARK: - Actions
+    
+    private func bindingForProviderKey(_ providerId: String) -> Binding<String> {
+        Binding(
+            get: { draftKeys[providerId] ?? "" },
+            set: { draftKeys[providerId] = $0 }
+        )
+    }
+    
+    private func loadAIProviders() {
+        isLoadingProviders = true
+        Task {
+            do {
+                let response = try await apiService.listAIProviders()
+                aiProviders = response.providers
+                providersNote = response.note
+                isLoadingProviders = false
+            } catch {
+                isLoadingProviders = false
+            }
+        }
+    }
+    
+    private func saveProviderKey(_ provider: AIProviderInfo) {
+        let key = (draftKeys[provider.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard key.count >= 8 else { return }
+        savingProviderId = provider.id
+        Task {
+            do {
+                let response = try await apiService.configureAIProvider(
+                    providerId: provider.id,
+                    apiKey: key
+                )
+                draftKeys[provider.id] = ""
+                let refreshed = try await apiService.listAIProviders()
+                aiProviders = refreshed.providers
+                providersNote = refreshed.note
+                savingProviderId = nil
+                statusMessage = response.message ?? "API key saved (\(response.maskedKey ?? "••••"))"
+                showStatus = true
+            } catch {
+                savingProviderId = nil
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func clearProviderKey(_ provider: AIProviderInfo) {
+        clearingProviderId = provider.id
+        Task {
+            do {
+                _ = try await apiService.clearAIProvider(providerId: provider.id)
+                draftKeys[provider.id] = ""
+                let refreshed = try await apiService.listAIProviders()
+                aiProviders = refreshed.providers
+                providersNote = refreshed.note
+                clearingProviderId = nil
+                statusMessage = "Cleared \(provider.name) key"
+                showStatus = true
+            } catch {
+                clearingProviderId = nil
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func loadSubscriptionProducts() {
+        isLoadingProducts = true
+        Task {
+            do {
+                let response = try await apiService.getSubscriptionProducts()
+                subscriptionProducts = response.products
+                if let ios = response.manageUrls?.ios, !ios.isEmpty {
+                    manageSubscriptionsURL = ios
+                }
+                isLoadingProducts = false
+            } catch {
+                isLoadingProducts = false
+            }
+        }
+    }
     
     private func saveBaseURL(_ url: String) {
         let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)

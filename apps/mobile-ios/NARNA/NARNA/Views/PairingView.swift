@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PairingView: View {
     @Binding var isPaired: Bool
+    var onBack: (() -> Void)? = nil
     @StateObject private var viewModel = PairingViewModel()
     @State private var showScanner = false
     @State private var isScanning = false
@@ -93,6 +94,15 @@ struct PairingView: View {
             }
             .navigationTitle("Pairing")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let onBack {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Back") {
+                            onBack()
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showScanner) {
                 QRScannerSheet(
                     isScanning: $isScanning,
