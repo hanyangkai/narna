@@ -4,10 +4,9 @@ import { BRAND } from "../brand";
 
 const links = [
   { to: "/how-it-works", label: "How it works" },
-  { to: "/ask", label: "Agent" },
   { to: "/download", label: "Desktop" },
   { to: "/docs", label: "Docs" },
-  { to: "/pricing", label: "Free" },
+  { to: "/pricing", label: "Pricing" },
 ];
 
 export default function Nav() {
@@ -53,28 +52,38 @@ export default function Nav() {
               ))}
             </div>
             <div className="nav-actions">
-              <Link to="/checkout" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Get Pro $20
-              </Link>
-              <Link to="/signup" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Sign up free
-              </Link>
-              <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
-                Download free
-              </Link>
-              <a href={BRAND.github} target="_blank" rel="noreferrer" className="btn btn-secondary">
+              <a
+                href={BRAND.github}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary"
+                onClick={() => setOpen(false)}
+              >
                 GitHub
               </a>
+              <Link to="/download" className="btn btn-primary" onClick={() => setOpen(false)}>
+                Download bot
+              </Link>
             </div>
           </>
         )}
         {isConsole && (
           <div className={`nav-links ${open ? "nav-links-open" : ""}`}>
-            <Link to="/docs" onClick={() => setOpen(false)}>Docs</Link>
-            <Link to="/console" onClick={() => setOpen(false)}>Sessions</Link>
-            <Link to="/console/decision" onClick={() => setOpen(false)}>Decision</Link>
-            <Link to="/console/guardian" onClick={() => setOpen(false)}>Guardian</Link>
-            <Link to="/billing" onClick={() => setOpen(false)}>Billing</Link>
+            <Link to="/docs" onClick={() => setOpen(false)}>
+              Docs
+            </Link>
+            <Link to="/console" onClick={() => setOpen(false)}>
+              Sessions
+            </Link>
+            <Link to="/console/decision" onClick={() => setOpen(false)}>
+              Decision
+            </Link>
+            <Link to="/console/guardian" onClick={() => setOpen(false)}>
+              Guardian
+            </Link>
+            <Link to="/billing" onClick={() => setOpen(false)}>
+              Billing
+            </Link>
           </div>
         )}
       </div>

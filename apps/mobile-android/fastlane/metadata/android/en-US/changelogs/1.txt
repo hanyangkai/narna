@@ -1,0 +1,1 @@
+First release: Desktop agent bot remote, QR pair, inbox Allow/Deny, dual-path AI, NARNA Pro via Play Billing.

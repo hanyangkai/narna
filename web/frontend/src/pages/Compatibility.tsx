@@ -59,11 +59,7 @@ export default function Compatibility() {
           {COMPATIBILITY.map((name) => (
             <div key={name} className="card feature-card">
               <h3>{name}</h3>
-              <p>
-                {name === "CMEM"
-                  ? "Continuity memory feedstock → ADQA memory attribute + lessons."
-                  : `Extend via adapter · ADQA optional (NARNA_ADQA=1).`}
-              </p>
+              <p>Extend via adapter · ADQA optional (`NARNA_ADQA=1`).</p>
             </div>
           ))}
         </div>

@@ -1,0 +1,18 @@
+NARNA is an open-source AI agent bot remote for your phone.
+
+Desktop runs the bot — Claude Code CLI, Codex CLI, or your own API key (BYOK). Pair with QR. Chat, approve risky actions, and stay in control with ADQA (ACT / REVIEW / REJECT).
+
+FEATURES
+• Pair Desktop or cloud bots by QR
+• Chat with your agent in real time (WebSocket)
+• Inbox Allow / Deny for shell, files, and tools
+• Routines and voice controls
+• Dual-path setup: your AI on Desktop, or NARNA Pro cloud hosting
+• Secure local storage for tokens
+
+YOUR AI, YOUR BILL
+• Claude / ChatGPT subscriptions work via Desktop CLI — not a login inside this app
+• Optional NARNA Pro (App Store) keeps the bot always-on; model tokens stay BYOK
+
+FREE & OPEN SOURCE (MIT)
+narna.org · github.com/hanyangkai/narna

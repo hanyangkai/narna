@@ -1,21 +1,25 @@
 # About NARNA
 
-## Standalone AI project
+## Standalone open-source AI agent bot
 
-**NARNA** is an independent open-source AI agent and decision-quality platform.
+**NARNA** is an independent **MIT open-source AI agent bot**:
+
+- **Desktop** runs the bot (Claude Code CLI / Codex CLI subscription, or BYOK API keys)
+- **Phone / social channels** remote it
+- **ADQA** scores actions before they execute
 
 It is **not** the 99X exchange, not a trading product, and not maintained inside the 99X monorepo.
 
 | Project | Focus |
 |---------|--------|
-| **NARNA** ([narna.org](https://narna.org), [github.com/hanyangkai/narna](https://github.com/hanyangkai/narna)) | AI agents, ADQA, social gateway, UGS governance |
+| **NARNA** ([narna.org](https://narna.org), [github.com/hanyangkai/narna](https://github.com/hanyangkai/narna)) | Agent bot, ADQA, social gateway, mobile companion |
 | **99X** | Perpetual DEX, mobile apps, off-chain engine |
 
-Some teams reuse the name "NARNA" internally for research agents — that is a **separate concept**. This repository is the canonical NARNA product.
+Canonical model: [`docs/AGENT-BOT-MODEL.md`](./AGENT-BOT-MODEL.md)
 
 ## Mission
 
-Build agents that **act** like Hermes/OpenClaw and **decide** with measurable quality (ADQA).
+Ship an agent bot people can run like MausBot — and make **decision quality** the default safety layer.
 
 ## Maintainer
 
