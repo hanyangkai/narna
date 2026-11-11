@@ -190,7 +190,7 @@ struct NoKeyEmptyState: View {
                 .foregroundStyle(Color.accentColor)
             Text("Add your API key to start")
                 .font(.title2.bold())
-            Text("NaNa Bot uses your own OpenAI or Anthropic key. The key is stored only in this iPhone's Keychain and requests go directly to the provider you choose.")
+            Text("NaNa Bot works with your own API key from OpenAI, Anthropic, OpenRouter, ckey.vn, Groq, DeepSeek, Gemini, xAI, Together, Mistral or any OpenAI-compatible service. The key is stored only in this iPhone's Keychain and requests go directly to the provider you choose.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

@@ -58,7 +58,7 @@ final class AIChatViewModel: ObservableObject {
 
     private func config() throws -> LLMRequestConfig {
         guard let key = settings.apiKey ?? (LLMService.shared.isMockMode ? "mock" : nil) else { throw LLMError.missingKey }
-        if settings.provider == .openaiCompatible, URL(string: settings.baseURL)?.scheme?.hasPrefix("http") != true {
+        if URL(string: settings.baseURL)?.scheme?.hasPrefix("http") != true {
             throw LLMError.invalidBaseURL
         }
         return LLMRequestConfig(provider: settings.provider, model: settings.model.trimmingCharacters(in: .whitespaces),

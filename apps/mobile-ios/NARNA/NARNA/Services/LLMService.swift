@@ -72,12 +72,35 @@ final class LLMService {
     func complete(config: LLMRequestConfig, system: String, turns: [LLMTurn], maxTokens: Int = 1500) async throws -> String {
         if isMockMode { return try await MockLLM.reply(system: system, turns: turns) }
         guard !config.apiKey.isEmpty else { throw LLMError.missingKey }
-        switch config.provider {
-        case .anthropic:
+        if config.provider.usesAnthropicAPI {
             return try await anthropic(config: config, system: system, turns: turns, maxTokens: maxTokens)
-        case .openai, .openaiCompatible:
-            return try await openAI(config: config, system: system, turns: turns)
         }
+        return try await openAI(config: config, system: system, turns: turns)
+    }
+
+    // MARK: Model list (GET {base}/models)
+
+    func listModels(provider: LLMProvider, baseURL: String, apiKey: String) async throws -> [String] {
+        if isMockMode { return provider.suggestedModels + ["demo-model-large", "demo-model-small"] }
+        let base = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+        guard let url = URL(string: base + "/models\(provider.usesAnthropicAPI ? "?limit=100" : "")"),
+              url.scheme?.hasPrefix("http") == true else { throw LLMError.invalidBaseURL }
+        var req = URLRequest(url: url)
+        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if provider.usesAnthropicAPI {
+            req.setValue(key, forHTTPHeaderField: "x-api-key")
+            req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        } else if !key.isEmpty {
+            req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        }
+        let json = try await send(req)
+        let items = (json["data"] as? [[String: Any]]) ?? (json["models"] as? [[String: Any]]) ?? []
+        var ids = items.compactMap { ($0["id"] as? String) ?? ($0["name"] as? String) }
+            .map { $0.hasPrefix("models/") ? String($0.dropFirst(7)) : $0 }
+        // Hide obvious non-chat models (embeddings, audio, image, moderation).
+        let skip = ["embed", "whisper", "tts", "dall-e", "moderation", "transcribe", "audio", "image", "rerank", "guard"]
+        ids = ids.filter { id in !skip.contains { id.lowercased().contains($0) } }
+        return Array(Set(ids)).sorted()
     }
 
     // MARK: OpenAI chat completions (also OpenAI-compatible servers)
@@ -110,7 +133,8 @@ final class LLMService {
     // MARK: Anthropic messages API
 
     private func anthropic(config: LLMRequestConfig, system: String, turns: [LLMTurn], maxTokens: Int) async throws -> String {
-        guard let url = URL(string: config.baseURL + "/messages") else { throw LLMError.invalidBaseURL }
+        let base = config.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+        guard let url = URL(string: base + "/messages") else { throw LLMError.invalidBaseURL }
         let body: [String: Any] = [
             "model": config.model,
             "max_tokens": maxTokens,
@@ -144,11 +168,16 @@ final class LLMService {
             throw LLMError.network(error.localizedDescription)
         }
         let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        let raw = try? JSONSerialization.jsonObject(with: data)
+        // Some providers (e.g. Gemini) wrap errors in a top-level array.
+        let json = (raw as? [String: Any]) ?? ((raw as? [[String: Any]])?.first) ?? [:]
         guard (200..<300).contains(code) else {
             let msg = Self.providerMessage(json)
+            let lower = (msg ?? "").lowercased()
+            let keyProblem = lower.contains("api key")
             switch code {
             case 401, 403: throw LLMError.invalidKey(msg)
+            case 400 where keyProblem: throw LLMError.invalidKey(msg)
             case 429: throw LLMError.rateLimited(msg)
             default: throw LLMError.server(code, msg)
             }

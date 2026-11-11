@@ -8,11 +8,21 @@ import SwiftUI
 struct AppSettingsView: View {
     @EnvironmentObject var app: AppState
     @EnvironmentObject var settings: LLMSettings
-    @State private var keyInput = ""
     @State private var showPairing = false
     @State private var showDesktopSettings = false
     @State private var confirmUnpair = false
+
+    // Draft of the single AI configuration (saved with one tap).
+    @State private var draftProvider: LLMProvider = .openai
+    @State private var draftKey = ""
+    @State private var draftModel = ""
+    @State private var draftBaseURL = ""
+    @State private var showAdvanced = false
+    @State private var detectedNote: String?
     @State private var savedFlash = false
+    @State private var loaded = false
+    @State private var suppressProviderReset = false
+    @State private var autoOpenModels = false
 
     private var version: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -20,63 +30,83 @@ struct AppSettingsView: View {
         return "\(v) (\(b))"
     }
 
+    private var effectiveKey: String {
+        let k = draftKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        return k.isEmpty ? (settings.apiKey ?? "") : k
+    }
+
+    private var effectiveBaseURL: String {
+        let o = draftBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        return o.isEmpty ? draftProvider.defaultBaseURL : o
+    }
+
+    private var canSave: Bool {
+        !effectiveKey.isEmpty
+            && !draftModel.trimmingCharacters(in: .whitespaces).isEmpty
+            && URL(string: effectiveBaseURL)?.scheme?.hasPrefix("http") == true
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Provider", selection: Binding(get: { settings.provider },
-                                                          set: { settings.selectProvider($0); keyInput = "" })) {
+                    Picker("Provider", selection: $draftProvider) {
                         ForEach(LLMProvider.allCases) { p in Text(p.displayName).tag(p) }
                     }
-                    if settings.provider == .openaiCompatible {
-                        TextField("Base URL, e.g. https://api.example.com/v1", text: $settings.compatibleBaseURL)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .keyboardType(.URL)
-                    }
-                    if !settings.provider.defaultModels.isEmpty {
-                        Picker("Model", selection: $settings.model) {
-                            ForEach(modelOptions, id: \.self) { Text($0).tag($0) }
-                        }
-                    }
-                    HStack {
-                        Text("Model ID")
-                        TextField("model name", text: $settings.model)
-                            .multilineTextAlignment(.trailing)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .font(.callout.monospaced())
-                    }
-                } header: {
-                    Text("AI Provider")
-                }
-
-                Section {
-                    if settings.hasKey {
-                        HStack {
-                            Label("Key saved in Keychain", systemImage: "checkmark.shield.fill")
-                                .foregroundStyle(.green)
-                            Spacer()
-                            if savedFlash { Text("Saved").font(.caption).foregroundStyle(.secondary) }
-                        }
-                        Button("Remove key", role: .destructive) { settings.removeKey() }
-                    }
-                    SecureField(settings.hasKey ? "Replace key (\(settings.provider.keyPlaceholder))" : "Paste API key (\(settings.provider.keyPlaceholder))",
-                                text: $keyInput)
+                    SecureField(keyPlaceholder, text: $draftKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .textContentType(.password)
-                    Button("Save key") {
-                        settings.saveKey(keyInput)
-                        keyInput = ""
-                        savedFlash = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { savedFlash = false }
+                    if let note = detectedNote {
+                        Label(note, systemImage: "wand.and.stars").font(.caption).foregroundStyle(.secondary)
                     }
-                    .disabled(keyInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    NavigationLink {
+                        ModelPickerView(provider: draftProvider, baseURL: effectiveBaseURL,
+                                        apiKey: effectiveKey, selection: $draftModel)
+                    } label: {
+                        LabeledContent("Model") {
+                            Text(draftModel.isEmpty ? "Choose" : draftModel)
+                                .font(.callout.monospaced()).lineLimit(1)
+                        }
+                    }
+                    if draftProvider == .custom {
+                        TextField("Base URL, e.g. https://api.example.com/v1", text: $draftBaseURL)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    } else {
+                        DisclosureGroup("Advanced", isExpanded: $showAdvanced) {
+                            TextField(draftProvider.defaultBaseURL, text: $draftBaseURL)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                                .font(.callout.monospaced())
+                            Text("Base URL override. Leave empty to use the \(draftProvider.displayName) default.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Button {
+                        saveConfig()
+                    } label: {
+                        HStack {
+                            Text("Save")
+                            Spacer()
+                            if savedFlash { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }
+                        }
+                    }
+                    .disabled(!canSave)
                 } header: {
-                    Text("\(settings.provider.displayName) API Key")
+                    Text("AI Provider & API Key")
                 } footer: {
-                    Text("Your key is stored only in this iPhone's Keychain (this device only, not synced) and is sent only to \(settings.provider == .openaiCompatible ? "the base URL above" : settings.provider.displayName) with your requests. Usage is billed by your provider.")
+                    Text("Pick a provider and paste its API key; the provider is detected from the key when possible. The key is stored only in this iPhone's Keychain (this device only, not synced) and is sent only to the provider you choose. Usage is billed by your provider.")
+                }
+
+                if let c = settings.config {
+                    Section("In use") {
+                        LabeledContent("Provider", value: c.provider.displayName)
+                        LabeledContent("Model") { Text(c.model).font(.callout.monospaced()).lineLimit(1) }
+                        LabeledContent("API key", value: "••••" + String(c.apiKey.suffix(4)))
+                        Button("Remove saved key", role: .destructive) {
+                            settings.clear()
+                            draftKey = ""
+                        }
+                    }
                 }
 
                 Section {
@@ -128,6 +158,23 @@ struct AppSettingsView: View {
             .onChange(of: app.isPaired) { _, paired in
                 if paired { showPairing = false }
             }
+            .onAppear {
+                loadDraft()
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_MODELS") { autoOpenModels = true }
+                #endif
+            }
+            .navigationDestination(isPresented: $autoOpenModels) {
+                ModelPickerView(provider: draftProvider, baseURL: effectiveBaseURL,
+                                apiKey: effectiveKey, selection: $draftModel)
+            }
+            .onChange(of: draftProvider) { _, newValue in
+                if suppressProviderReset { suppressProviderReset = false; return }
+                draftModel = newValue.defaultModel
+                draftBaseURL = ""
+                detectedNote = nil
+            }
+            .onChange(of: draftKey) { _, newValue in detectProvider(newValue) }
             .alert("Unpair desktop?", isPresented: $confirmUnpair) {
                 Button("Cancel", role: .cancel) {}
                 Button("Unpair", role: .destructive) { app.unpair() }
@@ -137,10 +184,126 @@ struct AppSettingsView: View {
         }
     }
 
-    private var modelOptions: [String] {
-        var list = settings.provider.defaultModels
-        let m = settings.model.trimmingCharacters(in: .whitespaces)
-        if !m.isEmpty && !list.contains(m) { list.append(m) }
-        return list
+    private var keyPlaceholder: String {
+        if let c = settings.config, draftKey.isEmpty {
+            return "Saved key ••••\(c.apiKey.suffix(4)) — paste to replace"
+        }
+        return "Paste API key (\(draftProvider.keyPlaceholder))"
+    }
+
+    private func loadDraft() {
+        guard !loaded else { return }
+        loaded = true
+        suppressProviderReset = true
+        let c = settings.config
+        draftProvider = c?.provider ?? .openai
+        draftModel = c?.model ?? draftProvider.defaultModel
+        draftBaseURL = c?.baseURLOverride ?? ""
+        showAdvanced = !(c?.baseURLOverride.isEmpty ?? true) && c?.provider != .custom
+        if c?.provider == nil || c?.provider == .openai { suppressProviderReset = false }
+    }
+
+    private func detectProvider(_ key: String) {
+        guard let (p, strong) = LLMProvider.detect(fromKey: key) else { detectedNote = nil; return }
+        let sharesSkPrefix: Set<LLMProvider> = [.openai, .ckey, .deepseek, .together, .mistral, .custom]
+        if strong {
+            if p != draftProvider { draftProvider = p }
+            detectedNote = "Detected a \(p.displayName) key"
+        } else if !sharesSkPrefix.contains(draftProvider) {
+            draftProvider = .openai
+            detectedNote = "Looks like an OpenAI-style key (sk-). Pick ckey.vn or DeepSeek above if it's from them."
+        } else {
+            detectedNote = nil
+        }
+    }
+
+    private func saveConfig() {
+        settings.save(LLMConfig(provider: draftProvider, model: draftModel,
+                                baseURLOverride: draftBaseURL, apiKey: effectiveKey))
+        draftKey = ""
+        detectedNote = nil
+        savedFlash = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { savedFlash = false }
+    }
+
+}
+
+/// Searchable model list fetched live from GET {base}/models, with typed-ID fallback.
+struct ModelPickerView: View {
+    let provider: LLMProvider
+    let baseURL: String
+    let apiKey: String
+    @Binding var selection: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var models: [String] = []
+    @State private var loading = false
+    @State private var errorText: String?
+    @State private var query = ""
+    @State private var typed = ""
+
+    private var filtered: [String] {
+        let list = models.isEmpty ? provider.suggestedModels : models
+        guard !query.isEmpty else { return list }
+        return list.filter { $0.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                HStack {
+                    TextField("Type a model ID", text: $typed)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .font(.callout.monospaced())
+                    Button("Use") { selection = typed.trimmingCharacters(in: .whitespaces); dismiss() }
+                        .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            } footer: {
+                if let e = errorText {
+                    Text("Couldn't load the model list: \(e)\nShowing suggested models; you can also type any model ID.")
+                        .foregroundStyle(.orange)
+                }
+            }
+
+            Section(models.isEmpty ? "Suggested" : "\(provider.displayName) models (\(models.count))") {
+                if loading {
+                    HStack { ProgressView(); Text("Loading models…").foregroundStyle(.secondary) }
+                }
+                ForEach(filtered, id: \.self) { m in
+                    Button {
+                        selection = m
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Text(m).font(.callout.monospaced()).foregroundStyle(.primary)
+                            Spacer()
+                            if m == selection { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+                        }
+                    }
+                }
+            }
+        }
+        .searchable(text: $query, prompt: "Search models")
+        .navigationTitle("Model")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await load() } } label: { Image(systemName: "arrow.clockwise") }
+                    .disabled(loading)
+            }
+        }
+        .task { typed = selection; await load() }
+    }
+
+    private func load() async {
+        loading = true
+        errorText = nil
+        defer { loading = false }
+        do {
+            models = try await LLMService.shared.listModels(provider: provider, baseURL: baseURL, apiKey: apiKey)
+            if models.isEmpty { errorText = "the provider returned no models" }
+        } catch {
+            models = []
+            errorText = error.localizedDescription
+        }
     }
 }

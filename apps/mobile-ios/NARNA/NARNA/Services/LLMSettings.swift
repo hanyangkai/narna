@@ -2,7 +2,8 @@
 //  LLMSettings.swift
 //  NARNA
 //
-//  User-chosen provider / model. API keys live only in the Keychain.
+//  One saved AI configuration (provider + model + optional base URL + API key),
+//  stored as a single Keychain item on this device only.
 //
 
 import Foundation
@@ -13,73 +14,86 @@ final class LLMSettings: ObservableObject {
     static let shared = LLMSettings()
 
     private let defaults = UserDefaults.standard
+    private static let configAccount = "llm_config_v1"
 
-    @Published var provider: LLMProvider {
-        didSet { defaults.set(provider.rawValue, forKey: "llm_provider"); refreshKeyState() }
-    }
-    @Published var model: String {
-        didSet { defaults.set(model, forKey: "llm_model_\(provider.rawValue)") }
-    }
-    @Published var compatibleBaseURL: String {
-        didSet { defaults.set(compatibleBaseURL, forKey: "llm_compat_base_url") }
-    }
+    @Published private(set) var config: LLMConfig?
     @Published var adqaEnabled: Bool {
         didSet { defaults.set(adqaEnabled, forKey: "adqa_enabled") }
     }
-    @Published private(set) var hasKey: Bool = false
 
     private init() {
-        let p = LLMProvider(rawValue: defaults.string(forKey: "llm_provider") ?? "") ?? .openai
-        provider = p
-        model = defaults.string(forKey: "llm_model_\(p.rawValue)") ?? p.defaultModel
-        compatibleBaseURL = defaults.string(forKey: "llm_compat_base_url") ?? ""
         adqaEnabled = defaults.object(forKey: "adqa_enabled") as? Bool ?? true
+        config = Self.loadConfig()
         #if DEBUG
-        // Simulator test hook: exercises the same Keychain save path as the Settings "Save key" button.
-        let args = ProcessInfo.processInfo.arguments
+        // Simulator test hook: saves through the same path as the Settings "Save" button.
         if let k = ProcessInfo.processInfo.environment["NARNA_TEST_KEY"], !k.isEmpty {
-            KeychainService.shared.saveAPIKey(k, account: provider.keychainAccount)
+            let args = ProcessInfo.processInfo.arguments
+            var p = LLMProvider.detect(fromKey: k)?.provider ?? .openai
+            if let i = args.firstIndex(of: "-NARNA_TEST_PROVIDER"), i + 1 < args.count,
+               let forced = LLMProvider(rawValue: args[i + 1]) { p = forced }
+            save(LLMConfig(provider: p, model: p.defaultModel, apiKey: k))
         }
-        if args.contains("-NARNA_TEST_CLEARKEY") {
-            KeychainService.shared.deleteAPIKey(account: provider.keychainAccount)
-        }
+        if ProcessInfo.processInfo.arguments.contains("-NARNA_TEST_CLEARKEY") { clear() }
         #endif
-        refreshKeyState()
     }
 
-    func selectProvider(_ p: LLMProvider) {
-        provider = p
-        model = defaults.string(forKey: "llm_model_\(p.rawValue)") ?? p.defaultModel
+    // MARK: Read
+
+    var provider: LLMProvider { config?.provider ?? .openai }
+    var model: String { config?.model ?? provider.defaultModel }
+    var baseURL: String { config?.baseURL ?? provider.defaultBaseURL }
+    var apiKey: String? {
+        guard let k = config?.apiKey, !k.isEmpty else { return nil }
+        return k
     }
 
-    var baseURL: String {
-        provider == .openaiCompatible ? compatibleBaseURL : provider.defaultBaseURL
+    var hasKey: Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_MOCK") { return true }
+        #endif
+        return apiKey != nil
     }
-
-    var apiKey: String? { KeychainService.shared.getAPIKey(account: provider.keychainAccount) }
 
     var isReady: Bool {
         guard hasKey, !model.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
-        if provider == .openaiCompatible { return URL(string: compatibleBaseURL)?.scheme?.hasPrefix("http") == true }
-        return true
+        return URL(string: baseURL)?.scheme?.hasPrefix("http") == true
     }
 
-    func saveKey(_ key: String) {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        KeychainService.shared.saveAPIKey(trimmed, account: provider.keychainAccount)
-        refreshKeyState()
+    // MARK: Write
+
+    func save(_ c: LLMConfig) {
+        var c = c
+        c.apiKey = c.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        c.model = c.model.trimmingCharacters(in: .whitespacesAndNewlines)
+        c.baseURLOverride = c.baseURLOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = try? JSONEncoder().encode(c), let json = String(data: data, encoding: .utf8) else { return }
+        KeychainService.shared.saveAPIKey(json, account: Self.configAccount)
+        config = c
     }
 
-    func removeKey() {
-        KeychainService.shared.deleteAPIKey(account: provider.keychainAccount)
-        refreshKeyState()
+    func clear() {
+        KeychainService.shared.deleteAPIKey(account: Self.configAccount)
+        config = nil
     }
 
-    func refreshKeyState() {
-        #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_MOCK") { hasKey = true; return }
-        #endif
-        hasKey = KeychainService.shared.getAPIKey(account: provider.keychainAccount) != nil
+    private static func loadConfig() -> LLMConfig? {
+        if let json = KeychainService.shared.getAPIKey(account: configAccount),
+           let data = json.data(using: .utf8),
+           let c = try? JSONDecoder().decode(LLMConfig.self, from: data) {
+            return c
+        }
+        // Migrate build-2 storage (per-provider key slot + UserDefaults provider/model).
+        let d = UserDefaults.standard
+        let p = LLMProvider(rawValue: d.string(forKey: "llm_provider") ?? "") ?? .openai
+        guard let oldKey = KeychainService.shared.getAPIKey(account: "llm_api_key_\(p.rawValue)") else { return nil }
+        let c = LLMConfig(provider: p,
+                          model: d.string(forKey: "llm_model_\(p.rawValue)") ?? p.defaultModel,
+                          baseURLOverride: p == .custom ? (d.string(forKey: "llm_compat_base_url") ?? "") : "",
+                          apiKey: oldKey)
+        if let data = try? JSONEncoder().encode(c), let json = String(data: data, encoding: .utf8) {
+            KeychainService.shared.saveAPIKey(json, account: configAccount)
+            for old in LLMProvider.allCases { KeychainService.shared.deleteAPIKey(account: "llm_api_key_\(old.rawValue)") }
+        }
+        return c
     }
 }
