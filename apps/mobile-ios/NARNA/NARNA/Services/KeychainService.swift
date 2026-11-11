@@ -45,6 +45,30 @@ class KeychainService {
         delete(key: agentNameKey)
     }
     
+    // MARK: - LLM API keys (bring your own key; device-only, never synced)
+
+    func saveAPIKey(_ key: String, account: String) {
+        guard let data = key.data(using: .utf8) else { return }
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(base as CFDictionary)
+        var add = base
+        add[kSecValueData as String] = data
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        SecItemAdd(add as CFDictionary, nil)
+    }
+
+    func getAPIKey(account: String) -> String? {
+        get(key: account)
+    }
+
+    func deleteAPIKey(account: String) {
+        delete(key: account)
+    }
+
     // MARK: - Generic Keychain Operations
     
     private func save(key: String, value: String) {

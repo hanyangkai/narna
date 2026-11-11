@@ -43,8 +43,8 @@ struct SettingsView: View {
                 }
                 
                 Section("About") {
-                    LabeledContent("Version", value: "1.0.0")
-                    LabeledContent("Build", value: "1")
+                    LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                    LabeledContent("Build", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
                     
                     Link("Documentation", destination: URL(string: "https://github.com/narna/narna")!)
                 }
@@ -75,7 +75,7 @@ struct SettingsView: View {
                     unpairDevice()
                 }
             } message: {
-                Text("Are you sure you want to unpair this device? You'll need to pair again to use NARNA.")
+                Text("Are you sure you want to unpair this device? Chat keeps working; pair again any time to see desktop bots.")
             }
             .onAppear {
                 agentName = KeychainService.shared.getAgentName() ?? "Unknown"
@@ -85,17 +85,8 @@ struct SettingsView: View {
     }
     
     private func unpairDevice() {
-        KeychainService.shared.clearAll()
+        AppState.shared.unpair()
         dismiss()
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.rootViewController = UIHostingController(
-                rootView: ContentView()
-                    .environmentObject(NARNAAPIService.shared)
-            )
-            window.makeKeyAndVisible()
-        }
     }
 }
 

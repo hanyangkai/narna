@@ -1,11 +1,5 @@
 # Fastlane Appfile for NARNA iOS
+# Auth uses the App Store Connect API key (see Fastfile asc_key lane).
 
 app_identifier("org.narna.mobile")
-apple_id(ENV["APPLE_ID"]) # Set in environment or Fastlane .env file
-team_id(ENV["APPLE_TEAM_ID"])
-
-# App Store Connect API Key (preferred over password)
-# Store the .p8 file path in FASTLANE_API_KEY_PATH
-if ENV["FASTLANE_API_KEY_PATH"]
-  api_key_path(ENV["FASTLANE_API_KEY_PATH"])
-end
+team_id(ENV["APPLE_TEAM_ID"]) if ENV["APPLE_TEAM_ID"]

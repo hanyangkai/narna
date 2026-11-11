@@ -7,25 +7,11 @@
 
 import SwiftUI
 
+/// Root view. The app opens straight into the standalone AI chat;
+/// pairing with the NARNA desktop agent is optional (Settings → NARNA Desktop).
 struct ContentView: View {
-    @EnvironmentObject var apiService: NARNAAPIService
-    @State private var isPaired = false
-    
     var body: some View {
-        Group {
-            if isPaired {
-                BotListView()
-            } else {
-                PairingView(isPaired: $isPaired)
-            }
-        }
-        .onAppear {
-            checkPairingStatus()
-        }
-    }
-    
-    private func checkPairingStatus() {
-        isPaired = KeychainService.shared.getMobileToken() != nil
+        MainTabView()
     }
 }
 

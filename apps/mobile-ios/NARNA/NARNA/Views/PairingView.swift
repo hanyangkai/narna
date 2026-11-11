@@ -13,6 +13,7 @@ struct PairingView: View {
     @State private var showScanner = false
     @State private var isScanning = false
     @State private var scannedCode: String?
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
@@ -23,11 +24,11 @@ struct PairingView: View {
                     .font(.system(size: 80))
                     .foregroundColor(.accentColor)
                 
-                Text("Pair with NARNA")
+                Text("Pair with Desktop")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                Text("Scan the QR code from your desktop agent or enter the 6-digit pairing code")
+                Text("Optional: scan the QR code shown by the NARNA desktop agent, or enter its 6-digit pairing code. Chat works without pairing.")
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -91,8 +92,13 @@ struct PairingView: View {
                 
                 Spacer()
             }
-            .navigationTitle("Pairing")
+            .navigationTitle("Pair with Desktop")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
             .sheet(isPresented: $showScanner) {
                 QRScannerSheet(
                     isScanning: $isScanning,
