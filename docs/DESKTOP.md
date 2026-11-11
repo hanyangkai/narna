@@ -7,10 +7,38 @@ Run the **local AI agent** on your PC — Hermes-like chat + tools + ADQA, no cl
 | Platform | Download | Run |
 |----------|----------|-----|
 | **Windows** | [NARNA-Desktop-windows.zip](https://github.com/hanyangkai/narna/releases/latest) | `NARNA-Desktop.exe` |
-| **macOS** | [NARNA-Desktop-macos.zip](https://github.com/hanyangkai/narna/releases/latest) | `./NARNA-Desktop` |
-| **Any OS** | `pip install "narna[desktop]"` | `narna desktop` |
+| **macOS** | [NARNA-Desktop-macos.zip](https://github.com/hanyangkai/narna/releases/latest) | see Gatekeeper below |
+| **Any OS (recommended if zip blocked)** | `pip install "narna[desktop]"` | `narna desktop` |
 
 Browser opens at `http://127.0.0.1:8765/`.
+
+### macOS — Apple blocks “unidentified developer”
+
+The GitHub zip is **not Apple-notarized** yet (unsigned PyInstaller build). Gatekeeper shows *“cannot be opened because Apple cannot check it for malicious software”* or *“damaged”*.
+
+**Fix A — Terminal (fastest):**
+
+```bash
+# after unzip, path is usually ~/Downloads/NARNA-Desktop
+xattr -cr ~/Downloads/NARNA-Desktop
+chmod +x ~/Downloads/NARNA-Desktop/NARNA-Desktop
+~/Downloads/NARNA-Desktop/NARNA-Desktop
+```
+
+Or from the repo:
+
+```bash
+bash scripts/macos_fix_gatekeeper.sh ~/Downloads/NARNA-Desktop
+```
+
+**Fix B — Finder:** Right-click `NARNA-Desktop` → **Open** → **Open** (first time only). Do not double-click.
+
+**Fix C — skip the zip** (needs Python 3.11+):
+
+```bash
+pip install "narna[desktop]"
+narna desktop
+```
 
 ## How it works (Hermes-style)
 

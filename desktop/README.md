@@ -10,6 +10,21 @@ Decision-quality AI agent on Windows / macOS / Linux. **BYOK** — keys stay in 
 
 Build locally: `.\scripts\build_desktop_exe.ps1`
 
+## macOS portable (Gatekeeper)
+
+1. Download `NARNA-Desktop-macos.zip` from [Releases](https://github.com/hanyangkai/narna/releases)
+2. Unzip. **Do not double-click** if macOS blocks it — the build is not Apple-notarized yet.
+3. Clear quarantine, then run:
+
+```bash
+xattr -cr ~/Downloads/NARNA-Desktop
+chmod +x ~/Downloads/NARNA-Desktop/NARNA-Desktop
+~/Downloads/NARNA-Desktop/NARNA-Desktop
+```
+
+Or: Right-click `NARNA-Desktop` → **Open** → **Open**.  
+Helper: `bash scripts/macos_fix_gatekeeper.sh ~/Downloads/NARNA-Desktop`
+
 ## Quick install (needs Python 3.11+)
 
 ### Windows (PowerShell)
