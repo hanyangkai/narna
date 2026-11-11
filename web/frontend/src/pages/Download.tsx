@@ -75,7 +75,7 @@ export default function Download() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="desktop">
         <h2>Desktop (available now)</h2>
         <div className="land-cta" style={{ marginBottom: "1.5rem" }}>
           <a
@@ -97,6 +97,24 @@ export default function Download() {
           <a className="btn btn-secondary" href={BRAND.github} target="_blank" rel="noreferrer">
             Source on GitHub
           </a>
+        </div>
+
+        <div className="land-store-card" style={{ marginBottom: "1.5rem" }} id="macos-gatekeeper">
+          <p className="land-strip-label">macOS · Apple Gatekeeper</p>
+          <h3>Zip bị chặn? Bình thường — app chưa notarize</h3>
+          <p className="section-desc">
+            Bản GitHub chưa ký Apple Developer ID. Hệ thống báo “cannot be opened” / “damaged”.
+            Mở Terminal và chạy (đổi đường dẫn nếu unzip chỗ khác):
+          </p>
+          <pre className="code-block">{`xattr -cr ~/Downloads/NARNA-Desktop
+chmod +x ~/Downloads/NARNA-Desktop/NARNA-Desktop
+~/Downloads/NARNA-Desktop/NARNA-Desktop`}</pre>
+          <p className="section-desc">
+            Hoặc Finder: <strong>Right-click → Open → Open</strong> (không double-click).  
+            Hoặc bỏ zip, dùng pip:
+          </p>
+          <pre className="code-block">{`pip install "narna[desktop]"
+narna desktop`}</pre>
         </div>
 
         <div className="download-steps">

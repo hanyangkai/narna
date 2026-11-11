@@ -36,17 +36,23 @@ fi
 
 cp desktop/README.md "$OUT/README.md"
 cat > "$OUT/START-HERE.txt" <<'EOF'
-NARNA Desktop (portable) v0.2.9
+NARNA Desktop (portable)
 
-1. Double-click NARNA-Desktop (or run ./NARNA-Desktop in Terminal)
-2. Browser opens http://127.0.0.1:8765/
-3. Paste OpenRouter / OpenAI / Ollama key (saved under ~/.narna)
+If macOS says the app is damaged / cannot be opened (Gatekeeper):
+  the zip is not Apple-notarized yet. Clear quarantine first:
 
-Cloud Pro (optional):
-- Tab "Cloud Pro" → paste API key from narna.org/account
-- Enable auto backup for daily encrypted sync to cloud (Pro plan)
+  xattr -cr "$(pwd)"
+  chmod +x ./NARNA-Desktop
+  ./NARNA-Desktop
 
-No Python install required.
+Or: Right-click NARNA-Desktop → Open → Open.
+
+Then:
+1. Browser opens http://127.0.0.1:8765/
+2. Login Claude CLI / Codex CLI, or paste API key (BYOK → ~/.narna)
+3. Pair phone via QR (optional)
+
+Alternative without zip:  pip install "narna[desktop]" && narna desktop
 EOF
 
 mkdir -p dist
