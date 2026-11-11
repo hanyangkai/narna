@@ -34,6 +34,9 @@
 		A10000000050 /* ADQACardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000051 /* ADQACardView.swift */; };
 		A10000000052 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000053 /* HistoryView.swift */; };
 		A10000000054 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000055 /* AppSettingsView.swift */; };
+		A10000000056 /* ChatBot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000057 /* ChatBot.swift */; };
+		A10000000058 /* ChatBotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000059 /* ChatBotStore.swift */; };
+		A1000000005A /* BotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000005B /* BotsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +69,9 @@
 		A10000000051 /* ADQACardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ADQACardView.swift; sourceTree = "<group>"; };
 		A10000000053 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		A10000000055 /* AppSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsView.swift; sourceTree = "<group>"; };
+		A10000000057 /* ChatBot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBot.swift; sourceTree = "<group>"; };
+		A10000000059 /* ChatBotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBotStore.swift; sourceTree = "<group>"; };
+		A1000000005B /* BotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000055 /* AppSettingsView.swift */,
+				A1000000005B /* BotsView.swift */,
 				A10000000053 /* HistoryView.swift */,
 				A10000000051 /* ADQACardView.swift */,
 				A1000000004F /* AIChatView.swift */,
@@ -143,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000049 /* ConversationStore.swift */,
+				A10000000059 /* ChatBotStore.swift */,
 				A10000000047 /* ADQAService.swift */,
 				A10000000045 /* LLMService.swift */,
 				A10000000043 /* LLMSettings.swift */,
@@ -157,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000041 /* AIChatModels.swift */,
+				A10000000057 /* ChatBot.swift */,
 				A10000000018 /* Models.swift */,
 			);
 			path = Models;
@@ -242,6 +251,9 @@
 				A10000000050 /* ADQACardView.swift in Sources */,
 				A10000000052 /* HistoryView.swift in Sources */,
 				A10000000054 /* AppSettingsView.swift in Sources */,
+				A10000000056 /* ChatBot.swift in Sources */,
+				A10000000058 /* ChatBotStore.swift in Sources */,
+				A1000000005A /* BotsView.swift in Sources */,
 				A10000000003 /* ContentView.swift in Sources */,
 				A10000000001 /* NARNAApp.swift in Sources */,
 				A10000000007 /* PairingView.swift in Sources */,
@@ -388,7 +400,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -418,7 +430,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;

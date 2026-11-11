@@ -186,12 +186,49 @@ struct AIMessage: Codable, Identifiable, Equatable {
 
 struct Conversation: Codable, Identifiable, Equatable {
     var id: UUID = UUID()
+    var botID: UUID = ChatBot.chiefOfStaffID
     var title: String = "New chat"
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
     var messages: [AIMessage] = []
     var provider: String?
     var model: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, botID, title, createdAt, updatedAt, messages, provider, model
+    }
+
+    init(id: UUID = UUID(), botID: UUID = ChatBot.chiefOfStaffID, title: String = "New chat",
+         createdAt: Date = Date(), updatedAt: Date = Date(), messages: [AIMessage] = [],
+         provider: String? = nil, model: String? = nil) {
+        self.id = id; self.botID = botID; self.title = title
+        self.createdAt = createdAt; self.updatedAt = updatedAt
+        self.messages = messages; self.provider = provider; self.model = model
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        botID = try c.decodeIfPresent(UUID.self, forKey: .botID) ?? ChatBot.chiefOfStaffID
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? "New chat"
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        messages = try c.decodeIfPresent([AIMessage].self, forKey: .messages) ?? []
+        provider = try c.decodeIfPresent(String.self, forKey: .provider)
+        model = try c.decodeIfPresent(String.self, forKey: .model)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(botID, forKey: .botID)
+        try c.encode(title, forKey: .title)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(updatedAt, forKey: .updatedAt)
+        try c.encode(messages, forKey: .messages)
+        try c.encodeIfPresent(provider, forKey: .provider)
+        try c.encodeIfPresent(model, forKey: .model)
+    }
 
     var preview: String {
         messages.last(where: { !$0.isError })?.content ?? "No messages yet"

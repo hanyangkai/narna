@@ -79,6 +79,7 @@ struct MainTabView: View {
     @StateObject private var app = AppState.shared
     @StateObject private var settings = LLMSettings.shared
     @StateObject private var store = ConversationStore.shared
+    @StateObject private var bots = ChatBotStore.shared
 
     var body: some View {
         // Don't use TabView: the iOS 26 system tab bar floats over Form content
@@ -97,6 +98,7 @@ struct MainTabView: View {
         .environmentObject(app)
         .environmentObject(settings)
         .environmentObject(store)
+            .environmentObject(bots)
         .onAppear {
             app.refreshPairing()
             #if DEBUG

@@ -34,14 +34,18 @@ final class ConversationStore: ObservableObject {
 
     var sorted: [Conversation] { conversations.sorted { $0.updatedAt > $1.updatedAt } }
 
+    func sorted(for botID: UUID) -> [Conversation] {
+        conversations.filter { $0.botID == botID }.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
     func conversation(_ id: UUID?) -> Conversation? {
         guard let id else { return nil }
         return conversations.first { $0.id == id }
     }
 
     @discardableResult
-    func create(provider: String?, model: String?) -> Conversation {
-        let c = Conversation(provider: provider, model: model)
+    func create(provider: String?, model: String?, botID: UUID = ChatBot.chiefOfStaffID) -> Conversation {
+        let c = Conversation(botID: botID, provider: provider, model: model)
         conversations.append(c)
         save()
         return c
@@ -62,6 +66,11 @@ final class ConversationStore: ObservableObject {
 
     func deleteAll() {
         conversations.removeAll()
+        save()
+    }
+
+    func deleteAll(for botID: UUID) {
+        conversations.removeAll { $0.botID == botID }
         save()
     }
 

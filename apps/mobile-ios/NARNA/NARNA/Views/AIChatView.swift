@@ -9,6 +9,7 @@ struct AIChatView: View {
     @EnvironmentObject var app: AppState
     @EnvironmentObject var settings: LLMSettings
     @EnvironmentObject var store: ConversationStore
+    @EnvironmentObject var bots: ChatBotStore
     @StateObject private var vm = AIChatViewModel()
     @FocusState private var inputFocused: Bool
 
@@ -22,41 +23,75 @@ struct AIChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if !settings.isReady {
+                if !vm.isReady {
                     NoKeyEmptyState { app.selectedTab = .settings }
                 } else if let convo = vm.conversation, !convo.messages.isEmpty {
                     messageList(convo)
-                } else {
+                } else if vm.currentBot.isChiefOfStaff {
                     StartEmptyState(suggestions: suggestions) { s in
                         vm.input = s
                         vm.send()
                     }
+                } else {
+                    BotEmptyState(bot: vm.currentBot) { s in
+                        vm.input = s
+                        vm.send()
+                    }
                 }
-                if settings.isReady { inputBar }
+                if vm.isReady { inputBar }
             }
-            .navigationTitle(vm.conversation?.title ?? "NaNa Bot")
+            .navigationTitle(vm.conversation?.title ?? vm.currentBot.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if settings.isReady {
-                        Text(settings.model)
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .fixedSize()
+                    Button { app.showBotsList = true } label: {
+                        HStack(spacing: 4) {
+                            if !vm.currentBot.isChiefOfStaff {
+                                Image(systemName: "chevron.backward")
+                                    .font(.body.weight(.semibold))
+                            }
+                            BotAvatar(bot: vm.currentBot, size: 30)
+                        }
                     }
+                    .accessibilityLabel(vm.currentBot.isChiefOfStaff ? "Bots" : "Back to bots")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { vm.newChat() } label: { Image(systemName: "square.and.pencil") }
-                        .disabled(vm.conversation == nil)
-                        .accessibilityLabel("New chat")
+                    HStack(spacing: 10) {
+                        if vm.isReady {
+                            Text(vm.activeModel)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Button { vm.newChat() } label: { Image(systemName: "square.and.pencil") }
+                            .disabled(vm.conversation == nil)
+                            .accessibilityLabel("New chat")
+                    }
                 }
+            }
+            .sheet(isPresented: $app.showBotsList) {
+                BotsView()
+                    .environmentObject(app)
+                    .environmentObject(bots)
+                    .environmentObject(store)
+                    .environmentObject(settings)
             }
             .onAppear {
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_AUTOSEND"), vm.conversation == nil {
                     vm.input = "Our 12-person team wants to move from Jenkins to a hosted CI. Should we switch now?"
                     vm.send()
+                }
+                if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_BOTS") {
+                    bots.seedDemoBots()
+                }
+                if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_USER_BOT") {
+                    bots.seedDemoBots()
+                    app.currentBotID = ChatBotStore.demoResearchID
+                    app.currentConversationID = store.sorted(for: ChatBotStore.demoResearchID).first?.id
+                } else if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_BOTS") {
+                    bots.seedDemoBots()
+                    app.showBotsList = true
                 }
                 #endif
             }
@@ -113,7 +148,7 @@ struct AIChatView: View {
 
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            TextField("Message NaNa Bot", text: $vm.input, axis: .vertical)
+            TextField("Message \(vm.currentBot.name)", text: $vm.input, axis: .vertical)
                 .lineLimit(1...6)
                 .focused($inputFocused)
                 .padding(.horizontal, 14)
@@ -245,5 +280,32 @@ struct StartEmptyState: View {
                 .padding(.bottom, 36)
             }
         }
+    }
+}
+
+/// Empty state for user-created bots. The Chief of Staff keeps StartEmptyState / NoKeyEmptyState.
+struct BotEmptyState: View {
+    let bot: ChatBot
+    var pick: (String) -> Void
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            BotAvatar(bot: bot, size: 72)
+            Text("Message \(bot.name)")
+                .font(.title2.bold())
+            if !bot.role.isEmpty {
+                Text(bot.role).font(.callout).foregroundStyle(.secondary)
+            }
+            if !bot.persona.isEmpty {
+                Text(bot.persona)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .lineLimit(4)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
     }
 }

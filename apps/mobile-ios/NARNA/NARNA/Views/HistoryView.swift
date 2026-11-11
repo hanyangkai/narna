@@ -14,13 +14,13 @@ struct HistoryView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if store.conversations.isEmpty {
+                if store.sorted(for: app.currentBotID).isEmpty {
                     ContentUnavailableView("No conversations yet",
                                            systemImage: "bubble.left.and.text.bubble.right",
                                            description: Text("Your chats are saved only on this iPhone."))
                 } else {
                     List {
-                        ForEach(store.sorted) { c in
+                        ForEach(store.sorted(for: app.currentBotID)) { c in
                             NavigationLink {
                                 HistoryDetailView(conversation: c)
                             } label: {
@@ -45,7 +45,7 @@ struct HistoryView: View {
                             }
                         }
                         .onDelete { idx in
-                            let list = store.sorted
+                            let list = store.sorted(for: app.currentBotID)
                             for i in idx {
                                 let id = list[i].id
                                 if app.currentConversationID == id { app.currentConversationID = nil }
@@ -57,28 +57,31 @@ struct HistoryView: View {
             }
             .navigationTitle("History")
             .toolbar {
-                if !store.conversations.isEmpty {
+                if !store.sorted(for: app.currentBotID).isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(role: .destructive) { confirmDeleteAll = true } label: { Image(systemName: "trash") }
                             .accessibilityLabel("Delete all")
                     }
                 }
             }
-            .confirmationDialog("Delete all conversations from this iPhone?", isPresented: $confirmDeleteAll, titleVisibility: .visible) {
+            .confirmationDialog("Delete all conversations for this bot from this iPhone?", isPresented: $confirmDeleteAll, titleVisibility: .visible) {
                 Button("Delete All", role: .destructive) {
-                    app.currentConversationID = nil
-                    store.deleteAll()
+                    if app.currentConversationID != nil,
+                       store.conversation(app.currentConversationID)?.botID == app.currentBotID {
+                        app.currentConversationID = nil
+                    }
+                    store.deleteAll(for: app.currentBotID)
                 }
             }
             .navigationDestination(isPresented: $autoOpenFirst) {
-                if let c = store.sorted.first {
+                if let c = store.sorted(for: app.currentBotID).first {
                     HistoryDetailView(conversation: c)
                 }
             }
             .onAppear {
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_HISTORY_DETAIL"),
-                   store.sorted.first != nil {
+                   store.sorted(for: app.currentBotID).first != nil {
                     autoOpenFirst = true
                 }
                 #endif

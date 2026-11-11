@@ -15,7 +15,18 @@ final class AppState: ObservableObject {
     static let shared = AppState()
     @Published var selectedTab: MainTab = .chat
     @Published var currentConversationID: UUID?
+    @Published var currentBotID: UUID = ChatBot.chiefOfStaffID {
+        didSet { UserDefaults.standard.set(currentBotID.uuidString, forKey: "current_bot_id") }
+    }
+    @Published var showBotsList = false
     @Published var isPaired: Bool = KeychainService.shared.getMobileToken() != nil
+
+    private init() {
+        if let s = UserDefaults.standard.string(forKey: "current_bot_id"), let id = UUID(uuidString: s) {
+            currentBotID = id
+        }
+        isPaired = KeychainService.shared.getMobileToken() != nil
+    }
 
     func refreshPairing() {
         isPaired = KeychainService.shared.getMobileToken() != nil
@@ -37,6 +48,7 @@ final class AIChatViewModel: ObservableObject {
     private let store = ConversationStore.shared
     private let settings = LLMSettings.shared
     private let app = AppState.shared
+    private let bots = ChatBotStore.shared
 
     static let systemPrompt = """
     You are NaNa Bot, a helpful, concise AI assistant running on the user's iPhone with the user's own API key. \
@@ -45,7 +57,25 @@ final class AIChatViewModel: ObservableObject {
     For medical, legal or financial topics, remind the user to verify with a qualified professional.
     """
 
-    var conversation: Conversation? { store.conversation(app.currentConversationID) }
+    var currentBot: ChatBot { bots.bot(app.currentBotID) }
+
+    var systemPrompt: String {
+        let bot = currentBot
+        if bot.isChiefOfStaff { return Self.systemPrompt }
+        let persona = bot.persona.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !persona.isEmpty { return persona }
+        return "You are \(bot.name), a helpful assistant on the user's iPhone. Be clear and concise."
+    }
+
+    var conversation: Conversation? {
+        guard let c = store.conversation(app.currentConversationID), c.botID == app.currentBotID else { return nil }
+        return c
+    }
+
+    var isReady: Bool {
+        if LLMService.shared.isMockMode { return true }
+        do { _ = try config(); return true } catch { return false }
+    }
 
     var canSend: Bool {
         !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
@@ -57,12 +87,33 @@ final class AIChatViewModel: ObservableObject {
     }
 
     private func config() throws -> LLMRequestConfig {
-        guard let key = settings.apiKey ?? (LLMService.shared.isMockMode ? "mock" : nil) else { throw LLMError.missingKey }
-        if URL(string: settings.baseURL)?.scheme?.hasPrefix("http") != true {
+        let bot = currentBot
+        let useGlobal = bot.useGlobalKey || bot.isChiefOfStaff
+        let provider = useGlobal ? settings.provider : (bot.provider ?? settings.provider)
+        let model = (useGlobal ? settings.model : (bot.model ?? settings.model)).trimmingCharacters(in: .whitespaces)
+        let base: String = {
+            if !useGlobal {
+                let o = bot.baseURLOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !o.isEmpty { return o }
+            }
+            return settings.baseURL
+        }()
+        let key: String? = {
+            if LLMService.shared.isMockMode { return "mock" }
+            if !useGlobal, let k = bots.apiKey(for: bot.id), !k.isEmpty { return k }
+            return settings.apiKey
+        }()
+        guard let key, !key.isEmpty else { throw LLMError.missingKey }
+        if URL(string: base)?.scheme?.hasPrefix("http") != true {
             throw LLMError.invalidBaseURL
         }
-        return LLMRequestConfig(provider: settings.provider, model: settings.model.trimmingCharacters(in: .whitespaces),
-                                baseURL: settings.baseURL, apiKey: key)
+        return LLMRequestConfig(provider: provider, model: model, baseURL: base, apiKey: key)
+    }
+
+    var activeModel: String {
+        let bot = currentBot
+        if bot.useGlobalKey || bot.isChiefOfStaff { return settings.model }
+        return (bot.model?.isEmpty == false ? bot.model! : settings.model)
     }
 
     func send() {
@@ -70,7 +121,7 @@ final class AIChatViewModel: ObservableObject {
         guard !text.isEmpty, !isSending else { return }
         input = ""
 
-        var convo = conversation ?? store.create(provider: settings.provider.rawValue, model: settings.model)
+        var convo = conversation ?? store.create(provider: settings.provider.rawValue, model: activeModel, botID: app.currentBotID)
         app.currentConversationID = convo.id
         if convo.messages.isEmpty {
             convo.title = String(text.prefix(60))
@@ -110,7 +161,7 @@ final class AIChatViewModel: ObservableObject {
         let history = turns(convo.messages)
         do {
             let cfg = try config()
-            let answer = try await LLMService.shared.complete(config: cfg, system: Self.systemPrompt, turns: history)
+            let answer = try await LLMService.shared.complete(config: cfg, system: systemPrompt, turns: history)
             guard var c = store.conversation(conversationID) else { return }
             let msg = AIMessage(role: .assistant, content: answer)
             c.messages.append(msg)
