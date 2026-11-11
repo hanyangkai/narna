@@ -23,6 +23,9 @@ struct AppSettingsView: View {
     @State private var loaded = false
     @State private var suppressProviderReset = false
     @State private var autoOpenModels = false
+    @State private var autoOpenAdvanced = false
+    @State private var unrecognizedKey = false
+    @State private var userPickedProvider = false
 
     private var version: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -44,6 +47,7 @@ struct AppSettingsView: View {
         !effectiveKey.isEmpty
             && !draftModel.trimmingCharacters(in: .whitespaces).isEmpty
             && URL(string: effectiveBaseURL)?.scheme?.hasPrefix("http") == true
+            && (!unrecognizedKey || userPickedProvider)
     }
 
     var body: some View {
@@ -58,7 +62,9 @@ struct AppSettingsView: View {
                         .autocorrectionDisabled()
                         .textContentType(.password)
                     if let note = detectedNote {
-                        Label(note, systemImage: "wand.and.stars").font(.caption).foregroundStyle(.secondary)
+                        Label(note, systemImage: unrecognizedKey ? "exclamationmark.triangle.fill" : "wand.and.stars")
+                            .font(.caption)
+                            .foregroundStyle(unrecognizedKey ? Color.orange : Color.secondary)
                     }
                     NavigationLink {
                         ModelPickerView(provider: draftProvider, baseURL: effectiveBaseURL,
@@ -73,12 +79,13 @@ struct AppSettingsView: View {
                         TextField("Base URL, e.g. https://api.example.com/v1", text: $draftBaseURL)
                             .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     } else {
-                        DisclosureGroup("Advanced", isExpanded: $showAdvanced) {
-                            TextField(draftProvider.defaultBaseURL, text: $draftBaseURL)
-                                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                                .font(.callout.monospaced())
-                            Text("Base URL override. Leave empty to use the \(draftProvider.displayName) default.")
-                                .font(.caption).foregroundStyle(.secondary)
+                        NavigationLink {
+                            AdvancedBaseURLView(provider: draftProvider, draftBaseURL: $draftBaseURL)
+                        } label: {
+                            LabeledContent("Advanced") {
+                                Text(draftBaseURL.isEmpty ? "Default" : "Custom URL")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                     Button {
@@ -149,11 +156,23 @@ struct AppSettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        app.selectedTab = .chat
+                    } label: {
+                        Label("Chat", systemImage: "chevron.backward")
+                    }
+                    .accessibilityLabel("Back to Chat")
+                }
+            }
             .sheet(isPresented: $showPairing) {
                 PairingView(isPaired: $app.isPaired)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showDesktopSettings) {
                 SettingsView()
+                    .presentationDragIndicator(.visible)
             }
             .onChange(of: app.isPaired) { _, paired in
                 if paired { showPairing = false }
@@ -161,18 +180,29 @@ struct AppSettingsView: View {
             .onAppear {
                 loadDraft()
                 #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_MODELS") { autoOpenModels = true }
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-NARNA_OPEN_MODELS") { autoOpenModels = true }
+                if args.contains("-NARNA_OPEN_ADVANCED") { autoOpenAdvanced = true }
+                // Prefill a clearly fake unrecognised key for UI screenshots only.
+                if args.contains("-NARNA_UNRECOGNIZED_KEY") && draftKey.isEmpty {
+                    draftKey = "c02dc7bc-demo-not-a-real-key"
+                    detectProvider(draftKey)
+                }
                 #endif
             }
             .navigationDestination(isPresented: $autoOpenModels) {
                 ModelPickerView(provider: draftProvider, baseURL: effectiveBaseURL,
                                 apiKey: effectiveKey, selection: $draftModel)
             }
+            .navigationDestination(isPresented: $autoOpenAdvanced) {
+                AdvancedBaseURLView(provider: draftProvider, draftBaseURL: $draftBaseURL)
+            }
             .onChange(of: draftProvider) { _, newValue in
+                if unrecognizedKey { userPickedProvider = true }
                 if suppressProviderReset { suppressProviderReset = false; return }
                 draftModel = newValue.defaultModel
                 draftBaseURL = ""
-                detectedNote = nil
+                if !unrecognizedKey { detectedNote = nil }
             }
             .onChange(of: draftKey) { _, newValue in detectProvider(newValue) }
             .alert("Unpair desktop?", isPresented: $confirmUnpair) {
@@ -182,6 +212,7 @@ struct AppSettingsView: View {
                 Text("Chat keeps working. You can pair again any time.")
             }
         }
+        .narnaTabRoot()
     }
 
     private var keyPlaceholder: String {
@@ -204,16 +235,31 @@ struct AppSettingsView: View {
     }
 
     private func detectProvider(_ key: String) {
-        guard let (p, strong) = LLMProvider.detect(fromKey: key) else { detectedNote = nil; return }
-        let sharesSkPrefix: Set<LLMProvider> = [.openai, .ckey, .deepseek, .together, .mistral, .custom]
-        if strong {
-            if p != draftProvider { draftProvider = p }
-            detectedNote = "Detected a \(p.displayName) key"
-        } else if !sharesSkPrefix.contains(draftProvider) {
-            draftProvider = .openai
-            detectedNote = "Looks like an OpenAI-style key (sk-). Pick ckey.vn or DeepSeek above if it's from them."
-        } else {
+        let k = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        if k.isEmpty {
+            unrecognizedKey = false
+            userPickedProvider = false
             detectedNote = nil
+            return
+        }
+        let sharesSkPrefix: Set<LLMProvider> = [.openai, .ckey, .deepseek, .together, .mistral, .custom]
+        if let (p, strong) = LLMProvider.detect(fromKey: k) {
+            unrecognizedKey = false
+            userPickedProvider = false
+            if strong {
+                if p != draftProvider { draftProvider = p }
+                detectedNote = "Detected a \(p.displayName) key"
+            } else if !sharesSkPrefix.contains(draftProvider) {
+                draftProvider = .openai
+                detectedNote = "Looks like an OpenAI-style key (sk-). Pick CKEY.VN or DeepSeek above if it's from them."
+            } else {
+                detectedNote = nil
+            }
+        } else {
+            // Do not silently assume OpenAI for an unrecognised prefix.
+            unrecognizedKey = true
+            userPickedProvider = false
+            detectedNote = "Không nhận ra loại key — chọn nhà cung cấp"
         }
     }
 
@@ -285,10 +331,13 @@ struct ModelPickerView: View {
         .searchable(text: $query, prompt: "Search models")
         .navigationTitle("Model")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { Task { await load() } } label: { Image(systemName: "arrow.clockwise") }
                     .disabled(loading)
+                    .accessibilityLabel("Reload models")
             }
         }
         .task { typed = selection; await load() }
@@ -305,5 +354,31 @@ struct ModelPickerView: View {
             models = []
             errorText = error.localizedDescription
         }
+    }
+}
+
+/// Pushed from Settings. System back and swipe-back return to Settings.
+struct AdvancedBaseURLView: View {
+    let provider: LLMProvider
+    @Binding var draftBaseURL: String
+
+    var body: some View {
+        Form {
+            Section {
+                TextField(provider.defaultBaseURL, text: $draftBaseURL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                    .font(.callout.monospaced())
+            } header: {
+                Text("Base URL override")
+            } footer: {
+                Text("Leave empty to use the \(provider.displayName) default (\(provider.defaultBaseURL)).")
+            }
+        }
+        .navigationTitle("Advanced")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .toolbar(.visible, for: .navigationBar)
     }
 }

@@ -27,7 +27,7 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
         case .openai: return "OpenAI"
         case .anthropic: return "Anthropic (Claude)"
         case .openrouter: return "OpenRouter"
-        case .ckey: return "ckey.vn"
+        case .ckey: return "CKEY.VN"
         case .groq: return "Groq"
         case .deepseek: return "DeepSeek"
         case .gemini: return "Google Gemini"
@@ -102,12 +102,15 @@ enum LLMProvider: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Guess the provider from a pasted key. Plain "sk-" is shared by several
-    /// providers (OpenAI, ckey.vn, DeepSeek...), so it is a weak signal.
+    /// Guess the provider only from a recognised key prefix.
+    /// Unrecognised keys must not be assumed to be OpenAI.
+    /// Plain "sk-" is shared by OpenAI, CKEY.VN and DeepSeek, so it is a weak signal.
     static func detect(fromKey key: String) -> (provider: LLMProvider, strong: Bool)? {
         let k = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !k.isEmpty else { return nil }
         if k.hasPrefix("sk-or-") { return (.openrouter, true) }
         if k.hasPrefix("sk-ant-") { return (.anthropic, true) }
+        if k.hasPrefix("sk-proj-") { return (.openai, true) }
         if k.hasPrefix("gsk_") { return (.groq, true) }
         if k.hasPrefix("xai-") { return (.xai, true) }
         if k.hasPrefix("AIza") { return (.gemini, true) }

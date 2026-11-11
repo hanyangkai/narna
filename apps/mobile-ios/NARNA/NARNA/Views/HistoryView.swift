@@ -9,6 +9,7 @@ struct HistoryView: View {
     @EnvironmentObject var app: AppState
     @EnvironmentObject var store: ConversationStore
     @State private var confirmDeleteAll = false
+    @State private var autoOpenFirst = false
 
     var body: some View {
         NavigationStack {
@@ -20,9 +21,8 @@ struct HistoryView: View {
                 } else {
                     List {
                         ForEach(store.sorted) { c in
-                            Button {
-                                app.currentConversationID = c.id
-                                app.selectedTab = .chat
+                            NavigationLink {
+                                HistoryDetailView(conversation: c)
                             } label: {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
@@ -42,9 +42,7 @@ struct HistoryView: View {
                                     .foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 4)
-                                .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
                         }
                         .onDelete { idx in
                             let list = store.sorted
@@ -70,6 +68,60 @@ struct HistoryView: View {
                 Button("Delete All", role: .destructive) {
                     app.currentConversationID = nil
                     store.deleteAll()
+                }
+            }
+            .navigationDestination(isPresented: $autoOpenFirst) {
+                if let c = store.sorted.first {
+                    HistoryDetailView(conversation: c)
+                }
+            }
+            .onAppear {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_HISTORY_DETAIL"),
+                   store.sorted.first != nil {
+                    autoOpenFirst = true
+                }
+                #endif
+            }
+        }
+        .narnaTabRoot()
+    }
+}
+
+/// Pushed from History. System back + swipe-back return to the list; Open in Chat jumps to the Chat tab.
+struct HistoryDetailView: View {
+    let conversation: Conversation
+    @EnvironmentObject var app: AppState
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                if conversation.messages.isEmpty {
+                    Text("No messages in this conversation.")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                ForEach(conversation.messages) { msg in
+                    VStack(alignment: .leading, spacing: 8) {
+                        AIMessageRow(message: msg) {}
+                        if let a = msg.adqa {
+                            ADQACardView(assessment: a)
+                        }
+                    }
+                }
+            }
+            .padding()
+            .padding(.bottom, 36)
+        }
+        .navigationTitle(conversation.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Open in Chat") {
+                    app.currentConversationID = conversation.id
+                    app.selectedTab = .chat
                 }
             }
         }

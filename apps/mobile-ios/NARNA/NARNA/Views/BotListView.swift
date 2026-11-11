@@ -54,6 +54,7 @@ struct BotListView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
+                    .presentationDragIndicator(.visible)
             }
             .sheet(item: $selectedBot) { bot in
                 ChatView(bot: bot)
@@ -71,6 +72,7 @@ struct BotListView: View {
                 viewModel.stopAutoRefresh()
             }
         }
+        .narnaTabRoot()
     }
 }
 

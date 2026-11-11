@@ -28,10 +28,12 @@ final class LLMSettings: ObservableObject {
         // Simulator test hook: saves through the same path as the Settings "Save" button.
         if let k = ProcessInfo.processInfo.environment["NARNA_TEST_KEY"], !k.isEmpty {
             let args = ProcessInfo.processInfo.arguments
-            var p = LLMProvider.detect(fromKey: k)?.provider ?? .openai
+            var p = LLMProvider.detect(fromKey: k)?.provider
             if let i = args.firstIndex(of: "-NARNA_TEST_PROVIDER"), i + 1 < args.count,
                let forced = LLMProvider(rawValue: args[i + 1]) { p = forced }
-            save(LLMConfig(provider: p, model: p.defaultModel, apiKey: k))
+            if let p {
+                save(LLMConfig(provider: p, model: p.defaultModel, apiKey: k))
+            }
         }
         if ProcessInfo.processInfo.arguments.contains("-NARNA_TEST_CLEARKEY") { clear() }
         #endif

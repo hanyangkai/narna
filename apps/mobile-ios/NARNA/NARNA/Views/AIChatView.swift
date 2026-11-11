@@ -61,6 +61,7 @@ struct AIChatView: View {
                 #endif
             }
         }
+        .narnaTabRoot()
     }
 
     private func messageList(_ convo: Conversation) -> some View {
@@ -100,6 +101,7 @@ struct AIChatView: View {
                     }
                 }
                 .padding()
+                    .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: convo.messages) { _, _ in
@@ -126,6 +128,7 @@ struct AIChatView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+        .padding(.bottom, 4)
         .background(.bar)
     }
 }
@@ -190,7 +193,7 @@ struct NoKeyEmptyState: View {
                 .foregroundStyle(Color.accentColor)
             Text("Add your API key to start")
                 .font(.title2.bold())
-            Text("NaNa Bot works with your own API key from OpenAI, Anthropic, OpenRouter, ckey.vn, Groq, DeepSeek, Gemini, xAI, Together, Mistral or any OpenAI-compatible service. The key is stored only in this iPhone's Keychain and requests go directly to the provider you choose.")
+            Text("NaNa Bot works with your own API key from OpenAI, Anthropic, OpenRouter, CKEY.VN, Groq, DeepSeek, Gemini, xAI, Together, Mistral or any OpenAI-compatible service. The key is stored only in this iPhone's Keychain and requests go directly to the provider you choose.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -239,6 +242,7 @@ struct StartEmptyState: View {
                     }
                 }
                 .padding(.horizontal)
+                .padding(.bottom, 36)
             }
         }
     }

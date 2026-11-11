@@ -36,7 +36,7 @@ enum LLMError: LocalizedError {
         case .invalidBaseURL:
             return "The provider base URL is not valid. Check it in Settings."
         case .invalidKey(let m):
-            return "Your API key was rejected by the provider. Check it in Settings." + (m.map { "\n(\($0))" } ?? "")
+            return "The API key was rejected (401). Check that the selected provider matches this key, and that the key is valid." + (m.map { "\n(\($0))" } ?? "")
         case .rateLimited(let m):
             return "Rate limit or quota reached at your provider. Wait a moment or check your plan." + (m.map { "\n(\($0))" } ?? "")
         case .network(let m):
@@ -186,11 +186,35 @@ final class LLMService {
     }
 
     private static func providerMessage(_ json: [String: Any]) -> String? {
+        let raw: String?
         if let err = json["error"] as? [String: Any], let m = err["message"] as? String {
-            return String(m.prefix(200))
+            raw = m
+        } else if let m = json["message"] as? String {
+            raw = m
+        } else {
+            raw = nil
         }
-        if let m = json["message"] as? String { return String(m.prefix(200)) }
-        return nil
+        return raw.map { sanitizeProviderMessage($0) }
+    }
+
+    /// Strip anything that looks like a key so we never show or log key material.
+    static func sanitizeProviderMessage(_ message: String) -> String {
+        var s = message
+        // Replace only values that look like secrets, never header names such as "x-api-key".
+        let replacements: [(String, String)] = [
+            (#"sk-[A-Za-z0-9_\-]{8,}"#, "[redacted]"),
+            (#"gsk_[A-Za-z0-9_\-]{8,}"#, "[redacted]"),
+            (#"xai-[A-Za-z0-9_\-]{8,}"#, "[redacted]"),
+            (#"AIza[A-Za-z0-9_\-]{8,}"#, "[redacted]"),
+            (#"(?i)Bearer\s+[A-Za-z0-9_\-\.]{8,}"#, "Bearer [redacted]"),
+            (#"(?i)(API key provided:\s*)(\S+)"#, "$1[redacted]"),
+        ]
+        for (p, tmpl) in replacements {
+            if let re = try? NSRegularExpression(pattern: p) {
+                s = re.stringByReplacingMatches(in: s, options: [], range: NSRange(s.startIndex..., in: s), withTemplate: tmpl)
+            }
+        }
+        return String(s.prefix(200))
     }
 }
 
