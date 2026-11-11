@@ -10,15 +10,23 @@ enum MainTab: Hashable {
     case chat, history, desktop, settings
 }
 
+/// Screens pushed on top of the bot list (home).
+enum HomeRoute: Hashable {
+    case chat
+}
+
 @MainActor
 final class AppState: ObservableObject {
     static let shared = AppState()
-    @Published var selectedTab: MainTab = .chat
+    /// Navigation path of the home NavigationStack (bot list -> chat).
+    @Published var path: [HomeRoute] = []
+    @Published var showSettings = false
+    @Published var showHistory = false
+    @Published var showDesktop = false
     @Published var currentConversationID: UUID?
     @Published var currentBotID: UUID = ChatBot.chiefOfStaffID {
         didSet { UserDefaults.standard.set(currentBotID.uuidString, forKey: "current_bot_id") }
     }
-    @Published var showBotsList = false
     @Published var isPaired: Bool = KeychainService.shared.getMobileToken() != nil
 
     private init() {
@@ -35,7 +43,38 @@ final class AppState: ObservableObject {
     func unpair() {
         KeychainService.shared.clearAll()
         isPaired = false
-        if selectedTab == .desktop { selectedTab = .settings }
+        showDesktop = false
+    }
+
+    /// Open a chat with a bot (pushes the chat over the bot list).
+    func openBot(_ id: UUID, conversation: UUID?) {
+        currentBotID = id
+        currentConversationID = conversation
+        showSettings = false
+        showHistory = false
+        path = [.chat]
+    }
+
+    /// Replacement for the old tab bar: everything hangs off the bot list now.
+    func navigate(_ tab: MainTab) {
+        switch tab {
+        case .chat:
+            showSettings = false
+            showHistory = false
+            showDesktop = false
+            if path.isEmpty { path = [.chat] }
+        case .history:
+            showHistory = true
+        case .settings:
+            showSettings = true
+        case .desktop:
+            if showSettings {
+                showSettings = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.showDesktop = true }
+            } else {
+                showDesktop = true
+            }
+        }
     }
 }
 

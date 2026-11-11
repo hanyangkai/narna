@@ -21,10 +21,10 @@ struct AIChatView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
+            Group {
                 if !vm.isReady {
-                    NoKeyEmptyState { app.selectedTab = .settings }
+                    NoKeyEmptyState { app.navigate(.settings) }
                 } else if let convo = vm.conversation, !convo.messages.isEmpty {
                     messageList(convo)
                 } else if vm.currentBot.isChiefOfStaff {
@@ -38,65 +38,65 @@ struct AIChatView: View {
                         vm.send()
                     }
                 }
-                if vm.isReady { inputBar }
             }
-            .navigationTitle(vm.conversation?.title ?? vm.currentBot.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { app.showBotsList = true } label: {
-                        HStack(spacing: 4) {
-                            if !vm.currentBot.isChiefOfStaff {
-                                Image(systemName: "chevron.backward")
-                                    .font(.body.weight(.semibold))
-                            }
-                            BotAvatar(bot: vm.currentBot, size: 30)
-                        }
-                    }
-                    .accessibilityLabel(vm.currentBot.isChiefOfStaff ? "Bots" : "Back to bots")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 10) {
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Tap anywhere outside the input to put the keyboard away.
+            .contentShape(Rectangle())
+            .simultaneousGesture(TapGesture().onEnded { dismissKeyboard() })
+            if vm.isReady { inputBar }
+        }
+        .background(Color(.systemBackground))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    BotAvatar(bot: vm.currentBot, size: 28)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(vm.currentBot.name)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
                         if vm.isReady {
                             Text(vm.activeModel)
                                 .font(.caption2.monospaced())
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
-                        Button { vm.newChat() } label: { Image(systemName: "square.and.pencil") }
-                            .disabled(vm.conversation == nil)
-                            .accessibilityLabel("New chat")
                     }
                 }
+                .accessibilityElement(children: .combine)
             }
-            .sheet(isPresented: $app.showBotsList) {
-                BotsView()
-                    .environmentObject(app)
-                    .environmentObject(bots)
-                    .environmentObject(store)
-                    .environmentObject(settings)
-            }
-            .onAppear {
-                #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_AUTOSEND"), vm.conversation == nil {
-                    vm.input = "Our 12-person team wants to move from Jenkins to a hosted CI. Should we switch now?"
-                    vm.send()
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 14) {
+                    Button { dismissKeyboard(); app.navigate(.history) } label: { Image(systemName: "clock.arrow.circlepath") }
+                        .accessibilityLabel("History")
+                    Button { vm.newChat() } label: { Image(systemName: "square.and.pencil") }
+                        .disabled(vm.conversation == nil)
+                        .accessibilityLabel("New chat")
                 }
-                if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_BOTS") {
-                    bots.seedDemoBots()
-                }
-                if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_USER_BOT") {
-                    bots.seedDemoBots()
-                    app.currentBotID = ChatBotStore.demoResearchID
-                    app.currentConversationID = store.sorted(for: ChatBotStore.demoResearchID).first?.id
-                } else if ProcessInfo.processInfo.arguments.contains("-NARNA_OPEN_BOTS") {
-                    bots.seedDemoBots()
-                    app.showBotsList = true
-                }
-                #endif
             }
         }
-        .narnaTabRoot()
+        .onAppear {
+            bots.markViewed(vm.currentBot.id)
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-NARNA_DEMO_AUTOSEND"), vm.conversation == nil, vm.isReady {
+                vm.input = "Our 12-person team wants to move from Jenkins to a hosted CI. Should we switch now?"
+                vm.send()
+            }
+            if ProcessInfo.processInfo.arguments.contains("-NARNA_FOCUS_INPUT") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { inputFocused = true }
+            }
+            #endif
+        }
+        .onDisappear {
+            dismissKeyboard()
+            bots.markViewed(vm.currentBot.id)
+        }
+    }
+
+    private func dismissKeyboard() {
+        inputFocused = false
+        narnaEndEditing()
     }
 
     private func messageList(_ convo: Conversation) -> some View {
@@ -138,7 +138,15 @@ struct AIChatView: View {
                 .padding()
                     .padding(.bottom, 24)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)   // any drag on the list puts the keyboard away
+            .scrollBounceBehavior(.always)
+            .defaultScrollAnchor(.bottom)
+            .onChange(of: inputFocused) { _, focused in
+                guard focused else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation { proxy.scrollTo(convo.messages.last?.id, anchor: .bottom) }
+                }
+            }
             .onChange(of: convo.messages) { _, _ in
                 withAnimation { proxy.scrollTo(convo.messages.last?.id, anchor: .bottom) }
             }
@@ -155,6 +163,16 @@ struct AIChatView: View {
                 .padding(.vertical, 10)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
+            if inputFocused {
+                Button { dismissKeyboard() } label: {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, height: 34)
+                }
+                .accessibilityLabel("Hide keyboard")
+                .transition(.opacity)
+            }
             Button { vm.send() } label: {
                 Image(systemName: "arrow.up.circle.fill").font(.system(size: 34))
             }
@@ -165,6 +183,7 @@ struct AIChatView: View {
         .padding(.vertical, 8)
         .padding(.bottom, 4)
         .background(.bar)
+        .animation(.easeInOut(duration: 0.15), value: inputFocused)
     }
 }
 
@@ -280,6 +299,7 @@ struct StartEmptyState: View {
                 .padding(.bottom, 36)
             }
         }
+        .scrollDismissesKeyboard(.immediately)   // any drag on the list puts the keyboard away
     }
 }
 
@@ -288,8 +308,9 @@ struct BotEmptyState: View {
     let bot: ChatBot
     var pick: (String) -> Void
     var body: some View {
+        ScrollView {
         VStack(spacing: 16) {
-            Spacer()
+            Spacer(minLength: 80)
             BotAvatar(bot: bot, size: 72)
             Text("Message \(bot.name)")
                 .font(.title2.bold())
@@ -304,8 +325,11 @@ struct BotEmptyState: View {
                     .padding(.horizontal, 28)
                     .lineLimit(4)
             }
-            Spacer()
+            Spacer(minLength: 40)
         }
         .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.always)
+        .scrollDismissesKeyboard(.immediately)   // any drag on the list puts the keyboard away
     }
 }

@@ -80,7 +80,7 @@ final class LLMService {
 
     // MARK: Model list (GET {base}/models)
 
-    func listModels(provider: LLMProvider, baseURL: String, apiKey: String) async throws -> [String] {
+    func listModels(provider: LLMProvider, baseURL: String, apiKey: String, session: URLSession? = nil) async throws -> [String] {
         if isMockMode { return provider.suggestedModels + ["demo-model-large", "demo-model-small"] }
         let base = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
         guard let url = URL(string: base + "/models\(provider.usesAnthropicAPI ? "?limit=100" : "")"),
@@ -93,7 +93,7 @@ final class LLMService {
         } else if !key.isEmpty {
             req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
-        let json = try await send(req)
+        let json = try await send(req, session: session)
         let items = (json["data"] as? [[String: Any]]) ?? (json["models"] as? [[String: Any]]) ?? []
         var ids = items.compactMap { ($0["id"] as? String) ?? ($0["name"] as? String) }
             .map { $0.hasPrefix("models/") ? String($0.dropFirst(7)) : $0 }
@@ -101,6 +101,93 @@ final class LLMService {
         let skip = ["embed", "whisper", "tts", "dall-e", "moderation", "transcribe", "audio", "image", "rerank", "guard"]
         ids = ids.filter { id in !skip.contains { id.lowercased().contains($0) } }
         return Array(Set(ids)).sorted()
+    }
+
+    // MARK: Paste-only key setup
+
+    struct KeyResolution {
+        let provider: LLMProvider
+        let baseURL: String
+        let models: [String]
+    }
+
+    /// Short-timeout session for probing providers while the user pastes a key.
+    private let probeSession: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.timeoutIntervalForRequest = 12
+        c.timeoutIntervalForResource = 20
+        c.urlCache = nil
+        return URLSession(configuration: c)
+    }()
+
+    /// Order used when the key prefix is unknown.
+    static let probeOrder: [LLMProvider] = [.ckey, .openai, .openrouter, .groq, .deepseek, .together, .xai, .gemini, .mistral]
+    /// Plain "sk-" is shared by several OpenAI-compatible services.
+    static let skProbeOrder: [LLMProvider] = [.ckey, .openai, .deepseek, .together, .mistral, .openrouter]
+
+    static func candidates(forKey key: String) -> [LLMProvider] {
+        guard let (p, strong) = LLMProvider.detect(fromKey: key) else { return probeOrder }
+        return strong ? [p] : skProbeOrder
+    }
+
+    /// Finds which provider accepts this key: probes GET {base}/models for every candidate
+    /// in parallel and returns the first one (in priority order) that answers 200 and
+    /// really authenticated the key. nil if none accepted it.
+    func resolveKey(_ rawKey: String) async -> KeyResolution? {
+        let key = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return nil }
+        let order = Self.candidates(forKey: key)
+        if isMockMode {
+            let p = order.first ?? .openai
+            return KeyResolution(provider: p, baseURL: p.defaultBaseURL, models: p.suggestedModels + ["demo-model-large", "demo-model-small"])
+        }
+        var found: [LLMProvider: KeyResolution] = [:]
+        await withTaskGroup(of: (LLMProvider, KeyResolution?).self) { group in
+            for p in order {
+                group.addTask { [self] in
+                    let base = p.defaultBaseURL
+                    guard let models = try? await self.listModels(provider: p, baseURL: base, apiKey: key, session: self.probeSession),
+                          await self.verifyAuth(provider: p, baseURL: base, apiKey: key) else { return (p, nil) }
+                    return (p, KeyResolution(provider: p, baseURL: base, models: models))
+                }
+            }
+            for await (p, r) in group { if let r { found[p] = r } }
+        }
+        return order.lazy.compactMap { found[$0] }.first
+    }
+
+    /// Some /models endpoints are public (CKEY, OpenRouter), so a 200 there does not prove
+    /// the key is valid. Check an endpoint that needs auth for those.
+    private func verifyAuth(provider: LLMProvider, baseURL: String, apiKey: String) async -> Bool {
+        let base = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+        switch provider {
+        case .openrouter:
+            return await status("GET", base + "/key", key: apiKey) == 200
+        case .ckey:
+            let code = await status("GET", base + "/dashboard/billing/subscription", key: apiKey)
+            if code == 200 { return true }
+            if code == 401 || code == 403 { return false }
+            // Fallback: a chat call to a model that does not exist. Costs nothing;
+            // a bad key gets 401, a good key gets a model error instead.
+            let body = #"{"model":"narna-key-check","messages":[{"role":"user","content":"hi"}],"max_tokens":1}"#
+            let chat = await status("POST", base + "/chat/completions", key: apiKey, body: body)
+            return chat != 0 && chat != 401 && chat != 403
+        default:
+            return true
+        }
+    }
+
+    private func status(_ method: String, _ urlString: String, key: String, body: String? = nil) async -> Int {
+        guard let url = URL(string: urlString) else { return 0 }
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        if let body {
+            req.httpBody = body.data(using: .utf8)
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        guard let (_, resp) = try? await probeSession.data(for: req) else { return 0 }
+        return (resp as? HTTPURLResponse)?.statusCode ?? 0
     }
 
     // MARK: OpenAI chat completions (also OpenAI-compatible servers)
@@ -157,11 +244,11 @@ final class LLMService {
 
     // MARK: Transport + error mapping
 
-    private func send(_ req: URLRequest) async throws -> [String: Any] {
+    private func send(_ req: URLRequest, session override: URLSession? = nil) async throws -> [String: Any] {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for: req)
+            (data, response) = try await (override ?? session).data(for: req)
         } catch let e as URLError {
             throw LLMError.network(e.localizedDescription)
         } catch {

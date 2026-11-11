@@ -56,7 +56,12 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") { app.showHistory = false }
+                        .accessibilityLabel("Close History")
+                }
                 if !store.sorted(for: app.currentBotID).isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(role: .destructive) { confirmDeleteAll = true } label: { Image(systemName: "trash") }
@@ -124,7 +129,7 @@ struct HistoryDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Open in Chat") {
                     app.currentConversationID = conversation.id
-                    app.selectedTab = .chat
+                    app.navigate(.chat)
                 }
             }
         }

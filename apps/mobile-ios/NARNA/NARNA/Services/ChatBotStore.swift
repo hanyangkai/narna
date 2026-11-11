@@ -100,9 +100,10 @@ final class ChatBotStore: ObservableObject {
     }
 
     func markViewed(_ id: UUID) {
-        guard var b = bots.first(where: { $0.id == id }) else { return }
-        b.lastViewedAt = Date()
-        upsert(b)
+        // Don't bump updatedAt: that would reorder the home list on every open.
+        guard let i = bots.firstIndex(where: { $0.id == id }) else { return }
+        bots[i].lastViewedAt = Date()
+        save()
     }
 
     func setAPIKey(_ key: String?, for id: UUID) {
