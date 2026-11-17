@@ -48,9 +48,28 @@ Canonical overview: [`docs/AGENT-BOT-MODEL.md`](./AGENT-BOT-MODEL.md)
 
 ## Desktop CLI (Path A)
 
+### Sign in with Claude (MausBot-style UI)
+
+1. Install [Claude Code CLI](https://code.claude.com/docs/en/setup) (`claude` on PATH).
+2. Open **NARNA Desktop** → wizard or **Settings → Sign in with Claude**.
+3. Browser opens Claude login → sign in with your Claude / Claude Code subscription.
+4. Paste the authorization code into Desktop → NARNA sets provider `claude_cli`.
+5. Chat uses your subscription via `claude -p` (no Anthropic API key required).
+
+Desktop APIs:
+
+| Endpoint | Role |
+|----------|------|
+| `GET /v1/desktop/claude/status` | CLI installed? logged in? |
+| `POST /v1/desktop/claude/login/start` | Start `claude auth login`, open browser |
+| `POST /v1/desktop/claude/login/complete` | `{ "code": "…" }` paste OAuth code |
+| `POST /v1/desktop/claude/logout` | Cancel pending login / clear `claude_cli` provider |
+
+Never paste OAuth codes into chat with anyone — only into the Desktop UI (local).
+
 ```bash
-# Claude
-# install Claude Code / claude CLI → claude login
+# Terminal alternative (same credentials Desktop uses)
+claude auth login
 
 # ChatGPT / Codex
 # install Codex CLI → login with ChatGPT account

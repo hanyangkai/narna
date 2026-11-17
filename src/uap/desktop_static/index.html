@@ -220,10 +220,28 @@
           <div class="stat-grid" id="statGrid"></div>
         </div>
         <div class="panel">
+          <h3 style="margin:0 0 0.5rem;font-size:1rem">Sign in with Claude</h3>
+          <p class="hint" id="claudeStatusHint">Use your Claude / Claude Code subscription — no API key needed.</p>
+          <div class="row" style="margin-top:0.5rem;flex-wrap:wrap">
+            <button type="button" class="primary" id="claudeLoginStart">Sign in with Claude</button>
+            <a id="claudeLoginLink" class="hint" href="#" target="_blank" rel="noopener" style="display:none">Open login page</a>
+          </div>
+          <div id="claudeCodeBox" style="margin-top:0.75rem;display:none">
+            <label for="claudeCode">Paste code from Claude</label>
+            <input id="claudeCode" type="text" placeholder="Paste authorization code" autocomplete="off" />
+            <div class="row" style="margin-top:0.5rem">
+              <button type="button" class="primary" id="claudeLoginComplete">Complete login</button>
+              <button type="button" class="secondary" id="claudeLoginCancel">Cancel</button>
+            </div>
+          </div>
+          <p class="hint" id="claudeLoginMsg" style="margin-top:0.5rem"></p>
+        </div>
+        <div class="panel">
           <div class="grid2">
             <div>
               <label for="provider">LLM provider</label>
               <select id="provider">
+                <option value="claude_cli">Claude (subscription)</option>
                 <option value="openrouter">OpenRouter</option>
                 <option value="openai">OpenAI</option>
                 <option value="ollama">Ollama (local)</option>
@@ -236,7 +254,7 @@
             </div>
           </div>
           <div style="margin-top:0.75rem">
-            <label for="apiKey">API key (saved locally — never uploaded)</label>
+            <label for="apiKey">API key (BYOK — saved locally, never uploaded)</label>
             <input id="apiKey" type="password" placeholder="sk-… or OpenRouter key" autocomplete="off" />
           </div>
           <div class="row" style="margin-top:0.75rem">
@@ -271,20 +289,38 @@
         <span class="step-dot" id="wd3"></span>
       </div>
       <div id="wizardBody">
-        <p>1. Install done ✓<br>2. Paste your LLM key (OpenRouter / OpenAI / Ollama)<br>3. Start chatting — tools run on your PC</p>
-        <div style="margin-top:1rem;text-align:left">
-          <label for="wizKey">API key</label>
-          <input id="wizKey" type="password" placeholder="sk-…" />
-          <div class="row" style="margin-top:0.75rem">
-            <select id="wizProvider" style="width:auto">
-              <option value="openrouter">OpenRouter</option>
-              <option value="openai">OpenAI</option>
-              <option value="ollama">Ollama</option>
-            </select>
-            <button type="button" class="primary" id="wizSave">Save & start</button>
-            <button type="button" class="secondary" id="wizSkip">Demo (mock)</button>
+        <p style="text-align:left">Connect a brain for your local agent:</p>
+        <div style="margin-top:1rem;text-align:left;border:1px solid var(--border,#333);border-radius:8px;padding:0.85rem;margin-bottom:0.75rem">
+          <strong>Claude subscription</strong>
+          <p class="hint" style="margin:0.35rem 0">Open browser → sign in → paste the code here (like MausBot).</p>
+          <div class="row" style="margin-top:0.5rem;flex-wrap:wrap">
+            <button type="button" class="primary" id="wizClaudeStart">Sign in with Claude</button>
           </div>
+          <div id="wizClaudeCodeBox" style="margin-top:0.75rem;display:none">
+            <label for="wizClaudeCode">Paste code from Claude</label>
+            <input id="wizClaudeCode" type="text" placeholder="Paste authorization code" autocomplete="off" />
+            <div class="row" style="margin-top:0.5rem">
+              <button type="button" class="primary" id="wizClaudeComplete">Complete & start</button>
+            </div>
+          </div>
+          <p class="hint" id="wizClaudeMsg" style="margin-top:0.5rem"></p>
         </div>
+        <details style="text-align:left;margin-top:0.5rem">
+          <summary class="hint" style="cursor:pointer">Or use an API key (OpenRouter / OpenAI / Ollama)</summary>
+          <div style="margin-top:0.75rem">
+            <label for="wizKey">API key</label>
+            <input id="wizKey" type="password" placeholder="sk-…" />
+            <div class="row" style="margin-top:0.75rem">
+              <select id="wizProvider" style="width:auto">
+                <option value="openrouter">OpenRouter</option>
+                <option value="openai">OpenAI</option>
+                <option value="ollama">Ollama</option>
+              </select>
+              <button type="button" class="primary" id="wizSave">Save & start</button>
+              <button type="button" class="secondary" id="wizSkip">Demo (mock)</button>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -347,7 +383,7 @@
         const j = await r.json();
         agentBadge.textContent = j.hasKey
           ? j.toolCount + " tools · " + (j.provider || "mock")
-          : "no key — mock mode";
+          : (j.provider === "claude_cli" ? "Claude login needed" : "no key — mock mode");
         document.getElementById("statGrid").innerHTML =
           "<div class='stat'><b>" + j.toolCount + "</b><span>tools</span></div>" +
           "<div class='stat'><b>" + j.skillCount + "</b><span>skills</span></div>" +
@@ -358,6 +394,7 @@
         } else {
           wizard.classList.add("hidden");
         }
+        refreshClaudeStatus();
         return j;
       } catch {
         agentBadge.textContent = "status error";
@@ -397,6 +434,94 @@
       await refreshStatus();
     };
 
+    async function refreshClaudeStatus() {
+      try {
+        const j = await (await fetch("/v1/desktop/claude/status")).json();
+        const hint = document.getElementById("claudeStatusHint");
+        if (!hint) return;
+        if (!j.claudeInstalled) {
+          hint.textContent = "Install Claude Code CLI first, then sign in here. " + (j.installHint || "");
+        } else if (j.loggedIn) {
+          hint.textContent = j.usingClaudeCli
+            ? "Claude subscription connected — Desktop will use Claude Code as the brain."
+            : "Claude CLI logged in. Choose provider “Claude (subscription)” and Save, or Sign in again to activate.";
+        } else {
+          hint.textContent = "Use your Claude / Claude Code subscription — no API key needed.";
+        }
+      } catch (_) { /* ignore */ }
+    }
+
+    async function startClaudeLogin(msgEl, codeBox) {
+      msgEl.textContent = "Opening Claude login…";
+      try {
+        const r = await fetch("/v1/desktop/claude/login/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ openBrowser: true }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          msgEl.textContent = (j.detail || j.error || "Could not start login") + "";
+          return;
+        }
+        codeBox.style.display = "block";
+        const link = document.getElementById("claudeLoginLink");
+        if (link && j.loginUrl) {
+          link.href = j.loginUrl;
+          link.style.display = "inline";
+        }
+        msgEl.textContent = j.hint || "Sign in in the browser, then paste the code below.";
+      } catch (e) {
+        msgEl.textContent = String(e.message || e);
+      }
+    }
+
+    async function completeClaudeLogin(code, msgEl, fromWizard) {
+      const raw = (code || "").trim();
+      if (!raw) {
+        msgEl.textContent = "Paste the code from the Claude page first.";
+        return;
+      }
+      msgEl.textContent = "Completing login…";
+      try {
+        const r = await fetch("/v1/desktop/claude/login/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: raw }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          msgEl.textContent = (j.detail || j.error || "Login failed") + "";
+          return;
+        }
+        msgEl.textContent = "Claude connected.";
+        if (fromWizard) {
+          localStorage.setItem("narna_wizard_done", "1");
+          wizard.classList.add("hidden");
+          addMsg("bot", "Claude subscription connected. Ask anything — tools run on your PC.");
+        }
+        await loadCfg();
+        await refreshStatus();
+        await refreshClaudeStatus();
+      } catch (e) {
+        msgEl.textContent = String(e.message || e);
+      }
+    }
+
+    document.getElementById("claudeLoginStart").onclick = () =>
+      startClaudeLogin(document.getElementById("claudeLoginMsg"), document.getElementById("claudeCodeBox"));
+    document.getElementById("claudeLoginComplete").onclick = () =>
+      completeClaudeLogin(document.getElementById("claudeCode").value, document.getElementById("claudeLoginMsg"), false);
+    document.getElementById("claudeLoginCancel").onclick = async () => {
+      await fetch("/v1/desktop/claude/logout", { method: "POST" }).catch(() => {});
+      document.getElementById("claudeCodeBox").style.display = "none";
+      document.getElementById("claudeLoginMsg").textContent = "Cancelled.";
+    };
+    document.getElementById("wizClaudeStart").onclick = () =>
+      startClaudeLogin(document.getElementById("wizClaudeMsg"), document.getElementById("wizClaudeCodeBox"));
+    document.getElementById("wizClaudeComplete").onclick = () =>
+      completeClaudeLogin(document.getElementById("wizClaudeCode").value, document.getElementById("wizClaudeMsg"), true);
+
     document.getElementById("wizSave").onclick = async () => {
       await saveConfig({
         provider: document.getElementById("wizProvider").value,
@@ -412,7 +537,7 @@
     document.getElementById("wizSkip").onclick = () => {
       localStorage.setItem("narna_wizard_done", "1");
       wizard.classList.add("hidden");
-      addMsg("bot", "Running in mock mode. Add a key in Settings for real LLM responses.");
+      addMsg("bot", "Running in mock mode. Sign in with Claude or add a key in Settings.");
     };
 
     document.getElementById("newSession").onclick = () => {
@@ -704,7 +829,7 @@
         }
       } catch {}
     })();
-    addMsg("bot", "NARNA Desktop agent running locally. Paste your BYOK key to connect an LLM, or use mock mode to explore.");
+    addMsg("bot", "NARNA Desktop agent running locally. Sign in with Claude (subscription) or paste a BYOK key — tools run on your PC.");
   </script>
 </body>
 </html>

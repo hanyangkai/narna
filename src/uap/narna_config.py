@@ -170,7 +170,8 @@ def router_from_config(
     provider = (provider_override or cfg.get("provider") or "mock").lower()
     api_key = (cfg.get("apiKey") or "").strip() or None
     base_url = cfg.get("baseUrl") or None
-    if not api_key and provider != "ollama":
+    # Claude Code subscription login needs no API key; Ollama is local.
+    if not api_key and provider not in {"ollama", "claude_cli", "mock"}:
         provider = "mock"
     models: dict[str, str] = {}
     model = cfg.get("model")
