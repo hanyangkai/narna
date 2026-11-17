@@ -90,6 +90,14 @@ class CloudLinkBody(BaseModel):
     deviceId: str | None = None
 
 
+class ClaudeLoginStartBody(BaseModel):
+    openBrowser: bool = True
+
+
+class ClaudeLoginCompleteBody(BaseModel):
+    code: str
+
+
 def _device_id(cfg: dict[str, Any], ws: Path) -> str:
     import hashlib
 
@@ -158,17 +166,25 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
 
     @app.get("/v1/desktop/config")
     def get_config() -> dict[str, Any]:
+        from .claude_cli_auth import claude_logged_in
+
         cfg = load_config(ws)
         key = str(cfg.get("apiKey") or "")
+        provider = str(cfg.get("provider") or "openrouter").lower()
         masked = (key[:4] + "…" + key[-4:]) if len(key) > 8 else ("***" if key else "")
+        ready = bool(key) or provider in {"ollama", "claude_cli", "mock"}
+        if provider == "claude_cli":
+            ready = claude_logged_in() or bool(key)
         return {
             "ok": True,
-            "provider": cfg.get("provider") or "openrouter",
-            "hasKey": bool(key),
+            "provider": provider,
+            "hasKey": bool(key) or (provider == "claude_cli" and claude_logged_in()),
+            "ready": ready,
             "maskedKey": masked,
             "baseUrl": cfg.get("baseUrl"),
             "model": cfg.get("model"),
             "workspace": str(ws),
+            "claudeSubscription": provider == "claude_cli" and claude_logged_in(),
         }
 
     @app.put("/v1/desktop/config")
@@ -195,7 +211,7 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
         if body.llmProvider or body.llmApiKey or body.llmBaseUrl or body.model:
             from uap.model_router import ModelRouter
 
-            if not api_key:
+            if not api_key and provider not in {"ollama", "claude_cli", "mock"}:
                 provider = "mock"
             models: dict[str, str] = {}
             model = body.model or cfg.get("model")
@@ -229,20 +245,25 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
     def agent_status() -> dict[str, Any]:
         from uap.narna_config import make_agent
 
+        from .claude_cli_auth import claude_logged_in
+
         cfg = load_config(ws)
         agent = make_agent(ws)
         tools = agent.tools.specs()
         skills = agent.skills.list_skills()
+        provider = str(cfg.get("provider") or "mock").lower()
+        has_key = bool(cfg.get("apiKey")) or (provider == "claude_cli" and claude_logged_in())
         return {
             "ok": True,
-            "hasKey": bool(cfg.get("apiKey")),
-            "provider": cfg.get("provider") or "mock",
+            "hasKey": has_key,
+            "provider": provider,
             "model": cfg.get("model"),
             "toolCount": len(tools),
             "skillCount": len(skills),
             "workspace": str(ws),
             "shellBackend": os.environ.get("UAP_SHELL_BACKEND") or cfg.get("shellBackend") or "local",
             "browserEnabled": bool(cfg.get("browserEnabled")),
+            "claudeLoggedIn": claude_logged_in(),
             "standard": "NGS-0029-desktop-agent",
         }
 
@@ -389,6 +410,52 @@ def create_app(*, workspace: Path | None = None, runtime: Any | None = None) -> 
                 "project": str(md.project_path),
             },
         }
+
+    @app.get("/v1/desktop/claude/status")
+    def desktop_claude_status() -> dict[str, Any]:
+        from .claude_cli_auth import status as claude_status
+
+        st = claude_status()
+        cfg = load_config(ws)
+        st["activeProvider"] = cfg.get("provider")
+        st["usingClaudeCli"] = str(cfg.get("provider") or "").lower() == "claude_cli"
+        return st
+
+    @app.post("/v1/desktop/claude/login/start")
+    def desktop_claude_login_start(body: ClaudeLoginStartBody = ClaudeLoginStartBody()) -> dict[str, Any]:
+        from .claude_cli_auth import start_login
+
+        out = start_login(open_browser=bool(body.openBrowser))
+        if not out.get("ok"):
+            raise HTTPException(status_code=400, detail=out.get("detail") or out.get("error") or "login_start_failed")
+        return out
+
+    @app.post("/v1/desktop/claude/login/complete")
+    def desktop_claude_login_complete(body: ClaudeLoginCompleteBody) -> dict[str, Any]:
+        from .claude_cli_auth import complete_login, status as claude_status
+
+        out = complete_login(body.code)
+        if not out.get("ok"):
+            raise HTTPException(status_code=400, detail=out.get("detail") or out.get("error") or "login_failed")
+        # Prefer Claude CLI subscription as active Desktop brain after successful login.
+        cfg = load_config(ws)
+        cfg["provider"] = "claude_cli"
+        cfg["apiKey"] = cfg.get("apiKey") or ""
+        cfg["model"] = cfg.get("model") or "claude-code"
+        save_config(ws, cfg)
+        st = claude_status()
+        return {"ok": True, "loggedIn": True, "provider": "claude_cli", "claude": st}
+
+    @app.post("/v1/desktop/claude/logout")
+    def desktop_claude_logout() -> dict[str, Any]:
+        from .claude_cli_auth import cancel_login
+
+        cancel_login()
+        cfg = load_config(ws)
+        if str(cfg.get("provider") or "").lower() == "claude_cli":
+            cfg["provider"] = "mock"
+            save_config(ws, cfg)
+        return {"ok": True, "provider": cfg.get("provider")}
 
     @app.get("/v1/desktop/cloud")
     def desktop_cloud_status() -> dict[str, Any]:

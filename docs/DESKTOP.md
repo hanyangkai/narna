@@ -44,8 +44,8 @@ narna desktop
 
 1. **Download** portable app or install via pip
 2. **Launch** — local FastAPI agent server starts on `127.0.0.1`
-3. **Setup wizard** — paste OpenRouter / OpenAI / Ollama key (BYOK)
-4. **Chat** — agent runs tools on your PC (shell, browser, memory, skills)
+3. **Setup wizard** — **Sign in with Claude** (open browser + paste code) or paste OpenRouter / OpenAI / Ollama key (BYOK)
+4. **Chat** — agent runs tools on your PC (shell, browser, memory, skills); Claude subscription uses `claude_cli` provider
 5. **ADQA** — every reply scored with Decision Quality (DQS)
 
 All data stays in `~/.narna/` (config, sessions, decision memory, traces).

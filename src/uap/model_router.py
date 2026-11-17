@@ -35,6 +35,11 @@ DEFAULT_MODELS: dict[str, dict[str, str]] = {
         "reason": "llama3.2",
         "challenge": "llama3.2",
     },
+    "claude_cli": {
+        "cheap": "claude-code",
+        "reason": "claude-code",
+        "challenge": "claude-code",
+    },
     "mock": {
         "cheap": "mock-cheap",
         "reason": "mock-reason",
@@ -138,6 +143,8 @@ class ModelRouter:
         model = self.pick_model(tag)
         if self.provider == "mock":
             return self._mock_complete(messages=messages, model=model, task=tag)
+        if self.provider == "claude_cli":
+            return self._claude_cli_complete(messages=messages, model=model, task=tag)
         return self._openai_compat_complete(
             messages=messages,
             model=model,
@@ -146,6 +153,33 @@ class ModelRouter:
             max_tokens=max_tokens,
             tools=tools,
             tool_choice=tool_choice,
+        )
+
+    def _claude_cli_complete(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        model: str,
+        task: str,
+    ) -> RouterResult:
+        from .claude_cli_auth import run_claude_print
+
+        # Flatten chat into a single prompt Claude Code print-mode can handle.
+        parts: list[str] = []
+        for m in messages:
+            role = str(m.get("role") or "user")
+            content = str(m.get("content") or "")
+            if not content:
+                continue
+            parts.append(f"{role.upper()}:\n{content}")
+        prompt = "\n\n".join(parts) if parts else "Hello"
+        content = run_claude_print(prompt)
+        return RouterResult(
+            content=content,
+            model=model,
+            provider="claude_cli",
+            task=task,
+            usage={"promptTokens": max(1, len(prompt) // 4), "completionTokens": max(1, len(content) // 4)},
         )
 
     def reason(self, prompt: str, **kwargs: Any) -> RouterResult:
