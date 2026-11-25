@@ -1,0 +1,4 @@
+/* User-facing iOS display name (en) */
+"CFBundleDisplayName" = "Nana AI";
+"NSCameraUsageDescription" = "Nana AI needs camera access to scan QR codes for pairing with your desktop agent.";
+"NSMicrophoneUsageDescription" = "Nana AI needs microphone access for live voice calls with your bots.";

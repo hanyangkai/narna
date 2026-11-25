@@ -63,7 +63,7 @@ struct SettingsView: View {
                     unpairDevice()
                 }
             } message: {
-                Text("Are you sure you want to unpair this device? You'll need to pair again to use NARNA.")
+                Text("Are you sure you want to unpair this device? You'll need to pair again to use Nana AI.")
             }
             .alert("Updated", isPresented: $showStatus) {
                 Button("OK", role: .cancel) {}
@@ -210,7 +210,7 @@ struct SettingsView: View {
         } header: {
             Text("Subscription")
         } footer: {
-            Text("After purchasing Pro, attach your Claude/OpenAI API key in AI Providers so the cloud agent can run.")
+            Text("After purchasing Nana AI Pro, attach your Claude/OpenAI API key in AI Providers so the cloud agent can run.")
         }
     }
     
@@ -352,9 +352,13 @@ struct SettingsView: View {
     
     private var aboutSection: some View {
         Section("About") {
+            LabeledContent("App", value: "Nana AI")
             LabeledContent("Version", value: "1.0.0")
-            LabeledContent("Build", value: "1")
-            Link("Documentation", destination: URL(string: "https://github.com/narna/narna")!)
+            LabeledContent("Build", value: "2")
+            Link("Documentation", destination: URL(string: "https://github.com/hanyangkai/narna")!)
+            ShareLink(item: URL(string: "https://narna.org")!, message: Text("I'm using Nana AI — remote control for AI agents. https://narna.org")) {
+                Label("Share Nana AI", systemImage: "square.and.arrow.up")
+            }
         }
     }
     

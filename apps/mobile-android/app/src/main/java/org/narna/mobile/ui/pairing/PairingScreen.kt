@@ -87,7 +87,7 @@ fun PairingScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "Connect to NARNA Desktop",
+                    text = "Connect Nana AI to Desktop",
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )

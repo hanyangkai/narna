@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NARNA</string>
+    <string name="app_name">Nana AI</string>
+    <string name="app_share_message">I\'m using Nana AI — remote control for AI agents. https://narna.org</string>
+    <string name="about_app_label">Nana AI</string>
     
     <!-- Pairing -->
-    <string name="pairing_title">Pair with Desktop</string>
+    <string name="pairing_title">Pair with Nana AI</string>
+    <string name="pairing_connect_desktop">Connect to Desktop</string>
     <string name="pairing_scan_qr">Scan QR Code</string>
     <string name="pairing_or">OR</string>
     <string name="pairing_enter_code">Enter 6-digit code</string>
@@ -49,8 +52,15 @@
     <string name="settings_dark_theme">Dark Theme</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_unpair">Unpair Device</string>
-    <string name="settings_unpair_confirm">Are you sure you want to unpair this device?</string>
+    <string name="settings_unpair_confirm">Are you sure you want to unpair this device? You\'ll need to pair again to use Nana AI.</string>
     <string name="settings_version">Version %s</string>
+    <string name="settings_about">About</string>
+    <string name="settings_share">Share Nana AI</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_welcome">Welcome to Nana AI</string>
+    <string name="onboarding_pro_title">Buy Nana AI Pro</string>
+    <string name="notification_channel_connection">Nana AI</string>
     
     <!-- Common -->
     <string name="retry">Retry</string>

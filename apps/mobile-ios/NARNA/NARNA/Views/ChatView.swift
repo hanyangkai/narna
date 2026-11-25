@@ -176,7 +176,7 @@ struct MessageInputView: View {
 #Preview {
     ChatView(bot: BotInfo(
         botId: "bot_1",
-        name: "NARNA Assistant",
+        name: "Nana AI Assistant",
         model: "claude-3.5-sonnet",
         status: "idle",
         lastMessageAt: ISO8601DateFormatter().string(from: Date())

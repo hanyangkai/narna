@@ -33,7 +33,7 @@ fun OnboardingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Welcome to NARNA") }
+                title = { Text("Welcome to Nana AI") }
             )
         }
     ) { paddingValues ->
@@ -64,7 +64,7 @@ fun OnboardingScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "Use your Claude/ChatGPT account on Desktop, or buy NARNA Pro on Google Play and attach an API key for cloud.",
+                        text = "Use your Claude/ChatGPT account on Desktop, or buy Nana AI Pro on Google Play and attach an API key for cloud.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

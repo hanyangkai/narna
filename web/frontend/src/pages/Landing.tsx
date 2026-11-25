@@ -63,7 +63,7 @@ function LiveBotPanel() {
     >
       <div className="land-trace-bar">
         <span className="land-trace-dot" />
-        <span>NARNA BOT</span>
+        <span>NANA AI</span>
         <span className="land-trace-live">LIVE</span>
       </div>
       <div className="land-trace-body">

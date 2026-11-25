@@ -2,7 +2,7 @@
 //  OnboardingView.swift
 //  NARNA
 //
-//  Dual-path AI onboarding: external Claude/ChatGPT (MausBot-style) OR NARNA Pro (App Store).
+//  Dual-path AI onboarding: external Claude/ChatGPT (MausBot-style) OR Nana AI Pro (App Store).
 //
 
 import SwiftUI
@@ -97,7 +97,7 @@ struct OnboardingView: View {
     
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NARNA")
+            Text("Nana AI")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
             
             Text(headerSubtitle)
@@ -123,9 +123,9 @@ struct OnboardingView: View {
     
     private var headerSubtitle: String {
         if embedded || (status?.paired == true) {
-            return "Chọn cách kết nối AI: dùng Claude/ChatGPT của bạn, hoặc mua NARNA Pro rồi gắn API key."
+            return "Chọn cách kết nối AI: dùng Claude/ChatGPT của bạn, hoặc mua Nana AI Pro rồi gắn API key."
         }
-        return "Sau khi cài app, chọn một đường: dùng AI subscription của bạn (Desktop + Pair), hoặc mua NARNA Pro trên App Store."
+        return "Sau khi cài Nana AI, chọn một đường: dùng AI subscription của bạn (Desktop + Pair), hoặc mua Nana AI Pro trên App Store."
     }
     
     // MARK: - Path cards
@@ -314,9 +314,9 @@ struct OnboardingView: View {
                 subtitle: "MausBot-style — subscription CLI trên Desktop, rồi Pair điện thoại",
                 recommended: true,
                 steps: [
-                    "Cài NARNA Desktop và đăng nhập Claude CLI / Codex",
+                    "Cài Desktop và đăng nhập Claude CLI / Codex",
                     "Hoặc dán API key trong Settings sau khi Pair",
-                    "Trên Desktop mở Pair → quét QR bằng app",
+                    "Trên Desktop mở Pair → quét QR bằng Nana AI",
                     "Chat trên phone; token model trừ tài khoản AI của bạn"
                 ],
                 cta: "Tôi đã sẵn sàng Pair",
@@ -324,7 +324,7 @@ struct OnboardingView: View {
             ),
             OnboardingPath(
                 id: "narna_pro",
-                title: "Mua NARNA Pro",
+                title: "Mua Nana AI Pro",
                 subtitle: "Cloud agent always-on — thanh toán App Store only",
                 recommended: false,
                 steps: [

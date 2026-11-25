@@ -41,10 +41,10 @@ export default function Download() {
       </header>
 
       <section className="section" id="mobile">
-        <h2>Mobile companion</h2>
+        <h2>Nana AI — mobile companion</h2>
         <div className="land-store-grid" style={{ marginTop: "1rem" }}>
           <article className="land-store-card">
-            <p className="land-strip-label">iOS</p>
+            <p className="land-strip-label">iOS · Nana AI</p>
             <h3>App Store</h3>
             <p className="section-desc">
               Bundle ID <code>{BRAND.bundleId}</code>. Screenshots &amp; metadata in repo — submit
@@ -55,7 +55,7 @@ export default function Download() {
             </a>
           </article>
           <article className="land-store-card">
-            <p className="land-strip-label">Android</p>
+            <p className="land-strip-label">Android · Nana AI</p>
             <h3>Google Play</h3>
             <p className="section-desc">
               Package <code>{BRAND.bundleId}</code>. Feature graphic + phone shots ready to upload.
