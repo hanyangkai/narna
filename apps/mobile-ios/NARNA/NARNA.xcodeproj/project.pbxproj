@@ -30,6 +30,17 @@
 		A10000000048 /* RoutinesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000049 /* RoutinesViewModel.swift */; };
 		A1000000004A /* VoiceCallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000004B /* VoiceCallViewModel.swift */; };
 		A1000000004C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000004D /* OnboardingView.swift */; };
+		A10000000060 /* ChatBot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000061 /* ChatBot.swift */; };
+		A10000000062 /* ChatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000063 /* ChatProvider.swift */; };
+		A10000000064 /* AppleOnDeviceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000065 /* AppleOnDeviceProvider.swift */; };
+		A10000000066 /* FreePoolProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000067 /* FreePoolProvider.swift */; };
+		A10000000068 /* BYOKeyProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000069 /* BYOKeyProvider.swift */; };
+		A10000000070 /* AIChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000071 /* AIChatViewModel.swift */; };
+		A10000000072 /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000073 /* AIChatView.swift */; };
+		A10000000074 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000075 /* AppSettingsView.swift */; };
+		A10000000076 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000077 /* PrivacyInfo.xcprivacy */; };
+		A10000000078 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000079 /* Localizable.strings */; };
+		A1000000007A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1000000007B /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +69,19 @@
 		A10000000049 /* RoutinesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutinesViewModel.swift; sourceTree = "<group>"; };
 		A1000000004B /* VoiceCallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCallViewModel.swift; sourceTree = "<group>"; };
 		A1000000004D /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A10000000061 /* ChatBot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBot.swift; sourceTree = "<group>"; };
+		A10000000063 /* ChatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatProvider.swift; sourceTree = "<group>"; };
+		A10000000065 /* AppleOnDeviceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleOnDeviceProvider.swift; sourceTree = "<group>"; };
+		A10000000067 /* FreePoolProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePoolProvider.swift; sourceTree = "<group>"; };
+		A10000000069 /* BYOKeyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BYOKeyProvider.swift; sourceTree = "<group>"; };
+		A10000000071 /* AIChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewModel.swift; sourceTree = "<group>"; };
+		A10000000073 /* AIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
+		A10000000075 /* AppSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsView.swift; sourceTree = "<group>"; };
+		A10000000077 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A1000000007C /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1000000007D /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1000000007E /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1000000007F /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +113,10 @@
 				A10000000027 /* ViewModels */,
 				A10000000028 /* Services */,
 				A10000000029 /* Models */,
+				A10000000080 /* ChatProviders */,
+				A10000000077 /* PrivacyInfo.xcprivacy */,
+				A10000000079 /* Localizable.strings */,
+				A1000000007B /* InfoPlist.strings */,
 				A10000000006 /* Assets.xcassets */,
 			);
 			path = NARNA;
@@ -106,6 +134,8 @@
 			isa = PBXGroup;
 			children = (
 				A1000000004D /* OnboardingView.swift */,
+				A10000000073 /* AIChatView.swift */,
+				A10000000075 /* AppSettingsView.swift */,
 				A10000000008 /* PairingView.swift */,
 				A1000000000A /* BotListView.swift */,
 				A10000000041 /* InboxView.swift */,
@@ -128,6 +158,7 @@
 				A10000000047 /* InboxViewModel.swift */,
 				A10000000049 /* RoutinesViewModel.swift */,
 				A1000000004B /* VoiceCallViewModel.swift */,
+				A10000000071 /* AIChatViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -146,8 +177,20 @@
 			isa = PBXGroup;
 			children = (
 				A10000000018 /* Models.swift */,
+				A10000000061 /* ChatBot.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A10000000080 /* ChatProviders */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000063 /* ChatProvider.swift */,
+				A10000000065 /* AppleOnDeviceProvider.swift */,
+				A10000000067 /* FreePoolProvider.swift */,
+				A10000000069 /* BYOKeyProvider.swift */,
+			);
+			path = ChatProviders;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -191,6 +234,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				vi,
 				Base,
 			);
 			mainGroup = A10000000023;
@@ -209,10 +253,35 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000005 /* Assets.xcassets in Resources */,
+				A10000000076 /* PrivacyInfo.xcprivacy in Resources */,
+				A10000000078 /* Localizable.strings in Resources */,
+				A1000000007A /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+
+/* Begin PBXVariantGroup section */
+		A10000000079 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1000000007C /* en */,
+				A1000000007D /* vi */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		A1000000007B /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1000000007E /* en */,
+				A1000000007F /* vi */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A1000000002C /* Sources */ = {
@@ -222,6 +291,14 @@
 				A10000000003 /* ContentView.swift in Sources */,
 				A10000000001 /* NARNAApp.swift in Sources */,
 				A1000000004C /* OnboardingView.swift in Sources */,
+				A10000000060 /* ChatBot.swift in Sources */,
+				A10000000062 /* ChatProvider.swift in Sources */,
+				A10000000064 /* AppleOnDeviceProvider.swift in Sources */,
+				A10000000066 /* FreePoolProvider.swift in Sources */,
+				A10000000068 /* BYOKeyProvider.swift in Sources */,
+				A10000000070 /* AIChatViewModel.swift in Sources */,
+				A10000000072 /* AIChatView.swift in Sources */,
+				A10000000074 /* AppSettingsView.swift in Sources */,
 				A10000000007 /* PairingView.swift in Sources */,
 				A10000000009 /* BotListView.swift in Sources */,
 				A10000000040 /* InboxView.swift in Sources */,
@@ -372,12 +449,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NARNA/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "NARNA needs camera access to scan QR codes for pairing.";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nana AI";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nana AI needs camera access to scan QR codes for pairing.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nana AI needs microphone access for live voice calls with your bots.";
+				FREE_POOL_URL = "https://nana-free-pool.example.workers.dev";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -387,7 +467,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -402,12 +482,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NARNA/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "NARNA needs camera access to scan QR codes for pairing.";
+				INFOPLIST_KEY_CFBundleDisplayName = "Nana AI";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nana AI needs camera access to scan QR codes for pairing.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nana AI needs microphone access for live voice calls with your bots.";
+				FREE_POOL_URL = "https://nana-free-pool.example.workers.dev";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -417,7 +500,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

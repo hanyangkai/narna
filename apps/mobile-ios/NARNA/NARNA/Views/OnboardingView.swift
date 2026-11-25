@@ -97,7 +97,7 @@ struct OnboardingView: View {
     
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NARNA")
+            Text(PinnedBot.name)
                 .font(.system(size: 34, weight: .bold, design: .rounded))
             
             Text(headerSubtitle)
