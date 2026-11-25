@@ -23,7 +23,7 @@ struct AIChatView: View {
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                if !vm.isReady {
+                if vm.emptyStateNeedsSetup {
                     NoKeyEmptyState { app.navigate(.settings) }
                 } else if let convo = vm.conversation, !convo.messages.isEmpty {
                     messageList(convo)
@@ -68,6 +68,18 @@ struct AIChatView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 14) {
+                    Button {
+                        if vm.agentModeEnabled {
+                            vm.agentModeEnabled = false
+                        } else if AgentSubscriptionManager.shared.isSubscribed {
+                            vm.agentModeEnabled = true
+                        } else {
+                            vm.showPaywall = true
+                        }
+                    } label: {
+                        Image(systemName: vm.agentModeEnabled ? "sparkles.rectangle.stack.fill" : "sparkles")
+                    }
+                    .accessibilityLabel(vm.agentModeEnabled ? "Agent mode on" : "Agent mode")
                     Button { dismissKeyboard(); app.navigate(.history) } label: { Image(systemName: "clock.arrow.circlepath") }
                         .accessibilityLabel("History")
                     Button { vm.newChat() } label: { Image(systemName: "square.and.pencil") }
@@ -91,6 +103,10 @@ struct AIChatView: View {
         .onDisappear {
             dismissKeyboard()
             bots.markViewed(vm.currentBot.id)
+        }
+        .sheet(isPresented: $vm.showPaywall) {
+            PaywallView()
+                .environmentObject(AgentSubscriptionManager.shared)
         }
     }
 
@@ -203,6 +219,12 @@ struct AIMessageRow: View {
                 Text(Self.markdown(message.content))
                     .textSelection(.enabled)
                     .font(.body)
+                if message.role == .assistant, let name = message.modelDisplayName, !name.isEmpty {
+                    Text(name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Model \(name)")
+                }
                 if message.isError {
                     Button("Retry", action: onRetry).buttonStyle(.bordered).controlSize(.small)
                 }
@@ -245,9 +267,9 @@ struct NoKeyEmptyState: View {
             Image(systemName: "key.horizontal.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(Color.accentColor)
-            Text("Add your API key to start")
+            Text("Free chat is not available on this iPhone yet")
                 .font(.title2.bold())
-            Text("NaNa Bot works with your own API key from OpenAI, Anthropic, OpenRouter, CKEY.VN, Groq, DeepSeek, Gemini, xAI, Together, Mistral or any OpenAI-compatible service. The key is stored only in this iPhone's Keychain and requests go directly to the provider you choose.")
+            Text("Nana AI chats for free with the on-device model when Apple Intelligence is available, or with the free cloud pool (Gemini Flash, GPT-OSS, Gemma). You can also add your own API key in Settings > Advanced, or subscribe to Nana Agent.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -277,7 +299,7 @@ struct StartEmptyState: View {
                     .font(.system(size: 48))
                     .foregroundStyle(Color.accentColor)
                     .padding(.top, 60)
-                Text("Ask NaNa Bot anything")
+                Text("Ask Nana AI anything")
                     .font(.title2.bold())
                 Text("Each answer comes with an ADQA card that scores its decision quality: evidence, risk, confidence and more.")
                     .font(.callout)

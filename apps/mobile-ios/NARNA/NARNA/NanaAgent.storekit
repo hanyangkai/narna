@@ -1,0 +1,74 @@
+{
+  "identifier" : "NanaAgent",
+  "nonRenewingSubscriptions" : [],
+
+  "products" : [],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storefront" : "VNM",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "NANAAGENTGROUP",
+      "localizations" : [
+        {
+          "description" : "Nana Agent subscriptions",
+          "displayName" : "Nana Agent",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Nana Agent",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "99000",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "NANAAGENTBASIC",
+          "localizations" : [
+            {
+              "description" : "Multi-step Agent tasks, files, web search and stronger models. 200 credits each month.",
+              "displayName" : "Agent Basic",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "nana.agent.basic.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Agent Basic Monthly",
+          "subscriptionGroupID" : "NANAAGENTGROUP",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "249000",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "NANAAGENTPRO",
+          "localizations" : [
+            {
+              "description" : "More Agent credits for heavier work. 800 credits each month.",
+              "displayName" : "Agent Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "nana.agent.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Agent Pro Monthly",
+          "subscriptionGroupID" : "NANAAGENTGROUP",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

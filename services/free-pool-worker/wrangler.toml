@@ -1,0 +1,20 @@
+name = "nana-free-pool"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Scaffold only. Do not deploy without the owner's explicit approval.
+
+[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "QUOTA"
+id = "00000000000000000000000000000000"
+preview_id = "00000000000000000000000000000000"
+
+[vars]
+GEMINI_MODEL = "gemini-3.8-flash"
+DAILY_LIMIT = "10"
+ENABLED_PROVIDERS = "groq,google,workersai,openrouter,zai"
+# Secrets (wrangler secret put): GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, ZAI_API_KEY
+# Never put keys in this file.

@@ -21,9 +21,21 @@ final class LLMSettings: ObservableObject {
         didSet { defaults.set(adqaEnabled, forKey: "adqa_enabled") }
     }
 
+    /// When true, chat uses the user's own API key (Settings > Advanced). Default is free chat.
+    @Published var useOwnAPIKey: Bool {
+        didSet { defaults.set(useOwnAPIKey, forKey: "use_own_api_key") }
+    }
+
     private init() {
         adqaEnabled = defaults.object(forKey: "adqa_enabled") as? Bool ?? true
-        config = Self.loadConfig()
+        let loaded = Self.loadConfig()
+        config = loaded
+        // Existing 1.0 users who already saved a key keep BYOK until they turn it off.
+        if defaults.object(forKey: "use_own_api_key") == nil {
+            useOwnAPIKey = loaded != nil
+        } else {
+            useOwnAPIKey = defaults.bool(forKey: "use_own_api_key")
+        }
         #if DEBUG
         // Simulator test hook: saves through the same path as the Settings "Save" button.
         if let k = ProcessInfo.processInfo.environment["NARNA_TEST_KEY"], !k.isEmpty {
