@@ -63,7 +63,7 @@ struct SettingsView: View {
                     unpairDevice()
                 }
             } message: {
-                Text("Are you sure you want to unpair this device? You'll need to pair again to use NARNA.")
+                Text("Are you sure you want to unpair this device? You'll need to pair again to use Nana AI.")
             }
             .alert("Updated", isPresented: $showStatus) {
                 Button("OK", role: .cancel) {}
@@ -352,9 +352,10 @@ struct SettingsView: View {
     
     private var aboutSection: some View {
         Section("About") {
-            LabeledContent("Version", value: "1.0.0")
-            LabeledContent("Build", value: "1")
-            Link("Documentation", destination: URL(string: "https://github.com/narna/narna")!)
+            LabeledContent("App", value: PinnedBot.name)
+            LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1")
+            LabeledContent("Build", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "2")
+            Link("Documentation", destination: URL(string: "https://github.com/hanyangkai/narna")!)
         }
     }
     

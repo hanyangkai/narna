@@ -1,0 +1,82 @@
+{
+  "identifier" : "NanaAI",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21480001",
+      "localizations" : [
+
+      ],
+      "name" : "Nana Agent",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "21480011",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "500 Agent credits per month for multi-step Nana AI tasks.",
+              "displayName" : "Nana Agent Basic",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "nana.agent.basic.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Nana Agent Basic Monthly",
+          "subscriptionGroupID" : "21480001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "14.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "21480012",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "2000 Agent credits per month with stronger models.",
+              "displayName" : "Nana Agent Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "nana.agent.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Nana Agent Pro Monthly",
+          "subscriptionGroupID" : "21480001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

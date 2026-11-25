@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "Nana AI";
+"NSCameraUsageDescription" = "Nana AI cần quyền camera để quét mã QR ghép nối với agent trên máy tính.";
+"NSMicrophoneUsageDescription" = "Nana AI cần quyền micro cho cuộc gọi thoại với bot của bạn.";
