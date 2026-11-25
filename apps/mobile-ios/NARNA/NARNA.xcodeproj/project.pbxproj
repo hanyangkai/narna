@@ -47,6 +47,7 @@
 		A10000000077 /* AgentSubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000097 /* AgentSubscriptionManager.swift */; };
 		A10000000078 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000098 /* PaywallView.swift */; };
 		A10000000079 /* NanaAgent.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A10000000099 /* NanaAgent.storekit */; };
+		A10000000111 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000110 /* PrivacyInfo.xcprivacy */; };
 		A1000000007A /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000009A /* FoundationModels.framework */; settings = {ATTRIBUTES = (Weak, Optional, ); }; };
 		A20000000019 /* ProviderRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000002 /* ProviderRouterTests.swift */; };
 		A2000000001A /* PaywallGatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000003 /* PaywallGatingTests.swift */; };
@@ -97,6 +98,8 @@
 		A10000000099 /* NanaAgent.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NanaAgent.storekit; sourceTree = "<group>"; };
 		A1000000009A /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = System/Library/Frameworks/FoundationModels.framework; sourceTree = SDKROOT; };
 		A1000000009B /* NARNA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NARNA.entitlements; sourceTree = "<group>"; };
+		A10000000110 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A10000000112 /* NARNA-Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NARNA-Release.entitlements"; sourceTree = "<group>"; };
 		A20000000001 /* NARNATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NARNATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000002 /* ProviderRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRouterTests.swift; sourceTree = "<group>"; };
 		A20000000003 /* PaywallGatingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallGatingTests.swift; sourceTree = "<group>"; };
@@ -135,7 +138,9 @@
 			children = (
 				A10000000021 /* Info.plist */,
 				A1000000009B /* NARNA.entitlements */,
+				A10000000112 /* NARNA-Release.entitlements */,
 				A10000000099 /* NanaAgent.storekit */,
+				A10000000110 /* PrivacyInfo.xcprivacy */,
 				A10000000002 /* NARNAApp.swift */,
 				A10000000004 /* ContentView.swift */,
 				A10000000026 /* Views */,
@@ -330,6 +335,7 @@
 			files = (
 				A10000000005 /* Assets.xcassets in Resources */,
 				A10000000079 /* NanaAgent.storekit in Resources */,
+				A10000000111 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -555,7 +561,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA.entitlements;
+				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA-Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";

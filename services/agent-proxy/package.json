@@ -1,0 +1,12 @@
+{
+  "name": "nana-agent-proxy",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "description": "Nana Agent StoreKit-gated proxy. Ready but do not deploy without owner approval, and do not add paid keys in-repo.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "wrangler dev",
+    "deploy": "echo 'Do not deploy agent-proxy without owner approval.' && exit 1"
+  }
+}
