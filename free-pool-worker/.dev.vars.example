@@ -1,5 +1,0 @@
-# Copy to .dev.vars for local `wrangler dev` — never commit real values.
-GROQ_API_KEY=groq_replace_me
-OPENROUTER_API_KEY=sk-or-replace_me
-# Optional hard kill-switch for free tier
-FREE_POOL_PAUSED=false

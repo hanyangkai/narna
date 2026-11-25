@@ -12,7 +12,7 @@ enum BYOProviderKind: String {
     case openai
 }
 
-final class BYOKeyProvider: ChatProvider, @unchecked Sendable {
+final class BYOKeyProvider: LLMProvider, @unchecked Sendable {
     let engineDisplayName: String
     private let kind: BYOProviderKind
     private let apiKey: String

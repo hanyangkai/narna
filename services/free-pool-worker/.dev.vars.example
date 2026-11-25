@@ -1,0 +1,10 @@
+# Copy to .dev.vars for local wrangler (gitignored). Never commit real keys.
+GROQ_API_KEY=replace_me
+OPENROUTER_API_KEY=replace_me
+GEMINI_API_KEY=replace_me
+ZAI_API_KEY=replace_me
+# Optional:
+# FREE_POOL_PAUSED=false
+# REQUIRE_DEVICE_CHECK=0
+# GEMINI_MODEL=gemini-2.0-flash
+# ZAI_BASE_URL=https://api.z.ai/api/paas/v4

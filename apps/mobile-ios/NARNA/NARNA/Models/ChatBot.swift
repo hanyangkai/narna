@@ -11,6 +11,7 @@ enum ChatEngineKind: String, Codable, CaseIterable, Identifiable {
     case auto
     case onDevice
     case freePool
+    case agent
     case byoOpenRouter
     case byoOpenAI
 
@@ -19,8 +20,9 @@ enum ChatEngineKind: String, Codable, CaseIterable, Identifiable {
     var settingsLabel: String {
         switch self {
         case .auto: return "Auto (recommended)"
-        case .onDevice: return "On-device"
+        case .onDevice: return "Apple on-device"
         case .freePool: return "Free cloud"
+        case .agent: return "Agent (subscription)"
         case .byoOpenRouter: return "My OpenRouter key"
         case .byoOpenAI: return "My OpenAI key"
         }
@@ -57,6 +59,7 @@ struct ChatProviderMessage: Equatable {
 enum ChatProviderError: LocalizedError, Equatable {
     case unavailable(String)
     case dailyLimitReached
+    case agentPaywallRequired
     case network(String)
     case invalidKey
     case cancelled
@@ -66,6 +69,8 @@ enum ChatProviderError: LocalizedError, Equatable {
         case .unavailable(let msg): return msg
         case .dailyLimitReached:
             return String(localized: "free_daily_limit_reached")
+        case .agentPaywallRequired:
+            return String(localized: "agent_paywall_required")
         case .network(let msg): return msg
         case .invalidKey: return String(localized: "byo_invalid_key")
         case .cancelled: return nil

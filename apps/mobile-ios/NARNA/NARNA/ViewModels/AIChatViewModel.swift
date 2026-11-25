@@ -14,6 +14,8 @@ final class AIChatViewModel: ObservableObject {
     @Published var isStreaming = false
     @Published var errorMessage: String?
     @Published var showError = false
+    @Published var showDailyLimitPaywall = false
+    @Published var showAgentPaywall = false
     @Published var lastEngineLabel: String?
     @Published var appleAvailability: AppleModelAvailabilityReason = .unsupportedOS
     @Published var enginePreference: ChatEngineKind = .auto
@@ -70,7 +72,7 @@ final class AIChatViewModel: ObservableObject {
         streamTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let (provider, label) = try self.makeProvider()
+                let (provider, label) = try await self.makeProvider()
                 self.lastEngineLabel = label
                 if let idx = self.turns.firstIndex(where: { $0.id == assistantId }) {
                     self.turns[idx].engineLabel = label
@@ -81,10 +83,21 @@ final class AIChatViewModel: ObservableObject {
                     .map { ChatProviderMessage(role: $0.role, content: $0.content) }
 
                 let stream = try await provider.stream(messages: history)
+                // Prefer live FreePool engine label after headers arrive
+                if let free = provider as? FreePoolProvider {
+                    let live = free.engineDisplayName
+                    if let idx = self.turns.firstIndex(where: { $0.id == assistantId }) {
+                        self.turns[idx].engineLabel = live
+                        self.lastEngineLabel = live
+                    }
+                }
                 for await chunk in stream {
                     if Task.isCancelled { break }
                     if let idx = self.turns.firstIndex(where: { $0.id == assistantId }) {
                         self.turns[idx].content += chunk
+                        if let free = provider as? FreePoolProvider {
+                            self.turns[idx].engineLabel = free.engineDisplayName
+                        }
                     }
                 }
                 if let idx = self.turns.firstIndex(where: { $0.id == assistantId }),
@@ -101,8 +114,8 @@ final class AIChatViewModel: ObservableObject {
         }
     }
 
-    private func makeProvider() throws -> (ChatProvider, String) {
-        let (kind, note) = ChatRouter.resolve(
+    private func makeProvider() async throws -> (LLMProvider, String) {
+        let (kind, note) = ProviderRouter.resolve(
             preference: enginePreference,
             appleChecker: appleChecker,
             hasBYOKey: keychain.hasAnyBYOKey
@@ -112,10 +125,24 @@ final class AIChatViewModel: ObservableObject {
         }
         switch kind {
         case .onDevice, .auto:
-            return (AppleOnDeviceProvider(checker: appleChecker), "On-device")
+            return (AppleOnDeviceProvider(checker: appleChecker), "Apple on-device")
         case .freePool:
             let id = keychain.getOrCreateDeviceId()
-            return (FreePoolProvider(deviceId: id), "Free cloud")
+            let token = await DeviceAttestationService.deviceCheckToken()
+            let p = FreePoolProvider(deviceId: id, deviceToken: token)
+            return (p, p.engineDisplayName)
+        case .agent:
+            let store = AgentStoreKitService.shared
+            guard store.isSubscribed || store.signedTransactionJWS != nil else {
+                throw ChatProviderError.agentPaywallRequired
+            }
+            let id = keychain.getOrCreateDeviceId()
+            let p = AgentProvider(
+                baseURL: AgentProvider.defaultAPIBase,
+                deviceId: id,
+                signedTransaction: store.signedTransactionJWS
+            )
+            return (p, "Agent")
         case .byoOpenRouter:
             guard let key = keychain.getOpenRouterKey(), !key.isEmpty else {
                 throw ChatProviderError.invalidKey
@@ -133,9 +160,14 @@ final class AIChatViewModel: ObservableObject {
 
     private func handleProviderError(_ err: ChatProviderError, assistantId: String) {
         removeEmptyAssistant(assistantId)
-        if case .dailyLimitReached = err {
-            showErrorMessage(String(localized: "free_daily_limit_reached"))
-        } else {
+        switch err {
+        case .dailyLimitReached:
+            errorMessage = String(localized: "free_daily_limit_reached")
+            showDailyLimitPaywall = true
+        case .agentPaywallRequired:
+            errorMessage = String(localized: "agent_paywall_required")
+            showAgentPaywall = true
+        default:
             showErrorMessage(err.localizedDescription)
         }
     }

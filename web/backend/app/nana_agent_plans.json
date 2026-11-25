@@ -1,0 +1,29 @@
+{
+  "subscriptionGroup": "Nana Agent",
+  "products": {
+    "nana.agent.basic.monthly": {
+      "displayName": "Nana Agent Basic",
+      "period": "month",
+      "creditsPerPeriod": 500,
+      "maxCreditsPerRequest": 20,
+      "models": [
+        "openai/gpt-4o-mini",
+        "google/gemini-2.0-flash-001"
+      ],
+      "features": ["multi_step", "web_search", "file_read"]
+    },
+    "nana.agent.pro.monthly": {
+      "displayName": "Nana Agent Pro",
+      "period": "month",
+      "creditsPerPeriod": 2000,
+      "maxCreditsPerRequest": 80,
+      "models": [
+        "anthropic/claude-sonnet-4",
+        "openai/gpt-4o",
+        "google/gemini-2.5-pro-preview"
+      ],
+      "features": ["multi_step", "web_search", "file_read", "vision", "strong_models"]
+    }
+  },
+  "notes": "Prices live only in App Store Connect. Credits sized so API spend stays under Apple net revenue (~85%)."
+}

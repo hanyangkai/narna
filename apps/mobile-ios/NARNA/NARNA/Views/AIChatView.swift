@@ -7,6 +7,7 @@ import SwiftUI
 
 struct AIChatView: View {
     @StateObject private var viewModel = AIChatViewModel()
+    @ObservedObject private var agentStore = AgentStoreKitService.shared
     @State private var showSettings = false
 
     var body: some View {
@@ -63,13 +64,52 @@ struct AIChatView: View {
             .sheet(isPresented: $showSettings) {
                 AppSettingsView(chatViewModel: viewModel)
             }
+            .sheet(isPresented: $viewModel.showAgentPaywall) {
+                AgentPaywallView(store: agentStore) {
+                    viewModel.setEnginePreference(.agent)
+                }
+            }
+            .sheet(isPresented: $viewModel.showDailyLimitPaywall) {
+                dailyLimitSheet
+            }
             .alert(String(localized: "error_title"), isPresented: $viewModel.showError) {
                 Button(String(localized: "ok"), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
-            .onAppear { viewModel.refreshAvailability() }
+            .onAppear {
+                viewModel.refreshAvailability()
+                Task { await agentStore.refreshEntitlements() }
+            }
         }
+    }
+
+    private var dailyLimitSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(String(localized: "free_daily_limit_reached"))
+                    .font(.title3.weight(.semibold))
+                Text(String(localized: "free_daily_limit_body"))
+                    .foregroundStyle(.secondary)
+                Button {
+                    viewModel.showDailyLimitPaywall = false
+                    viewModel.showAgentPaywall = true
+                } label: {
+                    Text(String(localized: "upgrade_to_agent"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                Button(String(localized: "done")) {
+                    viewModel.showDailyLimitPaywall = false
+                }
+                .frame(maxWidth: .infinity)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle(PinnedBot.name)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium])
     }
 
     private var availabilityBanner: some View {

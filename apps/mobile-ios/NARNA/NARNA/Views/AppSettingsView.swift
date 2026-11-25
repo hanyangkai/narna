@@ -2,13 +2,14 @@
 //  AppSettingsView.swift
 //  NARNA
 //
-//  Nana AI settings: Engine Auto, Advanced BYOK, privacy, desktop pairing link.
+//  Nana AI settings: Engine Auto, Agent, Advanced BYOK, privacy, desktop pairing.
 //
 
 import SwiftUI
 
 struct AppSettingsView: View {
     @ObservedObject var chatViewModel: AIChatViewModel
+    @ObservedObject private var agentStore = AgentStoreKitService.shared
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var apiService: NARNAAPIService
 
@@ -16,6 +17,7 @@ struct AppSettingsView: View {
     @State private var openAIDraft = ""
     @State private var showPairing = false
     @State private var isPaired = false
+    @State private var showAgentPaywall = false
 
     private let keychain = KeychainService.shared
 
@@ -44,6 +46,7 @@ struct AppSettingsView: View {
                         Text(ChatEngineKind.auto.settingsLabel).tag(ChatEngineKind.auto)
                         Text(ChatEngineKind.onDevice.settingsLabel).tag(ChatEngineKind.onDevice)
                         Text(ChatEngineKind.freePool.settingsLabel).tag(ChatEngineKind.freePool)
+                        Text(ChatEngineKind.agent.settingsLabel).tag(ChatEngineKind.agent)
                         if keychain.getOpenRouterKey() != nil {
                             Text(ChatEngineKind.byoOpenRouter.settingsLabel).tag(ChatEngineKind.byoOpenRouter)
                         }
@@ -63,6 +66,28 @@ struct AppSettingsView: View {
                     Text(String(localized: "settings_engine"))
                 } footer: {
                     Text(String(localized: "settings_engine_footer"))
+                }
+
+                Section {
+                    Button(String(localized: "upgrade_to_agent")) {
+                        showAgentPaywall = true
+                    }
+                    if agentStore.isSubscribed {
+                        LabeledContent(
+                            String(localized: "agent_credits"),
+                            value: "\(agentStore.creditsRemaining)"
+                        )
+                        Button(String(localized: "agent_restore_purchases")) {
+                            Task { await agentStore.restore() }
+                        }
+                        Button(String(localized: "agent_manage_subscription")) {
+                            Task { await agentStore.manageSubscriptions() }
+                        }
+                    }
+                } header: {
+                    Text(String(localized: "agent_section"))
+                } footer: {
+                    Text(String(localized: "agent_subscription_legal"))
                 }
 
                 DisclosureGroup(String(localized: "settings_advanced")) {
@@ -123,8 +148,17 @@ struct AppSettingsView: View {
                     PairingView(isPaired: $isPaired, onBack: { showPairing = false })
                 }
             }
+            .sheet(isPresented: $showAgentPaywall) {
+                AgentPaywallView(store: agentStore) {
+                    chatViewModel.setEnginePreference(.agent)
+                }
+            }
             .onAppear {
                 isPaired = keychain.getMobileToken() != nil
+                Task {
+                    await agentStore.loadProducts()
+                    await agentStore.refreshEntitlements()
+                }
             }
         }
     }

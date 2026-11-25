@@ -2,13 +2,18 @@
 //  ChatProvider.swift
 //  NARNA
 //
+//  LLMProvider + ProviderRouter — free chat failover (on-device → free pool).
+//
 
 import Foundation
 
-protocol ChatProvider: Sendable {
+/// Official chat backends only. No scraping of chatgpt.com / gemini.google.com / claude.ai.
+protocol LLMProvider: Sendable {
     var engineDisplayName: String { get }
     func stream(messages: [ChatProviderMessage]) async throws -> AsyncStream<String>
 }
+
+typealias ChatProvider = LLMProvider
 
 protocol AppleAvailabilityChecking: Sendable {
     func availability() -> AppleModelAvailabilityReason
@@ -26,8 +31,9 @@ enum FreePoolConfig {
     }
 }
 
-enum ChatRouter {
-    /// Nana Auto: Apple on-device when available, else free pool. BYOK only when user picks it.
+/// Client-side engine selection. Upstream free-tier failover (429/503/timeout) lives in the Worker.
+enum ProviderRouter {
+    /// Nana Auto: Apple on-device when available, else free pool. BYOK / Agent only when user picks them.
     static func resolve(
         preference: ChatEngineKind,
         appleChecker: AppleAvailabilityChecking,
@@ -44,8 +50,48 @@ enum ChatRouter {
             return (.onDevice, appleChecker.availability())
         case .freePool:
             return (.freePool, nil)
-        case .byoOpenRouter, .byoOpenAI:
+        case .byoOpenRouter, .byoOpenAI, .agent:
             return (preference, nil)
         }
     }
+
+    /// Map Worker `X-Nana-Engine` / local ids to UI labels under answers.
+    static func friendlyModelLabel(_ raw: String) -> String {
+        let s = raw.lowercased()
+        if s.contains("on-device") || s.contains("apple") || s == "foundation" {
+            return "Apple on-device"
+        }
+        if s.contains("gpt-oss") || s.contains("workers-ai") {
+            return "GPT-OSS"
+        }
+        if s.contains("gemma") {
+            return "Gemma"
+        }
+        if s.contains("gemini") {
+            return "Gemini Flash"
+        }
+        if s.contains("groq") {
+            return s.contains("gpt-oss") ? "GPT-OSS" : "Groq"
+        }
+        if s.contains("openrouter") {
+            if s.contains("gemma") { return "Gemma" }
+            if s.contains("gpt-oss") { return "GPT-OSS" }
+            return "OpenRouter free"
+        }
+        if s.contains("zai") || s.contains("glm") {
+            return "GLM Flash"
+        }
+        if s.contains("agent") {
+            return "Agent"
+        }
+        if s.contains("llama") {
+            return "Llama"
+        }
+        if s.contains("qwen") {
+            return "Qwen"
+        }
+        return raw.isEmpty ? "Free cloud" : raw
+    }
 }
+
+typealias ChatRouter = ProviderRouter

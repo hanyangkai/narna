@@ -19,8 +19,8 @@ struct DefaultAppleAvailabilityChecker: AppleAvailabilityChecking {
     }
 }
 
-final class AppleOnDeviceProvider: ChatProvider, @unchecked Sendable {
-    let engineDisplayName = "On-device"
+final class AppleOnDeviceProvider: LLMProvider, @unchecked Sendable {
+    let engineDisplayName = "Apple on-device"
     private let checker: AppleAvailabilityChecking
 
     init(checker: AppleAvailabilityChecking = DefaultAppleAvailabilityChecker()) {

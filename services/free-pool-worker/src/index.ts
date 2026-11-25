@@ -1,6 +1,9 @@
 /**
  * Nana AI free-pool proxy — Cloudflare Worker (free plan).
  * POST /v1/chat  → SSE {delta} stream. No message content logged.
+ *
+ * Upstream order: Workers AI (gpt-oss/Gemma/Llama/Qwen) → Gemini free (skip EEA/UK/CH)
+ * → Groq (if key) → OpenRouter :free → Z.AI GLM Flash overflow.
  */
 
 import { checkAndBump } from "./limits";
@@ -11,19 +14,28 @@ export interface Env {
   AI: Ai;
   GROQ_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
+  GEMINI_API_KEY?: string;
+  ZAI_API_KEY?: string;
   DAILY_MSG_LIMIT_PER_DEVICE?: string;
   GLOBAL_DAILY_MSG_CAP?: string;
   MAX_TOKENS?: string;
   OPENROUTER_FREE_MODELS?: string;
   GROQ_MODEL?: string;
+  GEMINI_MODEL?: string;
+  ZAI_MODEL?: string;
+  ZAI_BASE_URL?: string;
+  WORKERS_AI_MODELS?: string;
   FREE_POOL_PAUSED?: string;
+  /** When "1", require X-Device-Check-Token (DeviceCheck). Soft by default. */
+  REQUIRE_DEVICE_CHECK?: string;
 }
 
 function corsHeaders(): HeadersInit {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Device-Id",
+    "Access-Control-Allow-Headers":
+      "Content-Type, X-Device-Id, X-Device-Check-Token, X-Region-Hint",
   };
 }
 
@@ -49,7 +61,7 @@ export default {
       return json(404, { error: "not_found" });
     }
 
-    let body: { deviceId?: string; messages?: ChatMessage[] };
+    let body: { deviceId?: string; messages?: ChatMessage[]; regionHint?: string };
     try {
       body = (await request.json()) as typeof body;
     } catch {
@@ -63,12 +75,18 @@ export default {
       return json(400, { error: "device_id_required" });
     }
 
+    const deviceCheck = (request.headers.get("X-Device-Check-Token") || "").trim();
+    if ((env.REQUIRE_DEVICE_CHECK || "").trim() === "1" && !deviceCheck) {
+      return json(401, { error: "device_check_required" });
+    }
+    // Token is accepted and folded into the KV counter key when present.
+    // Full Apple DeviceCheck verification needs Apple server API keys — optional later.
+
     const messages = Array.isArray(body.messages) ? body.messages : [];
     if (!messages.length) {
       return json(400, { error: "messages_required" });
     }
 
-    // Strip / clamp — never log content
     const safeMessages: ChatMessage[] = messages.slice(-20).map((m) => ({
       role: String(m.role || "user").slice(0, 16),
       content: String(m.content || "").slice(0, 8000),
@@ -79,7 +97,17 @@ export default {
       request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ||
       "unknown";
 
-    const limit = await checkAndBump(env, deviceId, ip);
+    const regionHint =
+      body.regionHint ||
+      request.headers.get("X-Region-Hint") ||
+      request.headers.get("CF-IPCountry") ||
+      "";
+
+    const limitKey = deviceCheck
+      ? `dc:${await hashShort(deviceCheck)}`
+      : deviceId;
+
+    const limit = await checkAndBump(env, limitKey, ip);
     if (!limit.ok) {
       console.log(
         JSON.stringify({
@@ -98,7 +126,7 @@ export default {
       });
     }
 
-    const upstream = await streamWithFallback(env, safeMessages);
+    const upstream = await streamWithFallback(env, safeMessages, { regionHint });
     if (!upstream.ok) {
       console.log(
         JSON.stringify({
@@ -115,6 +143,7 @@ export default {
         event: "chat_ok",
         engine: upstream.engine,
         deviceHash: await hashShort(deviceId),
+        region: regionHint || "unknown",
         approxPromptChars: safeMessages.reduce((n, m) => n + m.content.length, 0),
       })
     );

@@ -22,6 +22,8 @@
 	<string>2</string>
 	<key>FREE_POOL_URL</key>
 	<string>$(FREE_POOL_URL)</string>
+	<key>NANA_AGENT_API_URL</key>
+	<string>$(NANA_AGENT_API_URL)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
