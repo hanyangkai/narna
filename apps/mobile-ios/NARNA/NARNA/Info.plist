@@ -23,7 +23,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>FREE_POOL_URL</key>
-	<string>$(FREE_POOL_URL)</string>
+	<string>https://nana-free-pool.narna-nana.workers.dev</string>
 	<key>AGENT_PROXY_URL</key>
 	<string>$(AGENT_PROXY_URL)</string>
 	<key>GEMINI_MODEL</key>

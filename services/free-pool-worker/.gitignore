@@ -4,3 +4,4 @@ node_modules/
 *.pem
 *.p8
 .DS_Store
+.deploy-tmp/

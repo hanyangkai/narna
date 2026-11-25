@@ -9,8 +9,8 @@ binding = "AI"
 
 [[kv_namespaces]]
 binding = "QUOTA"
-id = "00000000000000000000000000000000"
-preview_id = "00000000000000000000000000000000"
+id = "3d1b0a6d2d804da7ad4abf236d40e6c4"
+preview_id = "3d1b0a6d2d804da7ad4abf236d40e6c4"
 
 [vars]
 GEMINI_MODEL = "gemini-3.8-flash"
