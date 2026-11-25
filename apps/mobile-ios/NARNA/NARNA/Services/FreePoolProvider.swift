@@ -4,7 +4,7 @@
 //
 //  Talks to our Cloudflare Worker (FREE_POOL_URL). The Worker holds provider
 //  keys and routes Gemini Flash → GPT-OSS → Gemma with 429 fallback.
-//  The app never embeds provider keys. Cap: 10 messages per device per day.
+//  The app never embeds provider keys. Cap: 100 messages per device per day (Worker DAILY_LIMIT).
 //
 
 import Foundation
@@ -17,7 +17,7 @@ struct FreePoolReply: Equatable {
 }
 
 enum FreePoolProvider {
-    static let dailyLimit = 10
+    static let dailyLimit = 100
     static var isConfigured: Bool { AppConfig.isFreePoolConfigured }
 
     private static let session: URLSession = {

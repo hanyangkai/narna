@@ -12,5 +12,5 @@ ZAI_BASE_URL=https://api.z.ai/api/paas/v4
 ZAI_MODELS=glm-4.7-flash
 CF_MODELS=@cf/meta/llama-3.1-8b-instruct-fp8-fast,@cf/google/gemma-4-26b-a4b-it,@cf/qwen/qwen3.8-27b
 ENABLED_PROVIDERS=groq,google,workersai,openrouter,zai
-DAILY_LIMIT=10
+DAILY_LIMIT=100
 DEV_ALLOW_UNATTESTED=1

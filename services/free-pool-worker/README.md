@@ -19,7 +19,7 @@ All model lists and the enabled-provider list are configurable through Worker en
 
 ## Per-device cap
 
-10 messages per device per day (`DAILY_LIMIT`), counted in KV after App Attest or DeviceCheck verification. In development, `DEV_ALLOW_UNATTESTED=1` allows `X-Debug-Device-Id`.
+100 messages per device per day (`DAILY_LIMIT`, default 100), counted in KV after App Attest or DeviceCheck verification. In development, `DEV_ALLOW_UNATTESTED=1` allows `X-Debug-Device-Id`.
 
 ## Secrets
 

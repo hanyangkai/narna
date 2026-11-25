@@ -56,7 +56,7 @@ enum LLMError: LocalizedError {
         case .freePoolNotConfigured:
             return "Free cloud chat is not configured yet. If this iPhone has Apple Intelligence, Nana can still chat on-device. You can also add your own API key in Settings > Advanced."
         case .dailyLimit(_, let m):
-            return m ?? "You have used today's 10 free cloud messages. Continue on-device if Apple Intelligence is available, or try again tomorrow."
+            return m ?? "You have used today's \(FreePoolProvider.dailyLimit) free cloud messages. Continue on-device if Apple Intelligence is available, or try again tomorrow."
         case .agentNotConfigured:
             return "Agent mode is not connected to the server yet. Free chat still works."
         case .notSubscribed:

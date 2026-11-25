@@ -173,7 +173,7 @@ async function completeWithFallback({ env, region, cfCountry, call }) {
 }
 
 function dailyLimit(env) {
-  const n = Number.parseInt((env && env.DAILY_LIMIT) || "10", 10);
+  const n = Number.parseInt((env && env.DAILY_LIMIT) || "100", 10);
   return Number.isFinite(n) && n > 0 ? n : 10;
 }
 

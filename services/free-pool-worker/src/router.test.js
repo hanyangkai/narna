@@ -124,7 +124,8 @@ test("completeWithFallback skips Google in DE and uses other Workers AI models",
 });
 
 test("daily cap helpers", () => {
-  assert.equal(dailyLimit({}), 10);
-  assert.equal(dailyLimit({ DAILY_LIMIT: "10" }), 10);
+  assert.equal(dailyLimit({}), 100);
+  assert.equal(dailyLimit({ DAILY_LIMIT: "100" }), 100);
+  assert.equal(dailyLimit({ DAILY_LIMIT: "50" }), 50);
   assert.equal(quotaKey("device-1", new Date("2026-11-25T16:00:00Z")), "quota:2026-11-25:device-1");
 });

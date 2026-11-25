@@ -14,7 +14,7 @@ preview_id = "00000000000000000000000000000000"
 
 [vars]
 GEMINI_MODEL = "gemini-3.8-flash"
-DAILY_LIMIT = "10"
+DAILY_LIMIT = "100"
 ENABLED_PROVIDERS = "groq,google,workersai,openrouter,zai"
 # Secrets (wrangler secret put): GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, ZAI_API_KEY
 # Never put keys in this file.

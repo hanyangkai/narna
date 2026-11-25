@@ -31,7 +31,7 @@ async function handle(request, env) {
   const key = router.quotaKey(deviceId);
   const used = Number.parseInt((await env.QUOTA.get(key)) || "0", 10) || 0;
   if (used >= limit) {
-    return json({ error: "You have used today's 10 free cloud messages. Try again tomorrow, or use on-device chat if it is available.", remaining: 0 }, 429);
+    return json({ error: "You have used today's " + limit + " free cloud messages. Try again tomorrow, or use on-device chat if it is available.", remaining: 0 }, 429);
   }
 
   let body;
