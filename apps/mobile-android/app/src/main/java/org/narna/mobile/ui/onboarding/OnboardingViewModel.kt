@@ -87,15 +87,15 @@ class OnboardingViewModel @Inject constructor(
                     subtitle = "Desktop BYOK or CLI subscription, then pair this phone",
                     recommended = true,
                     steps = listOf(
-                        "Install NARNA Desktop and sign in Claude CLI or Codex",
+                        "Install Desktop and sign in Claude CLI or Codex",
                         "Or paste an API key later in Settings → AI Providers",
-                        "On Desktop open Pairing and scan the QR here"
+                        "On Desktop open Pairing and scan the QR with Nana AI"
                     ),
                     cta = "Connect external AI"
                 ),
                 OnboardingPath(
                     id = "narna_pro",
-                    title = "Buy NARNA Pro",
+                    title = "Buy Nana AI Pro",
                     subtitle = "Cloud agent features via Google Play — then attach your API key",
                     recommended = false,
                     steps = listOf(
@@ -103,7 +103,7 @@ class OnboardingViewModel @Inject constructor(
                         "Attach Claude/OpenAI key in Settings for always-on cloud agent",
                         "Or still pair Desktop if you use a CLI subscription"
                     ),
-                    cta = "See NARNA plans"
+                    cta = "See Nana AI plans"
                 )
             )
         )

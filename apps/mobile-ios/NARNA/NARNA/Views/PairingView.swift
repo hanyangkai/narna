@@ -24,7 +24,7 @@ struct PairingView: View {
                     .font(.system(size: 80))
                     .foregroundColor(.accentColor)
                 
-                Text("Pair with NARNA")
+                Text("Pair with Nana AI")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 

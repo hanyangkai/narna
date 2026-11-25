@@ -181,7 +181,7 @@ class WebSocketService : Service() {
 
         return NotificationCompat.Builder(this, NARNAApplication.CHANNEL_CONNECTION)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("NARNA")
+            .setContentTitle("Nana AI")
             .setContentText(message)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

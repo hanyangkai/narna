@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -319,12 +320,33 @@ fun SettingsScreen(
                 }
             }
 
-            Text(
-                text = "Version ${BuildConfig.VERSION_NAME}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+            SettingsSection(title = "About") {
+                Text(
+                    text = "Nana AI",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(
+                    onClick = {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "I'm using Nana AI — remote control for AI agents. https://narna.org"
+                            )
+                        }
+                        context.startActivity(Intent.createChooser(send, "Share Nana AI"))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Share Nana AI")
+                }
+            }
         }
     }
 
@@ -332,7 +354,7 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { viewModel.hideUnpairDialog() },
             title = { Text("Unpair Device") },
-            text = { Text("Are you sure you want to unpair this device? You'll need to pair again to use the app.") },
+            text = { Text("Are you sure you want to unpair this device? You'll need to pair again to use Nana AI.") },
             confirmButton = {
                 TextButton(
                     onClick = {

@@ -41,7 +41,7 @@ fun ConnectAiSheet(
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "You're paired, but no model provider is ready yet. Use Desktop CLI/BYOK or attach a cloud API key after NARNA Pro.",
+                text = "You're paired, but no model provider is ready yet. Use Desktop CLI/BYOK or attach a cloud API key after Nana AI Pro.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -99,7 +99,7 @@ fun ConnectAiSheet(
                     onClick = onOpenSubscription,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("View NARNA Pro on Google Play")
+                    Text("View Nana AI Pro on Google Play")
                 }
             }
 

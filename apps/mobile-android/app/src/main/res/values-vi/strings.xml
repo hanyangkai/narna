@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nana AI</string>
+    <string name="app_share_message">Tôi đang dùng Nana AI — điều khiển agent AI từ xa. https://narna.org</string>
+    <string name="about_app_label">Nana AI</string>
+
+    <string name="pairing_title">Ghép nối Nana AI</string>
+    <string name="pairing_connect_desktop">Kết nối Desktop</string>
+    <string name="pairing_scan_qr">Quét mã QR</string>
+    <string name="pairing_or">HOẶC</string>
+    <string name="pairing_enter_code">Nhập mã 6 số</string>
+    <string name="pairing_code_hint">123456</string>
+    <string name="pairing_verify">Xác nhận</string>
+    <string name="pairing_success">Ghép nối thành công!</string>
+    <string name="pairing_error">Ghép nối thất bại. Thử lại.</string>
+    <string name="pairing_invalid_code">Mã không hợp lệ hoặc đã hết hạn</string>
+    <string name="camera_permission_required">Cần quyền camera để quét QR</string>
+
+    <string name="bots_title">Bot của tôi</string>
+    <string name="bots_empty">Chưa có bot</string>
+    <string name="bot_status_idle">Nhàn</string>
+    <string name="bot_status_working">Đang chạy</string>
+    <string name="bot_status_waiting_approval">Chờ duyệt</string>
+
+    <string name="chat_input_hint">Nhắn %s</string>
+    <string name="chat_send">Gửi</string>
+    <string name="chat_empty">Bắt đầu trò chuyện</string>
+    <string name="chat_connecting">Đang kết nối…</string>
+    <string name="chat_connected">Đã kết nối</string>
+    <string name="chat_disconnected">Mất kết nối</string>
+    <string name="chat_error">Lỗi kết nối</string>
+
+    <string name="approval_title">Cần phê duyệt</string>
+    <string name="approval_allow">Cho phép</string>
+    <string name="approval_deny">Từ chối</string>
+    <string name="approval_shell_command">Lệnh shell</string>
+    <string name="approval_file_edit">Sửa file</string>
+    <string name="approval_web_action">Hành động web</string>
+    <string name="approval_details">Chi tiết</string>
+    <string name="approval_no_pending">Không có yêu cầu chờ</string>
+
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_api_keys">API Keys</string>
+    <string name="settings_openai_key">OpenAI API Key</string>
+    <string name="settings_anthropic_key">Anthropic API Key</string>
+    <string name="settings_preferences">Tùy chọn</string>
+    <string name="settings_dark_theme">Giao diện tối</string>
+    <string name="settings_notifications">Thông báo</string>
+    <string name="settings_unpair">Hủy ghép nối</string>
+    <string name="settings_unpair_confirm">Bạn chắc muốn hủy ghép nối? Cần ghép lại để dùng Nana AI.</string>
+    <string name="settings_version">Phiên bản %s</string>
+    <string name="settings_about">Giới thiệu</string>
+    <string name="settings_share">Chia sẻ Nana AI</string>
+
+    <string name="onboarding_welcome">Chào mừng đến Nana AI</string>
+    <string name="onboarding_pro_title">Mua Nana AI Pro</string>
+    <string name="notification_channel_connection">Nana AI</string>
+
+    <string name="retry">Thử lại</string>
+    <string name="cancel">Hủy</string>
+    <string name="ok">OK</string>
+    <string name="error">Lỗi</string>
+    <string name="loading">Đang tải…</string>
+    <string name="refresh">Làm mới</string>
+</resources>

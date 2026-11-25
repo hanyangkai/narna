@@ -48,7 +48,7 @@ export default function Support() {
             a BYOK key.
           </li>
           <li>
-            Open Pairing → scan QR with the NARNA iOS/Android app.
+            Open Pairing → scan QR with the Nana AI iOS/Android app.
           </li>
           <li>Chat and approve risky actions from the phone Inbox.</li>
           <li>

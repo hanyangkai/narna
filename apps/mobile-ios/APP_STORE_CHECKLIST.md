@@ -12,7 +12,7 @@
 - [x] Fastlane configured with automation lanes
 - [x] App Store metadata created in `fastlane/metadata/en-US/`
 - [x] Bundle identifier: `org.narna.mobile`
-- [x] App name: NARNA Mobile
+- [x] App name: Nana AI
 - [x] Subtitle: AI Agent Remote Control
 
 ---

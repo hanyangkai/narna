@@ -17,7 +17,7 @@ Open: https://appstoreconnect.apple.com/apps
 
 | Field | Value |
 |-------|--------|
-| Name | NARNA Mobile |
+| Name | Nana AI |
 | Subtitle | AI Agent Remote Control |
 | Primary category | Productivity |
 | Secondary | Developer Tools |
@@ -67,7 +67,7 @@ Open: https://play.google.com/console
 
 | Field | Value |
 |-------|--------|
-| App name | NARNA Mobile |
+| App name | Nana AI |
 | Short description | Remote control for AI agents |
 | Full description | `apps/mobile-android/fastlane/metadata/android/en-US/full_description.txt` |
 | App category | Productivity |

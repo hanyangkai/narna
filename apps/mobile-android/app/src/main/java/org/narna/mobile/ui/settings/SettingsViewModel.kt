@@ -277,7 +277,7 @@ class SettingsViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 purchasingProductId = null,
                                 plan = verify.plan ?: "cloud",
-                                message = verify.message ?: "NARNA Pro activated via Google Play"
+                                message = verify.message ?: "Nana AI Pro activated via Google Play"
                             )
                             loadAiProviders()
                         }.onFailure { error ->
