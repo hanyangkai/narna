@@ -1,0 +1,20 @@
+name = "nana-free-pool"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Free plan: Workers + KV. Do NOT commit secrets — use `wrangler secret put`.
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "00000000000000000000000000000000"
+preview_id = "11111111111111111111111111111111"
+
+[ai]
+binding = "AI"
+
+[vars]
+# Non-secret defaults (override in dashboard if needed)
+DAILY_MSG_LIMIT_PER_DEVICE = "10"
+GLOBAL_DAILY_MSG_CAP = "5000"
+MAX_TOKENS = "512"
+OPENROUTER_FREE_MODELS = "meta-llama/llama-3.2-3b-instruct:free,google/gemma-2-9b-it:free"
+GROQ_MODEL = "llama-3.1-8b-instant"
