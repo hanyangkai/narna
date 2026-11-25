@@ -1,0 +1,25 @@
+name = "nana-agent-proxy"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Ready to deploy, but do NOT deploy without the owner's explicit approval.
+# Do not enable a paid Cloudflare plan for this worker.
+# Do not put API keys in this file.
+
+# Create the KV namespace at deploy time and replace this placeholder.
+# wrangler kv namespace create nana-agent-credits
+[[kv_namespaces]]
+binding = "CREDITS"
+id = "00000000000000000000000000000000"
+
+[vars]
+APPLE_BUNDLE_ID = "org.narna.mobile"
+APPLE_APP_ID = "6832895840"
+BASIC_MONTHLY_CREDITS = "200"
+PRO_MONTHLY_CREDITS = "800"
+# Prefer a cheap strong model so 200/800 caps stay under net proceeds.
+AGENT_MODEL = "gpt-4o-mini"
+# Secrets (wrangler secret put) — never commit:
+#   APPLE_IAP_KEY_ID, APPLE_IAP_ISSUER_ID, APPLE_IAP_PRIVATE_KEY
+#   OPENAI_API_KEY (preferred) or ANTHROPIC_API_KEY or AGENT_GEMINI_API_KEY
+# DEV_ALLOW_UNVERIFIED must stay unset/off in production.

@@ -37,6 +37,20 @@
 		A10000000056 /* ChatBot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000057 /* ChatBot.swift */; };
 		A10000000058 /* ChatBotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000059 /* ChatBotStore.swift */; };
 		A1000000005A /* BotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000005B /* BotsView.swift */; };
+		A10000000070 /* ChatProviderRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000090 /* ChatProviderRouter.swift */; };
+		A10000000071 /* AgentPlanConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000091 /* AgentPlanConfig.swift */; };
+		A10000000072 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000092 /* AppConfig.swift */; };
+		A10000000073 /* OnDeviceFoundationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000093 /* OnDeviceFoundationProvider.swift */; };
+		A10000000074 /* DeviceAttestation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000094 /* DeviceAttestation.swift */; };
+		A10000000075 /* FreePoolProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000095 /* FreePoolProvider.swift */; };
+		A10000000076 /* AgentProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000096 /* AgentProxyService.swift */; };
+		A10000000077 /* AgentSubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000097 /* AgentSubscriptionManager.swift */; };
+		A10000000078 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000098 /* PaywallView.swift */; };
+		A10000000079 /* NanaAgent.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A10000000099 /* NanaAgent.storekit */; };
+		A10000000111 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000110 /* PrivacyInfo.xcprivacy */; };
+		A1000000007A /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000009A /* FoundationModels.framework */; settings = {ATTRIBUTES = (Weak, Optional, ); }; };
+		A20000000019 /* ProviderRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000002 /* ProviderRouterTests.swift */; };
+		A2000000001A /* PaywallGatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000003 /* PaywallGatingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,10 +86,35 @@
 		A10000000057 /* ChatBot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBot.swift; sourceTree = "<group>"; };
 		A10000000059 /* ChatBotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBotStore.swift; sourceTree = "<group>"; };
 		A1000000005B /* BotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotsView.swift; sourceTree = "<group>"; };
+		A10000000090 /* ChatProviderRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatProviderRouter.swift; sourceTree = "<group>"; };
+		A10000000091 /* AgentPlanConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPlanConfig.swift; sourceTree = "<group>"; };
+		A10000000092 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		A10000000093 /* OnDeviceFoundationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDeviceFoundationProvider.swift; sourceTree = "<group>"; };
+		A10000000094 /* DeviceAttestation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAttestation.swift; sourceTree = "<group>"; };
+		A10000000095 /* FreePoolProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePoolProvider.swift; sourceTree = "<group>"; };
+		A10000000096 /* AgentProxyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProxyService.swift; sourceTree = "<group>"; };
+		A10000000097 /* AgentSubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSubscriptionManager.swift; sourceTree = "<group>"; };
+		A10000000098 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		A10000000099 /* NanaAgent.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NanaAgent.storekit; sourceTree = "<group>"; };
+		A1000000009A /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = System/Library/Frameworks/FoundationModels.framework; sourceTree = SDKROOT; };
+		A1000000009B /* NARNA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NARNA.entitlements; sourceTree = "<group>"; };
+		A10000000110 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A10000000112 /* NARNA-Release.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NARNA-Release.entitlements"; sourceTree = "<group>"; };
+		A20000000001 /* NARNATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NARNATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000002 /* ProviderRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRouterTests.swift; sourceTree = "<group>"; };
+		A20000000003 /* PaywallGatingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallGatingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000000022 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000007A /* FoundationModels.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000013 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -89,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000024 /* NARNA */,
+				A20000000018 /* NARNATests */,
 				A10000000025 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -97,6 +137,10 @@
 			isa = PBXGroup;
 			children = (
 				A10000000021 /* Info.plist */,
+				A1000000009B /* NARNA.entitlements */,
+				A10000000112 /* NARNA-Release.entitlements */,
+				A10000000099 /* NanaAgent.storekit */,
+				A10000000110 /* PrivacyInfo.xcprivacy */,
 				A10000000002 /* NARNAApp.swift */,
 				A10000000004 /* ContentView.swift */,
 				A10000000026 /* Views */,
@@ -112,6 +156,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000000FF /* NARNA.app */,
+				A20000000001 /* NARNATests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -131,6 +176,7 @@
 				A1000000000E /* ApprovalCardView.swift */,
 				A10000000010 /* SettingsView.swift */,
 				A10000000020 /* QRScannerView.swift */,
+				A10000000098 /* PaywallView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -157,6 +203,14 @@
 				A10000000012 /* NARNAAPIService.swift */,
 				A10000000014 /* WebSocketService.swift */,
 				A10000000016 /* KeychainService.swift */,
+				A10000000090 /* ChatProviderRouter.swift */,
+				A10000000091 /* AgentPlanConfig.swift */,
+				A10000000092 /* AppConfig.swift */,
+				A10000000093 /* OnDeviceFoundationProvider.swift */,
+				A10000000094 /* DeviceAttestation.swift */,
+				A10000000095 /* FreePoolProvider.swift */,
+				A10000000096 /* AgentProxyService.swift */,
+				A10000000097 /* AgentSubscriptionManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -169,6 +223,15 @@
 				A10000000018 /* Models.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A20000000018 /* NARNATests */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000002 /* ProviderRouterTests.swift */,
+				A20000000003 /* PaywallGatingTests.swift */,
+			);
+			path = NARNATests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -191,7 +254,43 @@
 			productReference = A100000000FF /* NARNA.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A20000000020 /* NARNATests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A20000000017 /* Build configuration list for PBXNativeTarget "NARNATests" */;
+			buildPhases = (
+				A20000000012 /* Sources */,
+				A20000000013 /* Frameworks */,
+				A20000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A20000000011 /* PBXTargetDependency */,
+			);
+			name = NARNATests;
+			productName = NARNATests;
+			productReference = A20000000001 /* NARNATests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A20000000010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000000002E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1000000002A;
+			remoteInfo = NARNA;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A20000000011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1000000002A /* NARNA */;
+			targetProxy = A20000000010 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		A1000000002E /* Project object */ = {
@@ -203,6 +302,10 @@
 				TargetAttributes = {
 					A1000000002A = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					A20000000020 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A1000000002A;
 					};
 				};
 			};
@@ -220,6 +323,7 @@
 			projectRoot = "";
 			targets = (
 				A1000000002A /* NARNA */,
+				A20000000020 /* NARNATests */,
 			);
 		};
 /* End PBXProject section */
@@ -230,6 +334,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000005 /* Assets.xcassets in Resources */,
+				A10000000079 /* NanaAgent.storekit in Resources */,
+				A10000000111 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,6 +367,15 @@
 				A10000000056 /* ChatBot.swift in Sources */,
 				A10000000058 /* ChatBotStore.swift in Sources */,
 				A1000000005A /* BotsView.swift in Sources */,
+				A10000000070 /* ChatProviderRouter.swift in Sources */,
+				A10000000071 /* AgentPlanConfig.swift in Sources */,
+				A10000000072 /* AppConfig.swift in Sources */,
+				A10000000073 /* OnDeviceFoundationProvider.swift in Sources */,
+				A10000000074 /* DeviceAttestation.swift in Sources */,
+				A10000000075 /* FreePoolProvider.swift in Sources */,
+				A10000000076 /* AgentProxyService.swift in Sources */,
+				A10000000077 /* AgentSubscriptionManager.swift in Sources */,
+				A10000000078 /* PaywallView.swift in Sources */,
 				A10000000003 /* ContentView.swift in Sources */,
 				A10000000001 /* NARNAApp.swift in Sources */,
 				A10000000007 /* PairingView.swift in Sources */,
@@ -269,6 +391,15 @@
 				A1000000001B /* BotListViewModel.swift in Sources */,
 				A1000000001D /* ChatViewModel.swift in Sources */,
 				A1000000001F /* QRScannerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A20000000012 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A20000000019 /* ProviderRouterTests.swift in Sources */,
+				A2000000001A /* PaywallGatingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,8 +530,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -415,7 +547,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -429,8 +561,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA-Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -445,12 +578,50 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A20000000015 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NARNA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NARNA";
+			};
+			name = Debug;
+		};
+		A20000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.narna.mobile.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NARNA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NARNA";
 			};
 			name = Release;
 		};
@@ -471,6 +642,15 @@
 			buildConfigurations = (
 				A10000000030 /* Debug */,
 				A10000000031 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A20000000017 /* Build configuration list for PBXNativeTarget "NARNATests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A20000000015 /* Debug */,
+				A20000000016 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

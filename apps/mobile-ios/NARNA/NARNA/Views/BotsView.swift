@@ -2,7 +2,7 @@
 //  BotsView.swift
 //  NARNA
 //
-//  Home screen: bot list in the style of the Grok Bot app. NaNa Bot (Chief of Staff)
+//  Home screen: bot list in the style of the Grok Bot app. Nana AI (Chief of Staff)
 //  is the large avatar on top and cannot be deleted. User bots are stored only on this iPhone.
 //
 

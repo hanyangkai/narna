@@ -28,13 +28,19 @@ enum LLMError: LocalizedError {
     case network(String)
     case server(Int, String?)
     case emptyResponse
+    case onDeviceUnavailable(String?)
+    case freePoolNotConfigured
+    case dailyLimit(Int, String?)
+    case agentNotConfigured
+    case notSubscribed
+    case creditsExhausted(String?)
 
     var errorDescription: String? {
         switch self {
         case .missingKey:
-            return "Add your API key in Settings to start chatting."
+            return "Add your API key in Settings > Advanced to chat with your own provider."
         case .invalidBaseURL:
-            return "The provider base URL is not valid. Check it in Settings."
+            return "The provider base URL is not valid. Check it in Settings > Advanced."
         case .invalidKey(let m):
             return "The API key was rejected (401). Check that the selected provider matches this key, and that the key is valid." + (m.map { "\n(\($0))" } ?? "")
         case .rateLimited(let m):
@@ -45,6 +51,18 @@ enum LLMError: LocalizedError {
             return "Provider error \(code)" + (m.map { ": \($0)" } ?? ".")
         case .emptyResponse:
             return "The provider returned an empty answer."
+        case .onDeviceUnavailable(let m):
+            return m ?? "On-device AI is not available on this iPhone."
+        case .freePoolNotConfigured:
+            return "Free cloud chat is not configured yet. If this iPhone has Apple Intelligence, Nana can still chat on-device. You can also add your own API key in Settings > Advanced."
+        case .dailyLimit(_, let m):
+            return m ?? "You have used today's \(FreePoolProvider.dailyLimit) free cloud messages. Continue on-device if Apple Intelligence is available, or try again tomorrow."
+        case .agentNotConfigured:
+            return "Agent mode is not connected to the server yet. Free chat still works."
+        case .notSubscribed:
+            return "Agent mode needs a Nana Agent subscription."
+        case .creditsExhausted(let m):
+            return m ?? "You have used this month's Agent credits. They reset at the start of the next billing period."
         }
     }
 }

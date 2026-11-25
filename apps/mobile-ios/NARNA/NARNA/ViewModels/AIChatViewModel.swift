@@ -83,14 +83,20 @@ final class AIChatViewModel: ObservableObject {
     @Published var input: String = ""
     @Published var isSending = false
     @Published var scoringIDs: Set<UUID> = []
+    @Published var showPaywall = false
+    @Published var agentModeEnabled = false
+    @Published var agentWebSearch = false
+    @Published var lastModelDisplayName: String?
+    @Published var freePoolRemaining: Int?
 
     private let store = ConversationStore.shared
     private let settings = LLMSettings.shared
     private let app = AppState.shared
     private let bots = ChatBotStore.shared
+    private let subscriptions = AgentSubscriptionManager.shared
 
     static let systemPrompt = """
-    You are NaNa Bot, a helpful, concise AI assistant running on the user's iPhone with the user's own API key. \
+    You are Nana AI, a helpful, concise AI assistant running on the user's iPhone. \
     Answer clearly. Use short paragraphs, bullet points and **bold** for key points when helpful. \
     When you give a recommendation or decision, state your assumptions and the main risks. \
     For medical, legal or financial topics, remind the user to verify with a qualified professional.
@@ -111,10 +117,33 @@ final class AIChatViewModel: ObservableObject {
         return c
     }
 
+    var routeInput: ChatProviderRouteInput {
+        ChatProviderRouteInput(
+            onDeviceAvailable: OnDeviceFoundationProvider.isAvailable,
+            freePoolConfigured: FreePoolProvider.isConfigured,
+            useOwnAPIKey: settings.useOwnAPIKey,
+            hasBYOK: settings.isReady,
+            agentModeEnabled: agentModeEnabled,
+            isSubscribed: subscriptions.isSubscribed,
+            agentCreditsRemaining: subscriptions.creditsRemaining
+        )
+    }
+
+    var currentRoute: ChatProviderKind { ChatProviderRouter.resolve(routeInput) }
+
     var isReady: Bool {
         if LLMService.shared.isMockMode { return true }
-        do { _ = try config(); return true } catch { return false }
+        switch currentRoute {
+        case .onDevice, .freePool, .byok, .agent:
+            return true
+        case .paywall:
+            return true // composer stays enabled; send presents the paywall
+        case .unavailable:
+            return settings.useOwnAPIKey && settings.isReady
+        }
     }
+
+    var emptyStateNeedsSetup: Bool { !isReady && currentRoute == .unavailable }
 
     var canSend: Bool {
         !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
@@ -150,6 +179,9 @@ final class AIChatViewModel: ObservableObject {
     }
 
     var activeModel: String {
+        if let lastModelDisplayName, !lastModelDisplayName.isEmpty { return lastModelDisplayName }
+        let name = ChatProviderRouter.displayName(for: currentRoute, modelDisplayName: nil)
+        if !name.isEmpty { return name }
         let bot = currentBot
         if bot.useGlobalKey || bot.isChiefOfStaff { return settings.model }
         return (bot.model?.isEmpty == false ? bot.model! : settings.model)
@@ -198,15 +230,22 @@ final class AIChatViewModel: ObservableObject {
         defer { isSending = false }
         guard let convo = store.conversation(conversationID) else { return }
         let history = turns(convo.messages)
+        let route = currentRoute
+        if route == .paywall {
+            showPaywall = true
+            return
+        }
         do {
-            let cfg = try config()
-            let answer = try await LLMService.shared.complete(config: cfg, system: systemPrompt, turns: history)
+            let (answer, displayName) = try await complete(route: route, history: history)
+            lastModelDisplayName = displayName
             guard var c = store.conversation(conversationID) else { return }
-            let msg = AIMessage(role: .assistant, content: answer)
+            var msg = AIMessage(role: .assistant, content: answer)
+            msg.modelDisplayName = displayName
             c.messages.append(msg)
+            c.model = displayName
             c.updatedAt = Date()
             store.update(c)
-            if settings.adqaEnabled {
+            if settings.adqaEnabled, let cfg = try? config() {
                 await score(conversationID: conversationID, messageID: msg.id, question: question,
                             answer: answer, history: Array(history.dropLast()))
             }
@@ -215,6 +254,52 @@ final class AIChatViewModel: ObservableObject {
             c.messages.append(AIMessage(role: .assistant, content: error.localizedDescription, isError: true))
             c.updatedAt = Date()
             store.update(c)
+        }
+    }
+
+    private func complete(route: ChatProviderKind, history: [LLMTurn]) async throws -> (String, String) {
+        if LLMService.shared.isMockMode {
+            let text = try await MockLLM.reply(system: systemPrompt, turns: history)
+            return (text, ChatProviderRouter.displayName(for: route, modelDisplayName: "Gemini Flash"))
+        }
+        switch route {
+        case .onDevice:
+            let text = try await OnDeviceFoundationProvider.complete(system: systemPrompt, turns: history)
+            return (text, OnDeviceFoundationProvider.displayName)
+        case .freePool:
+            let reply = try await FreePoolProvider.complete(system: systemPrompt, turns: history)
+            if reply.remaining >= 0 { freePoolRemaining = reply.remaining }
+            return (reply.content, reply.modelDisplayName)
+        case .byok:
+            let cfg = try config()
+            let text = try await LLMService.shared.complete(config: cfg, system: systemPrompt, turns: history)
+            return (text, cfg.model)
+        case .agent:
+            guard let jws = subscriptions.lastTransactionJWS, !jws.isEmpty else {
+                showPaywall = true
+                throw LLMError.notSubscribed
+            }
+            let gate = PaywallGating.evaluate(isSubscribed: subscriptions.isSubscribed,
+                                              plan: subscriptions.currentPlan,
+                                              creditsRemaining: subscriptions.creditsRemaining)
+            switch gate {
+            case .needsSubscription, .creditsExhausted:
+                showPaywall = true
+                throw gate == .needsSubscription ? LLMError.notSubscribed : LLMError.creditsExhausted(nil)
+            case .allowed:
+                break
+            }
+            let reply = try await AgentProxyService.complete(AgentRequest(
+                system: systemPrompt, turns: history, webSearch: agentWebSearch,
+                transactionJWS: jws, fileName: nil, fileMIME: nil, fileBase64: nil
+            ))
+            subscriptions.applyServerCredits(reply.creditsRemaining)
+            return (reply.content, reply.modelDisplayName)
+        case .paywall:
+            showPaywall = true
+            throw LLMError.notSubscribed
+        case .unavailable:
+            throw LLMError.freePoolNotConfigured
         }
     }
 

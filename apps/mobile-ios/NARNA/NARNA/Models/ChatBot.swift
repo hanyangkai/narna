@@ -2,7 +2,7 @@
 //  ChatBot.swift
 //  NARNA
 //
-//  On-device chat bots. The pinned Chief of Staff is NaNa Bot and cannot be deleted.
+//  On-device chat bots. The pinned Chief of Staff is Nana AI and cannot be deleted.
 //
 
 import SwiftUI
@@ -38,7 +38,7 @@ struct ChatBot: Codable, Identifiable, Equatable, Hashable {
     static func chiefOfStaff() -> ChatBot {
         ChatBot(
             id: chiefOfStaffID,
-            name: "NaNa Bot",
+            name: "Nana AI",
             role: "Chief of Staff",
             emoji: "✨",
             hue: 0.60,

@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  NARNA
 //
-//  Home is the bot list (like the Grok Bot app): NaNa Bot (Chief of Staff) on top,
+//  Home is the bot list (like the Grok Bot app): Nana AI (Chief of Staff) on top,
 //  user bots below. Tapping a bot pushes its chat. Settings, History and the
 //  optional Desktop monitor are sheets, so there is no tab bar to cover the
 //  chat input or block keyboard dismissal.
@@ -28,6 +28,7 @@ struct MainTabView: View {
     @StateObject private var settings = LLMSettings.shared
     @StateObject private var store = ConversationStore.shared
     @StateObject private var bots = ChatBotStore.shared
+    @StateObject private var subscriptions = AgentSubscriptionManager.shared
 
     var body: some View {
         NavigationStack(path: $app.path) {
@@ -44,6 +45,7 @@ struct MainTabView: View {
                 .environmentObject(settings)
                 .environmentObject(store)
                 .environmentObject(bots)
+                .environmentObject(subscriptions)
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $app.showHistory) {
@@ -52,6 +54,7 @@ struct MainTabView: View {
                 .environmentObject(settings)
                 .environmentObject(store)
                 .environmentObject(bots)
+                .environmentObject(subscriptions)
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $app.showDesktop) {
@@ -62,6 +65,7 @@ struct MainTabView: View {
         .environmentObject(settings)
         .environmentObject(store)
         .environmentObject(bots)
+        .environmentObject(subscriptions)
         .onAppear {
             app.refreshPairing()
             #if DEBUG

@@ -8,6 +8,8 @@ import SwiftUI
 struct AppSettingsView: View {
     @EnvironmentObject var app: AppState
     @EnvironmentObject var settings: LLMSettings
+    @EnvironmentObject var subscriptions: AgentSubscriptionManager
+    @State private var showPaywall = false
     @State private var showPairing = false
     @State private var showDesktopSettings = false
     @State private var confirmUnpair = false
@@ -43,6 +45,38 @@ struct AppSettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    LabeledContent("On-device AI") {
+                        Text(OnDeviceFoundationProvider.isAvailable ? "Available" : "Not on this iPhone")
+                            .foregroundStyle(.secondary)
+                    }
+                    if let left = FreePoolRemainingHint.current {
+                        LabeledContent("Free cloud messages today") {
+                            Text("\(left) of \(FreePoolProvider.dailyLimit)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Text("Chat is free. Nana uses the on-device Apple model when it is available, otherwise the free cloud pool (Gemini Flash, GPT-OSS, Gemma). No account needed.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Free chat")
+                }
+
+                Section {
+                    LabeledContent("Status", value: subscriptions.statusLabel)
+                    Button("Subscribe to Nana Agent") { showPaywall = true }
+                    Button("Restore Purchases") { Task { await subscriptions.restore() } }
+                    if subscriptions.isSubscribed {
+                        Button("Manage Subscription") { Task { await subscriptions.manageSubscription() } }
+                    }
+                } header: {
+                    Text("Nana Agent")
+                } footer: {
+                    Text("Agent is a monthly auto-renewable subscription for multi-step tasks, files and images, web search, and stronger models. Prices are shown by the App Store. Credits reset each billing period.")
+                }
+
+                Section {
+                    Toggle("Use my own API key", isOn: $settings.useOwnAPIKey)
                     SecureField(keyPlaceholder, text: $draftKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -86,9 +120,9 @@ struct AppSettingsView: View {
                         }
                     }
                 } header: {
-                    Text("API Key")
+                    Text("Advanced")
                 } footer: {
-                    Text("Just paste your API key. NaNa Bot recognises the provider and loads its models automatically. The key is stored only in this iPhone's Keychain (this device only, not synced) and is sent only to that provider. Usage is billed by your provider.")
+                    Text("Optional. Paste your API key to use your own OpenAI, Anthropic, OpenRouter, CKEY.VN, Groq, DeepSeek, Gemini, xAI, Together, Mistral or OpenAI-compatible account. Nana recognises the provider and loads its models automatically. The key is stored only in this iPhone's Keychain (this device only, not synced) and is sent only to that provider. Usage is billed by your provider.")
                 }
 
                 if let c = settings.config {
@@ -125,20 +159,25 @@ struct AppSettingsView: View {
                 } header: {
                     Text("NARNA Desktop")
                 } footer: {
-                    Text("Optional. If you run the NARNA desktop agent, pair to monitor its bots and approve actions from your phone. Not needed to use NaNa Bot.")
+                    Text("Optional. If you run the NARNA desktop agent, pair to monitor its bots and approve actions from your phone. Not needed to chat with Nana AI.")
                 }
 
                 Section {
-                    Label("We don't collect any data. No account, no analytics, no tracking.", systemImage: "hand.raised.fill")
-                    Label("API keys and chat history stay on this iPhone.", systemImage: "iphone")
-                    Label("Messages go directly from your iPhone to the AI provider you choose, under that provider's terms.", systemImage: "arrow.up.right.circle")
+                    Label("Chat history and any API key you add stay on this iPhone.", systemImage: "iphone")
+                    Label("On-device answers never leave this iPhone.", systemImage: "lock.iphone")
+                    Label("Free cloud chat goes to our Worker, which may call Google Gemini, Groq, OpenRouter or Cloudflare Workers AI.", systemImage: "cloud")
+                    Text("When the free pool uses Google's Gemini or Gemma API free tier, prompts and responses may be used by Google to improve Google models, under Google's Gemini API terms. We do not use your chats to train Nana. If your region is the EEA, the United Kingdom or Switzerland, Nana skips Google's unpaid API and uses the other free sources instead.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Link("Privacy Policy", destination: AppConfig.privacyURL)
+                    Link("Terms of Use", destination: AppConfig.termsURL)
                 } header: {
                     Text("Privacy")
                 }
                 .font(.callout)
 
                 Section("About") {
-                    LabeledContent("App", value: "NaNa Bot")
+                    LabeledContent("App", value: "Nana AI")
                     LabeledContent("Version", value: version)
                 }
             }
@@ -149,6 +188,11 @@ struct AppSettingsView: View {
                         .fontWeight(.semibold)
                         .accessibilityLabel("Close Settings")
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+                    .environmentObject(subscriptions)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showPairing) {
                 PairingView(isPaired: $app.isPaired)
@@ -260,6 +304,8 @@ struct AdvancedProviderView: View {
     let apiKey: String
     var onSaved: (AppSettingsView.KeyStatus) -> Void
     @EnvironmentObject var settings: LLMSettings
+    @EnvironmentObject var subscriptions: AgentSubscriptionManager
+    @State private var showPaywall = false
     @Environment(\.dismiss) private var dismiss
     @State private var provider: LLMProvider = .openai
     @State private var baseURL = ""
@@ -415,4 +461,13 @@ struct ModelPickerView: View {
             errorText = error.localizedDescription
         }
     }
+}
+
+
+/// Last remaining count reported by the free-pool Worker, if any.
+enum FreePoolRemainingHint {
+    static var current: Int? { _box.remaining }
+    static func set(_ n: Int) { _box.remaining = n }
+    private static let _box = Box()
+    private final class Box { var remaining: Int? }
 }
