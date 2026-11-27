@@ -51,6 +51,31 @@
 		A1000000007A /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1000000009A /* FoundationModels.framework */; settings = {ATTRIBUTES = (Weak, Optional, ); }; };
 		A20000000019 /* ProviderRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000002 /* ProviderRouterTests.swift */; };
 		A2000000001A /* PaywallGatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000003 /* PaywallGatingTests.swift */; };
+		A30000000001 /* SkillDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000002 /* SkillDefinition.swift */; };
+		A30000000003 /* RateLimitCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000004 /* RateLimitCache.swift */; };
+		A30000000005 /* ToolCallParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000006 /* ToolCallParser.swift */; };
+		A30000000007 /* AgentTaskModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000008 /* AgentTaskModels.swift */; };
+		A30000000009 /* SkillRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000000A /* SkillRegistry.swift */; };
+		A3000000000B /* AgentPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000000C /* AgentPlanner.swift */; };
+		A3000000000D /* AgentExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000000E /* AgentExecutor.swift */; };
+		A3000000000F /* AgentChatBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000010 /* AgentChatBridge.swift */; };
+		A30000000011 /* CalculateSkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000012 /* CalculateSkill.swift */; };
+		A30000000013 /* NotesSkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000014 /* NotesSkill.swift */; };
+		A30000000015 /* PlanTodoSkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000016 /* PlanTodoSkill.swift */; };
+		A30000000017 /* TextSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000018 /* TextSkills.swift */; };
+		A30000000019 /* WebLookupSkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000001A /* WebLookupSkill.swift */; };
+		A3000000001B /* CalendarReminderSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000001C /* CalendarReminderSkills.swift */; };
+		A3000000001D /* ImageDescribeSkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3000000001E /* ImageDescribeSkill.swift */; };
+		A3000000001F /* DocumentQASkill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000020 /* DocumentQASkill.swift */; };
+		A30000000021 /* AgentTaskProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000022 /* AgentTaskProgressView.swift */; };
+		A31000000001 /* SkillRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31000000002 /* SkillRegistryTests.swift */; };
+		A31000000003 /* AgentPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31000000004 /* AgentPlannerTests.swift */; };
+		A31000000005 /* ToolCallParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31000000006 /* ToolCallParserTests.swift */; };
+		A31000000007 /* SkillHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31000000008 /* SkillHandlerTests.swift */; };
+		A31000000009 /* AgentExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3100000000A /* AgentExecutorTests.swift */; };
+		A30000000030 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000031 /* EventKit.framework */; };
+		A30000000032 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000033 /* Vision.framework */; };
+		A30000000034 /* PDFKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000035 /* PDFKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -103,6 +128,31 @@
 		A20000000001 /* NARNATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NARNATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000002 /* ProviderRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRouterTests.swift; sourceTree = "<group>"; };
 		A20000000003 /* PaywallGatingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallGatingTests.swift; sourceTree = "<group>"; };
+		A30000000002 /* SkillDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillDefinition.swift; sourceTree = "<group>"; };
+		A30000000004 /* RateLimitCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateLimitCache.swift; sourceTree = "<group>"; };
+		A30000000006 /* ToolCallParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallParser.swift; sourceTree = "<group>"; };
+		A30000000008 /* AgentTaskModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskModels.swift; sourceTree = "<group>"; };
+		A3000000000A /* SkillRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillRegistry.swift; sourceTree = "<group>"; };
+		A3000000000C /* AgentPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPlanner.swift; sourceTree = "<group>"; };
+		A3000000000E /* AgentExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentExecutor.swift; sourceTree = "<group>"; };
+		A30000000010 /* AgentChatBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentChatBridge.swift; sourceTree = "<group>"; };
+		A30000000012 /* CalculateSkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculateSkill.swift; sourceTree = "<group>"; };
+		A30000000014 /* NotesSkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSkill.swift; sourceTree = "<group>"; };
+		A30000000016 /* PlanTodoSkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTodoSkill.swift; sourceTree = "<group>"; };
+		A30000000018 /* TextSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSkills.swift; sourceTree = "<group>"; };
+		A3000000001A /* WebLookupSkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebLookupSkill.swift; sourceTree = "<group>"; };
+		A3000000001C /* CalendarReminderSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarReminderSkills.swift; sourceTree = "<group>"; };
+		A3000000001E /* ImageDescribeSkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDescribeSkill.swift; sourceTree = "<group>"; };
+		A30000000020 /* DocumentQASkill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentQASkill.swift; sourceTree = "<group>"; };
+		A30000000022 /* AgentTaskProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskProgressView.swift; sourceTree = "<group>"; };
+		A31000000002 /* SkillRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillRegistryTests.swift; sourceTree = "<group>"; };
+		A31000000004 /* AgentPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPlannerTests.swift; sourceTree = "<group>"; };
+		A31000000006 /* ToolCallParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallParserTests.swift; sourceTree = "<group>"; };
+		A31000000008 /* SkillHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillHandlerTests.swift; sourceTree = "<group>"; };
+		A3100000000A /* AgentExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentExecutorTests.swift; sourceTree = "<group>"; };
+		A30000000031 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+		A30000000033 /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		A30000000035 /* PDFKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PDFKit.framework; path = System/Library/Frameworks/PDFKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +161,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000000007A /* FoundationModels.framework in Frameworks */,
+				A30000000030 /* EventKit.framework in Frameworks */,
+				A30000000032 /* Vision.framework in Frameworks */,
+				A30000000034 /* PDFKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,6 +230,7 @@
 				A10000000010 /* SettingsView.swift */,
 				A10000000020 /* QRScannerView.swift */,
 				A10000000098 /* PaywallView.swift */,
+				A30000000022 /* AgentTaskProgressView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -211,6 +265,7 @@
 				A10000000095 /* FreePoolProvider.swift */,
 				A10000000096 /* AgentProxyService.swift */,
 				A10000000097 /* AgentSubscriptionManager.swift */,
+				A30000000040 /* Agent */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -230,8 +285,44 @@
 			children = (
 				A20000000002 /* ProviderRouterTests.swift */,
 				A20000000003 /* PaywallGatingTests.swift */,
+				A31000000002 /* SkillRegistryTests.swift */,
+				A31000000004 /* AgentPlannerTests.swift */,
+				A31000000006 /* ToolCallParserTests.swift */,
+				A31000000008 /* SkillHandlerTests.swift */,
+				A3100000000A /* AgentExecutorTests.swift */,
 			);
 			path = NARNATests;
+			sourceTree = "<group>";
+		};
+		A30000000040 /* Agent */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000002 /* SkillDefinition.swift */,
+				A30000000004 /* RateLimitCache.swift */,
+				A30000000006 /* ToolCallParser.swift */,
+				A30000000008 /* AgentTaskModels.swift */,
+				A3000000000A /* SkillRegistry.swift */,
+				A3000000000C /* AgentPlanner.swift */,
+				A3000000000E /* AgentExecutor.swift */,
+				A30000000010 /* AgentChatBridge.swift */,
+				A30000000041 /* Skills */,
+			);
+			path = Agent;
+			sourceTree = "<group>";
+		};
+		A30000000041 /* Skills */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000012 /* CalculateSkill.swift */,
+				A30000000014 /* NotesSkill.swift */,
+				A30000000016 /* PlanTodoSkill.swift */,
+				A30000000018 /* TextSkills.swift */,
+				A3000000001A /* WebLookupSkill.swift */,
+				A3000000001C /* CalendarReminderSkills.swift */,
+				A3000000001E /* ImageDescribeSkill.swift */,
+				A30000000020 /* DocumentQASkill.swift */,
+			);
+			path = Skills;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -391,6 +482,23 @@
 				A1000000001B /* BotListViewModel.swift in Sources */,
 				A1000000001D /* ChatViewModel.swift in Sources */,
 				A1000000001F /* QRScannerView.swift in Sources */,
+				A30000000001 /* SkillDefinition.swift in Sources */,
+				A30000000003 /* RateLimitCache.swift in Sources */,
+				A30000000005 /* ToolCallParser.swift in Sources */,
+				A30000000007 /* AgentTaskModels.swift in Sources */,
+				A30000000009 /* SkillRegistry.swift in Sources */,
+				A3000000000B /* AgentPlanner.swift in Sources */,
+				A3000000000D /* AgentExecutor.swift in Sources */,
+				A3000000000F /* AgentChatBridge.swift in Sources */,
+				A30000000011 /* CalculateSkill.swift in Sources */,
+				A30000000013 /* NotesSkill.swift in Sources */,
+				A30000000015 /* PlanTodoSkill.swift in Sources */,
+				A30000000017 /* TextSkills.swift in Sources */,
+				A30000000019 /* WebLookupSkill.swift in Sources */,
+				A3000000001B /* CalendarReminderSkills.swift in Sources */,
+				A3000000001D /* ImageDescribeSkill.swift in Sources */,
+				A3000000001F /* DocumentQASkill.swift in Sources */,
+				A30000000021 /* AgentTaskProgressView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -400,6 +508,11 @@
 			files = (
 				A20000000019 /* ProviderRouterTests.swift in Sources */,
 				A2000000001A /* PaywallGatingTests.swift in Sources */,
+				A31000000001 /* SkillRegistryTests.swift in Sources */,
+				A31000000003 /* AgentPlannerTests.swift in Sources */,
+				A31000000005 /* ToolCallParserTests.swift in Sources */,
+				A31000000007 /* SkillHandlerTests.swift in Sources */,
+				A31000000009 /* AgentExecutorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,7 +645,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -563,7 +676,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = NARNA/NARNA-Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -592,7 +705,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -611,7 +724,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

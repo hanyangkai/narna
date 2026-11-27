@@ -36,6 +36,16 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Nana AI uses the camera only to scan the QR code when you choose to pair with the NARNA desktop agent.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Nana AI needs calendar access only when you ask it to create or list events for you.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Nana AI needs calendar access only when you ask it to create or list events for you.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Nana AI needs Reminders access only when you ask it to create or list reminders for you.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Nana AI needs Reminders access only when you ask it to create or list reminders for you.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nana AI needs photo access only when you ask it to describe an image you choose.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

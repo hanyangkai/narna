@@ -88,6 +88,8 @@ final class AIChatViewModel: ObservableObject {
     @Published var agentWebSearch = false
     @Published var lastModelDisplayName: String?
     @Published var freePoolRemaining: Int?
+    /// Live agent task progress while a multi-step run is in flight.
+    @Published var liveAgentTasks: [AgentTaskProgress] = []
 
     private let store = ConversationStore.shared
     private let settings = LLMSettings.shared
@@ -99,7 +101,9 @@ final class AIChatViewModel: ObservableObject {
     You are Nana AI, a helpful, concise AI assistant running on the user's iPhone. \
     Answer clearly. Use short paragraphs, bullet points and **bold** for key points when helpful. \
     When you give a recommendation or decision, state your assumptions and the main risks. \
-    For medical, legal or financial topics, remind the user to verify with a qualified professional.
+    For medical, legal or financial topics, remind the user to verify with a qualified professional. \
+    You can use built-in skills (research, summarize, draft, translate, plan/todo, calculate, \
+    calendar, reminders, notes, image description, document Q&A, web lookup) for multi-step work.
     """
 
     var currentBot: ChatBot { bots.bot(app.currentBotID) }
@@ -227,7 +231,11 @@ final class AIChatViewModel: ObservableObject {
 
     private func respond(conversationID: UUID, question: String) async {
         isSending = true
-        defer { isSending = false }
+        liveAgentTasks = []
+        defer {
+            isSending = false
+            liveAgentTasks = []
+        }
         guard let convo = store.conversation(conversationID) else { return }
         let history = turns(convo.messages)
         let route = currentRoute
@@ -235,6 +243,44 @@ final class AIChatViewModel: ObservableObject {
             showPaywall = true
             return
         }
+
+        // Multi-step / skill path for free chat (and BYOK / on-device). Paid Agent proxy keeps its own path.
+        if route == .onDevice || route == .freePool || route == .byok,
+           AgentPlanner.shouldUseAgent(for: question) {
+            let byok = try? config()
+            var lastSnap: AgentRunSnapshot?
+            for await snap in AgentChatBridge.runAgent(message: question, route: route, byokConfig: byok) {
+                liveAgentTasks = snap.tasks
+                lastSnap = snap
+            }
+            if let snap = lastSnap, !snap.tasks.isEmpty, let final = snap.finalAnswer, !final.isEmpty {
+                let label: String = {
+                    if let lastModelDisplayName, !lastModelDisplayName.isEmpty { return lastModelDisplayName }
+                    switch route {
+                    case .onDevice: return OnDeviceFoundationProvider.displayName
+                    case .freePool: return "Free"
+                    case .byok: return settings.model
+                    default: return "Skills"
+                    }
+                }()
+                lastModelDisplayName = label
+                guard var c = store.conversation(conversationID) else { return }
+                var msg = AIMessage(role: .assistant, content: final)
+                msg.modelDisplayName = label
+                msg.agentTasks = snap.tasks
+                c.messages.append(msg)
+                c.model = label
+                c.updatedAt = Date()
+                store.update(c)
+                if settings.adqaEnabled, let _ = try? config() {
+                    await score(conversationID: conversationID, messageID: msg.id, question: question,
+                                answer: final, history: Array(history.dropLast()))
+                }
+                return
+            }
+            // Empty plan → fall through to normal chat completion.
+        }
+
         do {
             let (answer, displayName) = try await complete(route: route, history: history)
             lastModelDisplayName = displayName

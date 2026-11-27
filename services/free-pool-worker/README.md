@@ -38,10 +38,14 @@ Never commit keys, `.dev.vars`, `.p8`, or `.pem` files.
 
 Unpaid Google Gemini / Gemma quota may be used by Google to improve Google models. The iOS Settings screen discloses this. Users in EEA / UK / CH are not sent to that unpaid Google route.
 
+## Skill catalog (documentation + parse helpers)
+
+`src/skills/catalog.js` mirrors the iOS built-in skill set (research, summarize, draft/translate, plan/todo, calculate, calendar, reminders, notes, image description, web lookup, document Q&A). Skills execute **on the device** (or via official free/keyless HTTP APIs from the app). The Worker does not charge for them and needs no extra secrets. The catalog exports JSON-tool-use prompt helpers and a `parseToolCalls` fallback for models without native function calling.
+
 ## Local tests
 
 ```bash
 npm test
 ```
 
-Runs `node --test` on the pure router (no Wrangler, no keys required).
+Runs `node --test` on the pure router and skill catalog (no Wrangler, no keys required).

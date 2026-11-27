@@ -184,6 +184,8 @@ struct AIMessage: Codable, Identifiable, Equatable {
     var adqaFailed: Bool = false
     /// Shown under assistant bubbles, e.g. "Gemini Flash", "GPT-OSS", "On-device".
     var modelDisplayName: String? = nil
+    /// Per-skill progress when Nana ran the agent planner/executor for this reply.
+    var agentTasks: [AgentTaskProgress]? = nil
 }
 
 struct Conversation: Codable, Identifiable, Equatable {
