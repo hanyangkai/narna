@@ -92,8 +92,9 @@ struct CalculateSkill: SkillHandler {
         init(_ s: String) { chars = Array(s) }
 
         var atEnd: Bool {
-            skipWS()
-            return i >= chars.count
+            var j = i
+            while j < chars.count, chars[j].isWhitespace { j += 1 }
+            return j >= chars.count
         }
 
         mutating func skipWS() {

@@ -23,7 +23,7 @@ private final class FakeEventKit: EventKitGateway, @unchecked Sendable {
 
 private struct FakeImageAnalyzer: ImageAnalyzing {
     func describe(imageData: Data) async throws -> (labels: [String], text: String) {
-        ("cat (90%)", "hello")
+        (["cat (90%)"], "hello")
     }
 }
 
@@ -206,9 +206,12 @@ final class SkillHandlerTests: XCTestCase {
     func testRateLimitCache() async {
         let cache = RateLimitCache()
         await cache.resetForTests()
-        XCTAssertTrue(await cache.consume(bucket: "t", cost: 5, capacity: 5, refillPerSecond: 0))
-        XCTAssertFalse(await cache.consume(bucket: "t", cost: 1, capacity: 5, refillPerSecond: 0))
+        let first = await cache.consume(bucket: "t", cost: 5, capacity: 5, refillPerSecond: 0)
+        XCTAssertTrue(first)
+        let second = await cache.consume(bucket: "t", cost: 1, capacity: 5, refillPerSecond: 0)
+        XCTAssertFalse(second)
         await cache.set("k", value: "v", ttl: 60)
-        XCTAssertEqual(await cache.get("k"), "v")
+        let got = await cache.get("k")
+        XCTAssertEqual(got, "v")
     }
 }

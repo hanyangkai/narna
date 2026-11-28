@@ -3,6 +3,8 @@
 
 const router = require("./router.js");
 
+const PROVIDER_TIMEOUT_MS = 8000;
+
 export default {
   async fetch(request, env, ctx) {
     return handle(request, env);
@@ -46,11 +48,18 @@ async function handle(request, env) {
   const region = body.region || request.headers.get("X-Device-Region") || "";
   const cfCountry = (request.cf && request.cf.country) || "";
 
+  const slowProviders = new Set();
   const result = await router.completeWithFallback({
     env,
     region,
     cfCountry,
-    call: (route) => callProvider(route, env, body.system || "", messages),
+    call: async (route) => {
+      // If a provider timed out once in this request, skip its remaining models.
+      if (slowProviders.has(route.provider)) return { ok: false, status: 503, error: "Provider skipped after timeout." };
+      const r = await callProvider(route, env, body.system || "", messages);
+      if (r && r.timedOut) slowProviders.add(route.provider);
+      return r;
+    },
   });
 
   if (!result.ok) {
@@ -91,7 +100,8 @@ async function callProvider(route, env, system, messages) {
       return await callWorkersAI(route, env, system, messages);
     }
     const { url, headers, body } = requestFor(route, env, system, messages);
-    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    // Hard per-provider timeout so one hung upstream cannot stall the whole fallback chain.
+    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
     const text = await resp.text();
     let parsed = {};
     try { parsed = JSON.parse(text); } catch { /* ignore */ }
@@ -105,7 +115,8 @@ async function callProvider(route, env, system, messages) {
     if (!content) return { ok: false, status: 502, error: "Empty model response." };
     return { ok: true, content };
   } catch (err) {
-    return { ok: false, status: 503, error: (err && err.message) || "Provider call failed." };
+    const timedOut = Boolean(err && (err.name === "TimeoutError" || err.name === "AbortError" || /timed out/i.test(err.message || "")));
+    return { ok: false, status: 503, timedOut, error: (err && err.message) || "Provider call failed." };
   }
 }
 
@@ -152,7 +163,10 @@ async function callWorkersAI(route, env, system, messages) {
   if (!env.AI || typeof env.AI.run !== "function") {
     return { ok: false, status: 503, error: "Workers AI binding is not available." };
   }
-  const result = await env.AI.run(route.id, { messages: openAIMessages(system, messages) });
+  const result = await Promise.race([
+    env.AI.run(route.id, { messages: openAIMessages(system, messages) }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Workers AI timed out.")), PROVIDER_TIMEOUT_MS)),
+  ]);
   const content = (result && (result.response || result.content || (result.result && result.result.response))) || "";
   if (!content) return { ok: false, status: 502, error: "Empty Workers AI response." };
   return { ok: true, content: String(content) };

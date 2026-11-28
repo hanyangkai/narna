@@ -56,7 +56,7 @@ final class SkillRegistryTests: XCTestCase {
         XCTAssertEqual(reg.definition(named: "calendar_event")?.permission, .calendars)
         XCTAssertEqual(reg.definition(named: "reminder")?.permission, .reminders)
         XCTAssertEqual(reg.definition(named: "describe_image")?.permission, .photoLibrary)
-        XCTAssertEqual(reg.definition(named: "calculate")?.permission, .none)
+        XCTAssertEqual(reg.definition(named: "calculate")?.permission, SkillPermission.none)
         XCTAssertEqual(reg.definition(named: "web_lookup")?.location, .networkFree)
         XCTAssertEqual(reg.definition(named: "notes")?.location, .onDevice)
     }
