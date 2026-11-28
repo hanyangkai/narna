@@ -3,6 +3,42 @@
 
 const router = require("./router.js");
 
+const FETCH_TIMEOUT_MS = 5000;
+const WORKERS_AI_TIMEOUT_MS = 6000;
+
+// Circuit breaker: a model that failed (timeout, 4xx/5xx, empty reply) is skipped for a few minutes.
+// Held in isolate memory and mirrored to one KV key so other isolates pick it up. KV is only
+// written when a route newly trips, so it stays far below the free-plan write limit.
+const BREAKER_MS = 5 * 60 * 1000;
+const BREAKER_KEY = "breaker:v1";
+const breaker = { until: new Map(), loadedAt: 0 };
+
+function breakerId(route) { return route.provider + ":" + route.id; }
+function breakerIsOpen(route) {
+  const until = breaker.until.get(breakerId(route));
+  return Boolean(until && until > Date.now());
+}
+async function breakerLoad(env) {
+  if (Date.now() - breaker.loadedAt < 30000) return;
+  breaker.loadedAt = Date.now();
+  try {
+    const raw = await env.QUOTA.get(BREAKER_KEY);
+    if (!raw) return;
+    for (const [k, v] of Object.entries(JSON.parse(raw))) {
+      if (v > (breaker.until.get(k) || 0)) breaker.until.set(k, v);
+    }
+  } catch { /* breaker is best effort */ }
+}
+async function breakerTrip(env, route) {
+  const now = Date.now();
+  const id = breakerId(route);
+  if ((breaker.until.get(id) || 0) > now) return;
+  breaker.until.set(id, now + BREAKER_MS);
+  const live = {};
+  for (const [k, v] of breaker.until) if (v > now) live[k] = v;
+  try { await env.QUOTA.put(BREAKER_KEY, JSON.stringify(live), { expirationTtl: 600 }); } catch { /* ignore */ }
+}
+
 export default {
   async fetch(request, env, ctx) {
     return handle(request, env);
@@ -46,11 +82,21 @@ async function handle(request, env) {
   const region = body.region || request.headers.get("X-Device-Region") || "";
   const cfCountry = (request.cf && request.cf.country) || "";
 
+  const slowProviders = new Set();
+  await breakerLoad(env);
   const result = await router.completeWithFallback({
     env,
     region,
     cfCountry,
-    call: (route) => callProvider(route, env, body.system || "", messages),
+    isOpen: breakerIsOpen,
+    onFailure: (route, res) => (res && res.status === 400 ? null : breakerTrip(env, route)),
+    call: async (route) => {
+      // If a provider timed out once in this request, skip its remaining models.
+      if (slowProviders.has(route.provider)) return { ok: false, status: 503, error: "Provider skipped after timeout." };
+      const r = await callProvider(route, env, body.system || "", messages);
+      if (r && r.timedOut) slowProviders.add(route.provider);
+      return r;
+    },
   });
 
   if (!result.ok) {
@@ -91,7 +137,8 @@ async function callProvider(route, env, system, messages) {
       return await callWorkersAI(route, env, system, messages);
     }
     const { url, headers, body } = requestFor(route, env, system, messages);
-    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    // Hard per-provider timeout so one hung upstream cannot stall the whole fallback chain.
+    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     const text = await resp.text();
     let parsed = {};
     try { parsed = JSON.parse(text); } catch { /* ignore */ }
@@ -105,7 +152,8 @@ async function callProvider(route, env, system, messages) {
     if (!content) return { ok: false, status: 502, error: "Empty model response." };
     return { ok: true, content };
   } catch (err) {
-    return { ok: false, status: 503, error: (err && err.message) || "Provider call failed." };
+    const timedOut = Boolean(err && (err.name === "TimeoutError" || err.name === "AbortError" || /timed out/i.test(err.message || "")));
+    return { ok: false, status: 503, timedOut, error: (err && err.message) || "Provider call failed." };
   }
 }
 
@@ -152,10 +200,17 @@ async function callWorkersAI(route, env, system, messages) {
   if (!env.AI || typeof env.AI.run !== "function") {
     return { ok: false, status: 503, error: "Workers AI binding is not available." };
   }
-  const result = await env.AI.run(route.id, { messages: openAIMessages(system, messages) });
-  const content = (result && (result.response || result.content || (result.result && result.result.response))) || "";
+  const result = await Promise.race([
+    env.AI.run(route.id, { messages: openAIMessages(system, messages) }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Workers AI timed out.")), WORKERS_AI_TIMEOUT_MS)),
+  ]);
+  // Workers AI returns either the legacy { response } shape or OpenAI chat.completion (gpt-oss, llama 3.x, qwen).
+  const choice = result && result.choices && result.choices[0];
+  const content = (result && (result.response || result.content || (result.result && result.result.response)))
+    || (choice && choice.message && choice.message.content)
+    || "";
   if (!content) return { ok: false, status: 502, error: "Empty Workers AI response." };
-  return { ok: true, content: String(content) };
+  return { ok: true, content: String(content).trim() };
 }
 
 function openAIMessages(system, messages) {

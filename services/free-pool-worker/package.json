@@ -4,7 +4,7 @@
   "version": "1.1.0",
   "description": "Nana AI free-chat pool. Scaffold only — do not deploy without owner approval.",
   "scripts": {
-    "test": "node --test src/router.test.js",
+    "test": "node --test src/router.test.js src/skills/catalog.test.js",
     "dev": "wrangler dev",
     "deploy": "echo 'Do not deploy from this PR; owner approval required.' && exit 1"
   }

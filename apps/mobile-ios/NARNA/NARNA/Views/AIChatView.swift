@@ -14,10 +14,10 @@ struct AIChatView: View {
     @FocusState private var inputFocused: Bool
 
     private let suggestions = [
-        "Should we switch our team to a new CI provider?",
-        "Help me plan a 3-day trip on a budget",
-        "Explain this error message and how to fix it",
-        "Draft a polite follow-up email for a late invoice"
+        "Research Wikipedia on decision quality and summarize it",
+        "Calculate (19.99 * 3) + 4.5 and remind me to review the total",
+        "Draft a polite follow-up email for a late invoice",
+        "1. Translate hello to Spanish\n2. Add a to-do to practice Spanish",
     ]
 
     var body: some View {
@@ -123,6 +123,9 @@ struct AIChatView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             AIMessageRow(message: msg) { vm.retry(errorMessageID: msg.id) }
                             if msg.role == .assistant && !msg.isError {
+                                if let tasks = msg.agentTasks, !tasks.isEmpty {
+                                    AgentTaskProgressView(tasks: tasks, isLive: false)
+                                }
                                 if let a = msg.adqa {
                                     ADQACardView(assessment: a)
                                 } else if vm.scoringIDs.contains(msg.id) {
@@ -144,9 +147,15 @@ struct AIChatView: View {
                         .id(msg.id)
                     }
                     if vm.isSending {
-                        HStack(spacing: 8) {
-                            ProgressView().controlSize(.small)
-                            Text("Thinking…").font(.callout).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 10) {
+                            if !vm.liveAgentTasks.isEmpty {
+                                AgentTaskProgressView(tasks: vm.liveAgentTasks, isLive: true)
+                            } else {
+                                HStack(spacing: 8) {
+                                    ProgressView().controlSize(.small)
+                                    Text("Thinking…").font(.callout).foregroundStyle(.secondary)
+                                }
+                            }
                         }
                         .id("typing")
                     }

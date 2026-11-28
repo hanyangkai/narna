@@ -12,11 +12,11 @@ const {
   providerReady,
 } = require("./router.js");
 
-test("default Gemini model is configurable gemini-3.8-flash, not 2.5", () => {
-  assert.equal(defaultGeminiModel({}), "gemini-3.8-flash");
+test("default Gemini model is configurable gemini-3.5-flash-lite, not 2.5", () => {
+  assert.equal(defaultGeminiModel({}), "gemini-3.5-flash-lite");
   assert.equal(defaultGeminiModel({ GEMINI_MODEL: "gemini-3.8-flash-lite" }), "gemini-3.8-flash-lite");
   const ids = buildRoutes({}).map((r) => r.id);
-  assert.ok(ids.includes("gemini-3.8-flash"));
+  assert.ok(ids.includes("gemini-3.5-flash-lite"));
   assert.ok(!ids.includes("gemini-2.5-flash"));
 });
 
@@ -88,7 +88,7 @@ test("completeWithFallback uses Workers AI gpt-oss first and skips Groq without 
       seen.push(route.provider + ":" + route.id);
       if (route.id === "@cf/openai/gpt-oss-120b") return { ok: false, status: 429, error: "rate limit" };
       if (route.id === "@cf/openai/gpt-oss-20b") return { ok: false, status: 503, error: "high demand" };
-      if (route.id === "gemini-3.8-flash") return { ok: true, content: "hello from flash" };
+      if (route.id === "gemini-3.5-flash-lite") return { ok: true, content: "hello from flash" };
       return { ok: false, status: 500, error: "no" };
     },
   });
@@ -98,7 +98,7 @@ test("completeWithFallback uses Workers AI gpt-oss first and skips Groq without 
   assert.deepEqual(seen.slice(0, 3), [
     "workersai:@cf/openai/gpt-oss-120b",
     "workersai:@cf/openai/gpt-oss-20b",
-    "google:gemini-3.8-flash",
+    "google:gemini-3.5-flash-lite",
   ]);
   assert.ok(seen.every((s) => !s.startsWith("groq:")));
 });
@@ -128,4 +128,35 @@ test("daily cap helpers", () => {
   assert.equal(dailyLimit({ DAILY_LIMIT: "100" }), 100);
   assert.equal(dailyLimit({ DAILY_LIMIT: "50" }), 50);
   assert.equal(quotaKey("device-1", new Date("2026-11-25T16:00:00Z")), "quota:2026-11-25:device-1");
+});
+
+test("circuit breaker skips open routes and reports failures", async () => {
+  const failures = [];
+  const tried = [];
+  const result = await completeWithFallback({
+    env: { AI: {}, GEMINI_API_KEY: "x" },
+    region: "US",
+    cfCountry: "US",
+    isOpen: (route) => route.id === "@cf/openai/gpt-oss-120b",
+    onFailure: async (route) => { failures.push(route.id); },
+    call: async (route) => {
+      tried.push(route.id);
+      if (route.id === "@cf/openai/gpt-oss-20b") return { ok: false, status: 503, error: "down" };
+      return { ok: true, content: "hi" };
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.ok(!tried.includes("@cf/openai/gpt-oss-120b"));
+  assert.deepEqual(failures, ["@cf/openai/gpt-oss-20b"]);
+});
+
+test("when every route is open the breaker is ignored", async () => {
+  const result = await completeWithFallback({
+    env: { AI: {} },
+    region: "DE",
+    cfCountry: "DE",
+    isOpen: () => true,
+    call: async () => ({ ok: true, content: "ok" }),
+  });
+  assert.equal(result.ok, true);
 });
