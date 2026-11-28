@@ -15,14 +15,16 @@ const DEFAULTS = {
   ],
   // Optional overflow when GROQ_API_KEY is set; skipped otherwise.
   groq: ["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
+  // Verified against Google's models.list and live calls (Nov 2026): the lite models answer in
+  // ~0.5-1.5s on the free tier; gemini-3.8-flash and gemini-3.6-flash hang (>20s) on a free key
+  // and "gemini-3.8-flash-lite" does not exist (404). Re-add heavy models via GEMINI_MODELS if wanted.
   google: [
-    "gemini-3.8-flash",
-    "gemini-3.8-flash-lite",
-    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
     "gemma-4-31b-it",
-    "gemma-4-26b-it",
   ],
   workersaiOther: [
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "@cf/meta/llama-3.1-8b-instruct-fp8-fast",
     "@cf/google/gemma-4-26b-a4b-it",
     "@cf/qwen/qwen3.8-27b",
@@ -75,7 +77,7 @@ function isRetryableStatus(status) {
 }
 
 function defaultGeminiModel(env) {
-  return (env && env.GEMINI_MODEL && env.GEMINI_MODEL.trim()) || "gemini-3.8-flash";
+  return (env && env.GEMINI_MODEL && env.GEMINI_MODEL.trim()) || "gemini-3.5-flash-lite";
 }
 
 function googleModels(env) {
@@ -146,9 +148,12 @@ function providerReady(provider, env) {
  * 429/503 fall through; other errors also fall through so the user still gets an answer.
  * The last error is returned if the pool is exhausted.
  */
-async function completeWithFallback({ env, region, cfCountry, call }) {
+async function completeWithFallback({ env, region, cfCountry, call, isOpen, onFailure }) {
   const skipGoogle = shouldSkipGoogle(region, cfCountry);
-  const routes = buildRoutes(env, { skipGoogle }).filter((r) => providerReady(r.provider, env));
+  const ready = buildRoutes(env, { skipGoogle }).filter((r) => providerReady(r.provider, env));
+  // Circuit breaker: routes that failed recently are skipped, unless that would leave nothing.
+  const healthy = typeof isOpen === "function" ? ready.filter((r) => !isOpen(r)) : ready;
+  const routes = healthy.length > 0 ? healthy : ready;
   if (routes.length === 0) {
     return { ok: false, status: 503, error: "No free-pool providers are configured." };
   }
@@ -165,6 +170,7 @@ async function completeWithFallback({ env, region, cfCountry, call }) {
       };
     }
     last = result || last;
+    if (typeof onFailure === "function") await onFailure(route, result);
     if (result && isRetryableStatus(result.status)) continue;
     // Non-retryable still advances: a missing model should not sink the pool.
     continue;
